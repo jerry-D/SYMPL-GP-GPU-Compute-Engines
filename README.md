@@ -1,7 +1,7 @@
 # SYMPL-FP324-AXI4
 This SYMPL FP324-AXI4 design supercedes and replaces the original SYMPL FP3250 quad-core 32-bit multi-thread multi-processor published last year.  The FP324-AXI4 incorporates numerous bug fixes, enhancements and, most noteably, an AXI4 burst-mode slave DMA interface.
 
-For more information on the FP324-AXI4, including architectural overview, instruction-set, register descriptions, block diagrams, and example test case, read the SYMPL FP324-AXI4 user's guide, which can downloaded at this link:
+For more information on the FP324-AXI4, including architectural overview, instruction-set, register descriptions, block diagrams, and example test case, read the SYMPL FP324-AXI4 user's guide, which can be downloaded at this link:
 
 https://github.com/jerry-D/SYMPL-FP324-AXI4/blob/master/SYMPL_FP324_AXI4.pdf
 

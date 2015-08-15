@@ -15,3 +15,7 @@ If you have questions or need assitance, please don't hesitate to contact me:  S
 Below is a block diagram of the design:
 
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4/blob/master/FP3244_scalable_graphic1.jpg)
+
+The AXI4 DMA protocol specification V2.0 can be downloaded here:
+
+http://home.mit.bme.hu/~feher/MSC_RA/ARM/AMBA_APB_v2_protocol_spec.pdf

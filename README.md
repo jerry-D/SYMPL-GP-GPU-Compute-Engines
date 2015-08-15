@@ -9,6 +9,8 @@ Presently the only cross-assembler available for generating object code is CROSS
 
 http://www.cdadapter.com/cross32.htm
 
+A .pdf copy of the Cross-32 user's manual can be downloaded here:  http://www.cdadapter.com/download/cross32.pdf
+
 A custom FP324-AXI4 instruction table and example test case for simulations is provided in the FP3244_threads folder in this repository.  Also included is a working Verilog test fixture in the stimulus folder in this repository.
 If you have questions or need assitance, please don't hesitate to contact me:  SYMPL.gpu@gmail.com
 

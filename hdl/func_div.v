@@ -115,7 +115,7 @@ assign wraddrsq = delay14[5:0];
       .nA (nRA_FP),
       .nR (rddataA[31:0]));
        
-    FP_To_IEEE754 fptoieeeA(
+    FP_To_IEEE754 fptoieeeB(
       .nA (nRB_FP),
       .nR (rddataB[31:0])); 
       

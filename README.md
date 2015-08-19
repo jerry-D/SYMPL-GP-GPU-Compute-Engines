@@ -1,4 +1,8 @@
 # SYMPL-FP324-AXI4
+Update (Aug. 19, 2015):  A version of the design is presently being modified to include FloPoCo FP operators.  Please check back here for status and updated RTL.  The FloPoCo website can be found here:
+
+http://flopoco.gforge.inria.fr/
+
 This SYMPL FP324-AXI4 design supercedes and replaces the original SYMPL FP3250 quad-core 32-bit multi-thread multi-processor published last year.  The FP324-AXI4 incorporates numerous bug fixes, enhancements and, most noteably, an AXI4 burst-mode slave DMA interface.
 
 For more information on the FP324-AXI4, including architectural overview, instruction-set, register descriptions, block diagrams, and example test case, read the SYMPL FP324-AXI4 user's guide, which can be downloaded at this link:

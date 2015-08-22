@@ -1,5 +1,5 @@
 # SYMPL-FP324-AXI4
-Update (Aug. 19, 2015):  A version of the design is presently being modified to include FloPoCo FP operators.  Please check back here for status and updated RTL.  The FloPoCo website can be found here:
+Update (Aug. 21, 2015):  The SYMPL FP324-AXI4 Quad-Shader GP-GPU-Compute engine now features FloPoCo-generated floating-point operators.  The FloPoCo website can be found here:
 
 http://flopoco.gforge.inria.fr/
 

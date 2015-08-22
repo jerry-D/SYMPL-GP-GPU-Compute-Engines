@@ -4,7 +4,7 @@
 // aSYMPL 32-bit GP^2 GPU multi-thread, multi-processing core
 // Author:  Jerry D. Harthcock
 // June 29, 2015
-// Version:  1.101   July 03, 2015
+// Version:  1.2   August 21, 2015
 //
 //
 // Copyright (C) 2014.  All rights reserved without prejudice.
@@ -127,22 +127,22 @@ reg reset;
 reg [31:0] SYSTEM_mem[262143:0];
 reg [31:0] SYSTEM_memP[4095:0];
 
-reg [31:0] packetF[8191:0];
-reg [31:0] packetE[8191:0];
-reg [31:0] packetD[8191:0];
-reg [31:0] packetC[8191:0];
-reg [31:0] packetB[8191:0];
-reg [31:0] packetA[8191:0];
-reg [31:0] packet9[8191:0];
-reg [31:0] packet8[8191:0];
-reg [31:0] packet7[8191:0];
-reg [31:0] packet6[8191:0];
-reg [31:0] packet5[8191:0];
-reg [31:0] packet4[8191:0];
-reg [31:0] packet3[8191:0];
-reg [31:0] packet2[8191:0];
-reg [31:0] packet1[8191:0];
-reg [31:0] packet0[8191:0];
+reg [31:0] packetF[511:0];
+reg [31:0] packetE[511:0];
+reg [31:0] packetD[511:0];
+reg [31:0] packetC[511:0];
+reg [31:0] packetB[511:0];
+reg [31:0] packetA[511:0];
+reg [31:0] packet9[511:0];
+reg [31:0] packet8[511:0];
+reg [31:0] packet7[511:0];
+reg [31:0] packet6[511:0];
+reg [31:0] packet5[511:0];
+reg [31:0] packet4[511:0];
+reg [31:0] packet3[511:0];
+reg [31:0] packet2[511:0];
+reg [31:0] packet1[511:0];
+reg [31:0] packet0[511:0];
 
 reg [11:0] i;
 reg [17:0] j;
@@ -297,10 +297,10 @@ fp3244_axi fp3244_axi(
         RREADY = 1'b0; 
 
         $readmemh("c:/aSYMPL/FP3244_threads/FP3244_test1.v", SYSTEM_memP);
-        prog_len = SYSTEM_memP[255];
-        prog_start = SYSTEM_memP[254];  //this is the entry point to the routine
-        i = 12'h0FE;
-        j = 18'h110FE;    //the thread will be transfered to SYSTEM_mem starting at location 0x0110FE
+        prog_start = SYSTEM_memP[253];  //this is the entry point to the routine
+        prog_len = SYSTEM_memP[254];
+         i = 12'h0FD;
+        j = 18'h110FD;    //the thread will be transfered to SYSTEM_mem starting at location 0x0110FD
         repeat (prog_len) begin
             SYSTEM_mem[j] = SYSTEM_memP[i];
             j = j + 1;
@@ -310,7 +310,7 @@ fp3244_axi fp3244_axi(
 // the first locations in the packets contain required parameters followed by the random numbers
 // first initialze entire packet working memories to 0
         k = 0;
-        repeat(8192) begin
+        repeat(512) begin
             packet3[k] = 0;
             packet2[k] = 0;
             packet1[k] = 0;
@@ -389,7 +389,7 @@ fp3244_axi fp3244_axi(
 //// load program memory with thread to be executed /////
 /////////////////////////////////////////////////////////
         @(posedge CLK);
-        AXI_block_write (prog_len[11:0], 18'h110FE, rom_global_wr_base+(254*4)); //copy shader program into all 4 shader program memories simultaneously
+        AXI_block_write (prog_len[11:0], 18'h110FD, rom_global_wr_base+(253*4)); //copy shader program into all 4 shader program memories simultaneously
         AXI_write (CSR, 32'h0000_0000); // clear forced-reset lines to all shaders and allow threads to spin at DONE location
 
         
@@ -410,19 +410,19 @@ fp3244_axi fp3244_axi(
 
         AXI_write (THREAD_IER, 32'h0000_0001);  //enable thread0-done interrupt and global interrupt enable
         wait(INTREQ);
-        AXI_block_read (32, thread0_ram_base, packet0_result_start); // read results from thread0 when done
+        AXI_block_read (41, thread0_ram_base, packet0_result_start); // read results from thread0 when done
         
         AXI_write (THREAD_IER, 32'h0000_0002);  //enable thread1-done interrupt and global interrupt enable
         wait(INTREQ);       
-        AXI_block_read (32, thread1_ram_base, packet1_result_start); // read results from thread1 when done
+        AXI_block_read (41, thread1_ram_base, packet1_result_start); // read results from thread1 when done
         
         AXI_write (THREAD_IER, 32'h0000_0004);  //enable thread2-done interrupt and global interrupt enable
         wait(INTREQ);       
-        AXI_block_read (32, thread2_ram_base, packet2_result_start); // read results from thread2 when done
+        AXI_block_read (41, thread2_ram_base, packet2_result_start); // read results from thread2 when done
         
         AXI_write (THREAD_IER, 32'h0000_0008);  //enable thread3-done interrupt and global interrupt enable
         wait(INTREQ);       
-        AXI_block_read (32, thread3_ram_base, packet3_result_start); // read results from thread3 when done
+        AXI_block_read (41, thread3_ram_base, packet3_result_start); // read results from thread3 when done
 
         
     #33750
@@ -435,16 +435,19 @@ task AXI_read;         // for a single transfer (read from target thread RAM)
     input [31:0] rdaddr;
        
     begin
+#1
         ARLEN = 4'b0000;   //qty (1) 32-bit write
         ARADDR = rdaddr; 
         ARVALID = 1'b1;
         RREADY = 1'b0;
         wait (ARREADY);
-        @(posedge CLK)
+        @(posedge CLK);
+#1
         ARVALID = 1'b0;
         RREADY = 1'b1;
-        @(posedge CLK)
-        @(posedge CLK)
+        @(posedge CLK);
+        @(posedge CLK);
+#1
         RREADY = 1'b0;
         rd_shader_data = RDATA;
         @(posedge CLK);
@@ -460,6 +463,7 @@ task AXI_burst_read;   // for maximum of 16 transfers read from target core/thre
     reg [31:0] write_pointer;
     
     begin
+#1
         write_pointer = dest_start_addrs[17:0];
         ARADDR = src_start_addrs; 
         ARVALID = 1'b1;
@@ -467,18 +471,22 @@ task AXI_burst_read;   // for maximum of 16 transfers read from target core/thre
         ARLEN = len;   
         RREADY = 1'b0;
         wait (ARREADY);  //ARVALID is in a term in ARREADY from slave
-        @(posedge CLK)
+        @(posedge CLK);
+#1
         ARVALID = 1'b0;           
         RREADY = 1'b1;
-        @(posedge CLK)        
+        @(posedge CLK);        
+#1
         while(count) begin
-            @(posedge CLK)
+            @(posedge CLK);
+#1
             SYSTEM_mem[write_pointer[17:0]] = RDATA;
             rd_shader_data = RDATA;
             if (~(count==0))  write_pointer = write_pointer + 3'h1; 
             count = count - 1'b1; 
         end 
-        @(posedge CLK)
+        @(posedge CLK);
+#1
         RREADY = 1'b0; 
         @(posedge CLK);
     end
@@ -496,11 +504,12 @@ task AXI_block_read;  // for transfers > 16 up to 64k (4 bytes per transfer for 
     reg [15:0] remaining;   //number of 32-bit words remaining in the overall transaction
     
     begin
+#1
         src_pointer = src_start_addrs;
         dest_pointer = dest_start_addrs;
         remaining = len;
         @(posedge CLK);
-       
+#1       
         while (remaining) begin
             if (remaining < 16) begin
                 burst_len = remaining[3:0] - 1;
@@ -531,11 +540,12 @@ task AXI_block_write;  // for transfers > 16 up to 64k (4 bytes per transfer)
     reg [15:0] remaining;   //number of 32-bit words remaining in the overall transaction
     
     begin
+#1
         src_pointer = src_start_addrs;
         dest_pointer = dest_start_addrs;
         remaining = len;
         @(posedge CLK);
-       
+#1       
         while (remaining) begin
             if (remaining < 16) begin
                 burst_len = remaining[3:0] - 1;
@@ -562,6 +572,7 @@ task AXI_burst_write;   // for maximum of 16 transfers
     reg [31:0] read_pointer;
     
     begin
+#1
         read_pointer = src_start_addrs;
         count = len;
         AWLEN = len;   
@@ -569,7 +580,8 @@ task AXI_burst_write;   // for maximum of 16 transfers
         AWVALID = 1'b1;
         wait (AWREADY);
         while(count) begin
-            @(posedge CLK)
+            @(posedge CLK);
+#1
                 BREADY = 1'b1;        
                 WVALID = 1'b1;
                 AWVALID = 1'b0;
@@ -577,10 +589,12 @@ task AXI_burst_write;   // for maximum of 16 transfers
                 read_pointer = read_pointer + 3'h1;  
                 count = count - 1'b1;
         end     
-        @(posedge CLK)
+        @(posedge CLK);
+#1
         WDATA = SYSTEM_mem[read_pointer[17:0]];
         WLAST = 1'b1;
-        @(posedge CLK)
+        @(posedge CLK);
+#1        
         BREADY = 1'b0;    
         WVALID = 1'b0;
         WLAST = 1'b0;
@@ -593,20 +607,24 @@ task AXI_write;         // for a single transfer
     input [31:0] wdata;
        
     begin
+#1
         AWLEN = 4'b0000;   //qty (1) 32-bit write
         AWADDR = waddr; 
         AWVALID = 1'b1;
         wait (AWREADY);
-        @(posedge CLK)
+        @(posedge CLK);
+#1
         BREADY = 1'b1;        
         AWVALID = 1'b0;
         WLAST = 1'b1;
         WDATA = wdata;
         WVALID = 1'b1;
-        @(posedge CLK)
+        @(posedge CLK);
+#1
         WVALID = 1'b0;
         WLAST = 1'b0;
-        @(posedge CLK)
+        @(posedge CLK);
+#1
         BREADY = 1'b0;
         @(posedge CLK);
     end    

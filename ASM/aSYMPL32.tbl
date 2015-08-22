@@ -1,0 +1,504 @@
+; Cross-32 instruction table for SYMPL FP324-AXI4 for use with SYMPL FP324-AXI4 multi-thread multi-processing core only.  
+; version 2.430   August 21, 2015 
+; Author:  Jerry D. Harthcock
+; Copyright (C) 2014-2015.  All rights reserved, without prejudice.
+; A copy of Cross-32 can be purchased from
+; Data-Sync Engineering at: http://www.cdadapter.com/cross32.htm  sales@datasynceng.com
+; A copy of the Cross-32 manual can be viewed online here:  http://www.cdadapter.com/download/cross32.pdf
+; This version does not include support for soft-scheduling feature.  If you need that capability
+; contact the author of this table at: SYMPL.gpu@gmail.com
+;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+;//                                                                                                               //
+;//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+;//                              Evaluation and Product Development License                                       //
+;//                                                                                                               //
+;// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
+;// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+;// Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
+;// non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
+;// products and related development tools only.                                                                  //
+;//                                                                                                               //
+;// Also subject to the terms and conditions set forth herein, Jerry D. Harthcock, exlusive inventor and owner    //
+;// of US Patent No. 7,073,048, entitled "CASCADED MICROCOMPUTER ARRAY AND METHOD", issue date July 4, 2006       //
+;// ("the '048 patent"), hereby grants a world-wide, paid-up, non-exclusive license under the '048 patent to use  //
+;// this IP for the purposes of evaluation, education, and development of end products and related development    //
+;// tools only.                                                                                                   //
+;//                                                                                                               //
+;// Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
+;// and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
+;// binaries, a printed copy of this license and/or a text format copy in a separate file distributed with said   //
+;// netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
+;// any copyright notices from any source file covered under this Evaluation and Product Development License.     //
+;//                                                                                                               //
+;// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR     //
+;// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM   //
+;// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                //
+;//                                                                                                               //
+;// Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
+;// or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
+;// of any kind to anyone. By using this IP for any purpose, you agree to all the terms and conditions set forth  //
+;// in this Evaluation and Product Development License.                                                           //
+;//                                                                                                               //
+;// This Evaluation and Product Development License does not include the right to sell products that incorporate  //
+;// this IP, any IP derived from this IP, or the '048 patent.  If you would like to obtain such a license, please //
+;// contact Licensor.                                                                                             //
+;//                                                                                                               //
+;// Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
+;//                                                                                                               //
+;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+;---------------------------------
+;Register/Flag definition section
+;---------------------------------
+1, "LEFT", "LSL", "ASL", "ROL", "RIGHT", "LSR", "ASR", "ROR"   ;type of SHFT
+2, "Z", "C", "N", "V", "LOCKED", "DONE", "FPN", "SZ", "NML", "DML", "INF", "NaN", "EXC", "EXCIE", "IRQIE", "*$%", "@#$*", "%%@@", "@@!!", "!~#", "&^$", "#~$", "&&!!", "!!$$", "%^!", "*&^", "&%@", "%$*", "&$%", "%!#", "NEVER", "ALWAYS"
+6, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"
+7, "LPCNT0", "LPCNT1", "LPCNT2", "LPCNT3"
+;           1111111111222222222233                       
+; 01234567890123456789012345678901
+; 00000000000000000000000000000000
+
+;---------------------------
+;Operand definition section
+;---------------------------
+*
+;NUM	START	LENGTH   EXP    LOW    HIGH   ;COMMENT
+1,	      8,	   8,     #,     0,    0xFF   ;direct destination
+2,	     16,       8,     #,     0,    0xFF   ;direct SrcA
+3,       24,       8,     #,     0,    0xFF   ;direct SrcB
+4,        8,       8,     #,   0x70,   0x73   ;indirect destination  
+5,       16,       8,     #,   0x70,   0x73   ;indirect SrcA  
+6,       24,       8,     #,   0x70,   0x73   ;indirect SrcB 
+7,       16,      16,     #,   0x0000, 0xFFFF ;immediate MOV #16-bits {srcA,srcB} combined (applies to MOV only)
+8,       24,       8,     #,   0x00,   0xFF   ;immediate SrcB is #8-bits 
+9,       19,       5,    @2,      0,   0x1f   ;conditional branch as per condition mneumonics "@2" above
+10,       8,       8,   {#-$}, $-127,  $+128  ;relative branch
+14,      28,       4,    @6,    0x0,   0xF    ;shift amount, 0x0 is code for one shift, 0xF is code for 16 shifts as per "@6" above
+15,      24,       4,    @1,    0x0,   0x7    ;type of shift as per "@1" above
+16,      8,        8,    @7,    0x0,   0x1    ;DBNZ as per "@7" above
+
+;-------------------------
+;addressing modes section
+;-------------------------
+*
+1,{1},{2}^00000000:                   ;MOV, AND, OR, XOR, ADD, SUB
+2,{1},*{5}^00000400:
+3,{1},*{5}++^00000800:
+4,{1},*{5}--^00000C00:
+5,*{4},{2}^00040000:
+6,*{4},*{5}^00040400:
+7,*{4},*{5}--^00040C00:
+8,*{4},*{5}++^00040800:
+9,*{4}++,{2}^00080000:
+10,*{4}++,*{5}^00080400:
+11,*{4}++,*{5}++^00080800:
+12,*{4}++,*{5}--^00080C00:
+13,*{4}--,{2}^000C0000:
+14,*{4}--,*{5}^000C0400:
+15,*{4}--,*{5}++^000C0800:
+16,*{4}--,*{5}--^000C0C00:
+
+17,{1},@{2}^20000000:
+18,*{4},@{2}^20040000:
+19,*{4}++,@{2}^20080000:
+20,*{4}--,@{2}^200C0000:
+
+21,{1},{2},{3}^00000000:
+22,{1},*{5},{3}^00000400:
+23,{1},*{5}++,{3}^00000800:
+24,{1},*{5}--,{3}^00000C00:
+25,{1},{2},*{6}^00000004:
+26,{1},{2},*{6}++^00000008:
+27,{1},{2},*{6}++^0000000C:
+28,{1},*{5},*{6}^00000404:
+29,{1},*{5},*{6}++^00000408:
+30,{1},*{5},*{6}--^0000040C:
+31,{1},*{5}++,*{6}^00000804:
+32,{1},*{5}++,*{6}++^00000808:
+33,{1},*{5}++,*{6}--^0000080C:
+34,{1},*{5}--,*{6}^00000C04:
+35,{1},*{5}--,*{6}++^00000C08:
+36,{1},*{5}--,*{6}--^00000C0C:
+37,*{4},{2},{3}^00040000:
+38,*{4}++,{2},{3}^00080000:
+39,*{4}--,{2},{3}^000C0000:
+40,*{4},*{5},{3}^00040400:
+41,*{4},*{5}++,{3}^00040800:
+42,*{4},*{5}--,{3}^00040C00:
+43,*{4}++,*{5},{3}^00080400:
+44,*{4}++,*{5}++,{3}^00080800:
+45,*{4}++,*{5}--,{3}^00080C00:
+46,*{4}--,*{5},{3}^000C0400:
+47,*{4}--,*{5}++,{3}^000C0800:
+48,*{4}--,*{5}--,{3}^000C0C00:
+49,*{4},{2},*{6}^00040004:
+50,*{4},{2},*{6}++^00040008:
+51,*{4},{2},*{6}--^0004000C:
+52,*{4}++,{2},*{6}^00080004:
+53,*{4}++,{2},*{6}++^00080008:
+54,*{4}++,{2},*{6}--^0008000C:
+55,*{4}--,{2},*{6}^000C0004:
+56,*{4}--,{2},*{6}++^000C0008:
+57,*{4}--,{2},*{6}--^000C000C:
+58,*{4},*{5},*{6}^00040404:
+59,*{4},*{5},*{6}++^00040408:
+60,*{4},*{5},*{6}--^0004040C:
+61,*{4},*{5}++,*{6}^00040804:
+62,*{4},*{5}++,*{6}++^00040808:
+63,*{4},*{5}++,*{6}--^0004080C:
+64,*{4},*{5}--,*{6}^00040C04:
+65,*{4},*{5}--,*{6}++^00040C08:
+66,*{4},*{5}--,*{6}--^00040C0C:
+67,*{4}++,*{5},*{6}^00080404:
+68,*{4}++,*{5},*{6}++^00080408:
+69,*{4}++,*{5},*{6}--^0008040C:
+70,*{4}++,*{5}++,*{6}^00080804:
+71,*{4}++,*{5}++,*{6}++^00080808:
+72,*{4}++,*{5}++,*{6}--^0008080C:
+73,*{4}++,*{5}--,*{6}^00080C04:
+74,*{4}++,*{5}--,*{6}++^00080C08:
+75,*{4}++,*{5}--,*{6}--^00080C0C:
+76,*{4}--,*{5},*{6}^000C0404:
+77,*{4}--,*{5},*{6}++^000C0408:
+78,*{4}--,*{5},*{6}--^000C040C:
+79,*{4}--,*{5}++,*{6}^000C0804:
+80,*{4}--,*{5}++,*{6}++^000C0808:
+
+81,*{4}--,*{5}++,*{6}--^000C080C:
+82,*{4}--,*{5}--,*{6}^000C0C04:
+83,*{4}--,*{5}--,*{6}++^000C0C08:
+84,*{4}--,*{5}--,*{6}--^000C0C0C:
+
+85,*{4},@{2},*{6}^20040004:
+86,*{4},@{2},*{6}++^20040008:
+87,*{4},@{2},*{6}--^2004000C:
+88,*{4}++,@{2},*{6}^20080004:
+89,*{4}++,@{2},*{6}++^20080008:
+90,*{4}++,@{2},*{6}--^2008000C:
+91,*{4}--,@{2},*{6}^200C0004:
+92,*{4}--,@{2},*{6}++^200C0008:
+93,*{4}--,@{2},*{6}--^200C000C:
+
+94,{1},@{2},*{6}^20000004:
+95,{1},@{2},*{6}++^20000008:
+96,{1},@{2},*{6}--^2000000C:
+
+97,*{4},@{2},{3}^20040000:      
+98,*{4}++,@{2},{3}^20080000:    
+99,*{4}--,@{2},{3}^200C0000:
+100,*{4},#{7}^30040000:
+101,*{4}++,#{7}^30080000:
+102,*{4}--,#{7}^300C0000:
+103,*{4},{2},#{8}^10040000:
+104,*{4}++,{2},#{8}^10080000:
+105,*{4}--,{2},#{8}^100C0000:
+106,*{4},*{5},#{8}^10040400:
+107,*{4},*{5}++,#{8}^10040800:
+108,*{4},*{5}--,#{8}^10040C00:
+109,*{4}++,*{5},#{8}^10080400:
+110,*{4}++,*{5}++,#{8}^10080800:
+111,*{4}++,*{5}--,#{8}^10080C00:
+112,*{4}--,*{5},#{8}^100C0400:
+113,*{4}--,*{5}++,#{8}^100C0800:
+114,*{4}--,*{5}--,#{8}^100C0C00:
+115,{1},{2},#{8}^10000000:
+116,{1},*{5},#{8}^10000400:
+117,{1},*{5}++,#{8}^10000800:
+118,{1},*{5}--,#{8}^10000C00:
+119,{1},@{2},{3}^20000000:
+
+120,{1},#{7}^30000000:                ;MOV#16
+
+121,{10},*{5},*{6}^00000404:          ;BCND, BTBC, BTBS  (note: BCND is alias of BTBS)
+122,{10},*{5},*{6}++^00000408:
+123,{10},*{5},*{6}--^0000040C:
+124,{10},*{5}++,*{6}^00000804:
+125,{10},*{5}++,*{6}++^00000808:
+126,{10},*{5}++,*{6}--^0000080C:
+127,{10},*{5}--,*{6}^00000C04:
+128,{10},*{5}--,*{6}++^00000C08:
+129,{10},*{5}--,*{6}--^00000C0C:
+130,{10},*{5},{3}^00000400:
+131,{10},{2},{3}^00000000:
+132,{10},*{5}++,{3}^00000800:
+133,{10},*{5}--,{3}^00000C00:
+134,{10},{2},*{6}^00000004:
+135,{10},{2},*{6}++^00000008:
+136,{10},{2},*{6}--^0000000C:
+137,{10},@{2},*{6}^20000004:
+138,{10},@{2},*{6}++^20000008:
+139,{10},@{2},*{6}--^2000000C:
+140,{10},@{2},{3}^20000000:
+141,{10},*{5},#{8}^10000400:
+142,{10},*{5}++,#{8}^10000800:
+143,{10},*{5}--,#{8}^10000C00:
+144,{10},{2},#{8}^10000000:
+145,*{4},@{2},{3}^20040000:
+146,*{4}++,@{2},{3}^20080000:
+147,*{4}--,@{2},{3}^200C0000:
+
+148,{10},{9}^0000006D:                  ;BCND  (note: BCND is alias of BTBS)
+ 
+229,{1},{2},{15},{14}^00000000:         ;SHFT
+230,{1},*{5},{15},{14}^00000400:
+231,{1},*{5}++,{15},{14}^00000800:
+232,{1},*{5}--,{15},{14}^00000C00:
+233,*{4},{2},{15},{14}^00040000:
+234,*{4},*{5},{15},{14}^00040400:
+235,*{4},*{5}--,{15},{14}^00040C00:
+236,*{4},*{5}++,{15},{14}^00040800:
+237,*{4}++,{2},{15},{14}^00080000:
+238,*{4}++,*{5},{15},{14}^00080400:
+239,*{4}++,*{5}++,{15},{14}^00080800:
+240,*{4}++,*{5}--,{15},{14}^00080C00:
+241,*{4}--,{2},{15},{14}^000C0000:
+242,*{4}--,*{5},{15},{14}^000C0400:
+243,*{4}--,*{5}++,{15},{14}^000C0800:
+244,*{4}--,*{5}--,{15},{14}^000C0C00:
+245,{1},@{2},{15},{14}^20000000:
+246,*{4},@{2},{15},{14}^20040000:
+247,*{4}++,@{2},{15},{14}^20080000:
+248,*{4}--,@{2},{15},{14}^200C0000:
+
+249,{2}^00000000:                       ;Repeat RPT (RPT is alias of MOV)
+250,*{5}++^00000800:
+251,*{5}--^00000C00:
+
+252,{10},{16}^00000F68:                 ;DBNZ (DBNZ is alias of BTBS)
+
+
+* ;Mnemonic Definition section, which includes just a few of the many possible aliases.  Second nyble (4-bits) from the far left is the opcode
+                               
+MOV    |1-120  ^00000000:
+AND    |21-119 ^01000000:                       
+OR     |21-119 ^02000000:
+XOR    |21-119 ^03000000:
+BCND   |148    ^04000000:
+BTBC   |121-147^04002000:
+BTBS   |121-147^04000000:
+DBNZ   |252    ^04000000:
+SHFT   |229-248^05000000:
+ADD    |21-119 ^06000000:                       
+ADDC   |21-119 ^07000000:                       
+SUB    |21-119 ^08000000:
+SUBB   |21-119 ^09000000:
+MUL    |21-119 ^0A000000:
+RCP    |1-20|100-102|120 ^0B000000:
+SIN    |1-20|100-102|120 ^0C000000:
+COS    |1-20|100-102|120 ^0D000000:
+TAN    |1-20|100-102|120 ^0E000000:
+COT    |1-20|100-102|120 ^0F000000:
+NOP    ^04001E6D:  ; BCND NEVER actually
+SBRK   ^04001F6D:  ; BCND ALWAYS (to self) actually
+RPT    |249-251^00640000:  ; MOV srcA to location 64 (repeat counter)
+
+;same as above, except switch from current thread to thread 1 (not available for RPT)
+MOV.1  |1-120  ^40000000:
+AND.1  |21-119 ^41000000:                       
+OR.1   |21-119 ^42000000:
+XOR.1  |21-119 ^43000000:
+BCND.1 |148    ^44000000:
+BTBC.1 |121-147^44002000:
+BTBS.1 |121-147^44000000:
+DBNZ.1 |252    ^44000000:
+SHFT.1 |229-248^45000000:
+ADD.1  |21-119 ^46000000:                       
+ADDC.1 |21-119 ^47000000:                       
+SUB.1  |21-119 ^48000000:
+SUBB.1 |21-119 ^49000000:
+MUL.1  |21-119 ^4A000000:
+RCP.1  |1-20|100-102|120 ^4B000000:
+SIN.1  |1-20|100-102|120 ^4C000000:
+COS.1  |1-20|100-102|120 ^4D000000:
+TAN.1  |1-20|100-102|120 ^4E000000:
+COT.1  |1-20|100-102|120 ^4F000000:
+NOP.1  ^44001E6D:  ; BCND NEVER actually
+SBRK.1 ^44001F6D:  ; BCND ALWAYS (to self) actually
+
+;same as above, except switch from current thread to thread 2 (not available for RPT)
+MOV.2  |1-120  ^80000000:
+AND.2  |21-119 ^81000000:                       
+OR.2   |21-119 ^82000000:
+XOR.2  |21-119 ^83000000:
+BCND.2 |148    ^84000000:
+BTBC.2 |121-147^84002000:
+BTBS.2 |121-147^84000000:
+DBNZ.2 |252    ^84000000:
+SHFT.2 |229-248^85000000:
+ADD.2  |21-119 ^86000000:                       
+ADDC.2 |21-119 ^87000000:                       
+SUB.2  |21-119 ^88000000:
+SUBB.2 |21-119 ^89000000:
+MUL.2  |21-119 ^8A000000:
+RCP.2  |1-20|100-102|120 ^8B000000:
+SIN.2  |1-20|100-102|120 ^8C000000:
+COS.2  |1-20|100-102|120 ^8D000000:
+TAN.2  |1-20|100-102|120 ^8E000000:
+COT.2  |1-20|100-102|120 ^8F000000:
+NOP.2  ^84001E6D:  ; BCND NEVER actually
+SBRK.2 ^84001F6D:  ; BCND ALWAYS (to self) actually
+
+;same as above, except switch from current thread to thread 3 (not available for RPT)
+MOV.3  |1-120  ^C0000000:
+AND.3  |21-119 ^C1000000:                       
+OR.3   |21-119 ^C2000000:
+XOR.3  |21-119 ^C3000000:
+BCND.3 |148    ^C4000000:
+BTBC.3 |121-147^C4002000:
+BTBS.3 |121-147^C4000000:
+DBNZ.3 |252    ^C4000000:
+SHFT.3 |229-248^C5000000:
+ADD.3  |21-119 ^C6000000:                       
+ADDC.3 |21-119 ^C7000000:                       
+SUB.3  |21-119 ^C8000000:
+SUBB.3 |21-119 ^C9000000:
+MUL.3  |21-119 ^CA000000:
+RCP.3  |1-20|100-102|120 ^CB000000:
+SIN.3  |1-20|100-102|120 ^CC000000:
+COS.3  |1-20|100-102|120 ^CD000000:
+TAN.3  |1-20|100-102|120 ^CE000000:
+COT.3  |1-20|100-102|120 ^CF000000:
+NOP.3  ^C4001E6D:  ; BCND NEVER actually
+SBRK.3 ^C4001F6D:  ; BCND ALWAYS (to self) actually
+
+
+*   ;equates section
+;--------------------------------------------------------------------------
+;FP OPERATOR memory-mapped addresses and corresponding results storage bins
+;--------------------------------------------------------------------------
+FADD_0:     EQU     0x080
+FADD_1:     EQU     0x081
+FADD_2:     EQU     0x082
+FADD_3:     EQU     0x083
+FADD_4:     EQU     0x084
+FADD_5:     EQU     0x085
+FADD_6:     EQU     0x086
+FADD_7:     EQU     0x087
+FADD_8:     EQU     0x088
+FADD_9:     EQU     0x089
+FADD_A:     EQU     0x08A
+FADD_B:     EQU     0x08B
+FADD_C:     EQU     0x08C
+FADD_D:     EQU     0x08D
+FADD_E:     EQU     0x08E
+FADD_F:     EQU     0x08F
+
+FSUB_0:     EQU     0x090
+FSUB_1:     EQU     0x091
+FSUB_2:     EQU     0x092
+FSUB_3:     EQU     0x093
+FSUB_4:     EQU     0x094
+FSUB_5:     EQU     0x095
+FSUB_6:     EQU     0x096
+FSUB_7:     EQU     0x097
+FSUB_8:     EQU     0x098
+FSUB_9:     EQU     0x099
+FSUB_A:     EQU     0x09A
+FSUB_B:     EQU     0x09B
+FSUB_C:     EQU     0x09C
+FSUB_D:     EQU     0x09D
+FSUB_E:     EQU     0x09E
+FSUB_F:     EQU     0x09F
+
+FMUL_0:     EQU     0x0A0
+FMUL_1:     EQU     0x0A1
+FMUL_2:     EQU     0x0A2
+FMUL_3:     EQU     0x0A3
+FMUL_4:     EQU     0x0A4
+FMUL_5:     EQU     0x0A5
+FMUL_6:     EQU     0x0A6
+FMUL_7:     EQU     0x0A7
+FMUL_8:     EQU     0x0A8
+FMUL_9:     EQU     0x0A9
+FMUL_A:     EQU     0x0AA
+FMUL_B:     EQU     0x0AB
+FMUL_C:     EQU     0x0AC
+FMUL_D:     EQU     0x0AD
+FMUL_E:     EQU     0x0AE
+FMUL_F:     EQU     0x0AF
+
+ITOF_0:     EQU     0x0B0
+ITOF_1:     EQU     0x0B1
+ITOF_2:     EQU     0x0B2
+ITOF_3:     EQU     0x0B3
+ITOF_4:     EQU     0x0B4
+ITOF_5:     EQU     0x0B5
+ITOF_6:     EQU     0x0B6
+ITOF_7:     EQU     0x0B7
+
+FTOI_0:     EQU     0x0B8
+FTOI_1:     EQU     0x0B9
+FTOI_2:     EQU     0x0BA
+FTOI_3:     EQU     0x0BB
+FTOI_4:     EQU     0x0BC
+FTOI_5:     EQU     0x0BD
+FTOI_6:     EQU     0x0BE
+FTOI_7:     EQU     0x0BF
+
+FDIV_0:     EQU     0x0C0
+FDIV_1:     EQU     0x0C1
+FDIV_2:     EQU     0x0C2
+FDIV_3:     EQU     0x0C3
+FDIV_4:     EQU     0x0C4
+FDIV_5:     EQU     0x0C5
+FDIV_6:     EQU     0x0C6
+FDIV_7:     EQU     0x0C7
+FDIV_8:     EQU     0x0C8
+FDIV_9:     EQU     0x0C9
+FDIV_A:     EQU     0x0CA
+FDIV_B:     EQU     0x0CB
+FDIV_C:     EQU     0x0CC
+FDIV_D:     EQU     0x0CD
+FDIV_E:     EQU     0x0CE
+FDIV_F:     EQU     0x0CF
+
+SQRT_0:     EQU     0x0D0
+SQRT_1:     EQU     0x0D1
+SQRT_2:     EQU     0x0D2
+SQRT_3:     EQU     0x0D3
+SQRT_4:     EQU     0x0D4
+SQRT_5:     EQU     0x0D5
+SQRT_6:     EQU     0x0D6
+SQRT_7:     EQU     0x0D7
+SQRT_8:     EQU     0x0D8
+SQRT_9:     EQU     0x0D9
+SQRT_A:     EQU     0x0DA
+SQRT_B:     EQU     0x0DB
+SQRT_C:     EQU     0x0DC
+SQRT_D:     EQU     0x0DD
+SQRT_E:     EQU     0x0DE
+SQRT_F:     EQU     0x0DF
+
+LOG_0:      EQU     0x0E0
+LOG_1:      EQU     0x0E1
+LOG_2:      EQU     0x0E2
+LOG_3:      EQU     0x0E3
+LOG_4:      EQU     0x0E4
+LOG_5:      EQU     0x0E5
+LOG_6:      EQU     0x0E6
+LOG_7:      EQU     0x0E7
+LOG_8:      EQU     0x0E8
+LOG_9:      EQU     0x0E9
+LOG_A:      EQU     0x0EA
+LOG_B:      EQU     0x0EB
+LOG_C:      EQU     0x0EC
+LOG_D:      EQU     0x0ED
+LOG_E:      EQU     0x0EE
+LOG_F:      EQU     0x0EF
+
+EXP_0:      EQU     0x0F0
+EXP_1:      EQU     0x0F1
+EXP_2:      EQU     0x0F2
+EXP_3:      EQU     0x0F3
+EXP_4:      EQU     0x0F4
+EXP_5:      EQU     0x0F5
+EXP_6:      EQU     0x0F6
+EXP_7:      EQU     0x0F7
+EXP_8:      EQU     0x0F8
+EXP_9:      EQU     0x0F9
+EXP_A:      EQU     0x0FA
+EXP_B:      EQU     0x0FB
+EXP_C:      EQU     0x0FC
+EXP_D:      EQU     0x0FD
+EXP_E:      EQU     0x0FE
+EXP_F:      EQU     0x0FF

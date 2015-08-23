@@ -178,7 +178,7 @@ always @(posedge CLK or posedge RESET) begin
                      end
             3'b001 : begin                                                                                         
                         ld_vector <= 1'b0;                                                                         
-                        if (NMI_ackq && (PC==NMI_VECTOR) && (thread==assigned_thread)) begin
+                        if (NMI_ackq) begin
                           NMI_ackq <= 1'b0;
                           NMI_in_service <= 1'b1;
                           state <= 3'b010;                
@@ -214,12 +214,12 @@ always @(posedge CLK or posedge RESET) begin
                      end                                                                                           
             3'b001 : begin                                                                                         
                         ld_vector <= 1'b0;                                                                         
-                        if (EXC_ackq && (PC==FPEXC_VECTOR) && (thread==assigned_thread)) begin
+                        if (EXC_ackq) begin
                             EXC_ackq <= 1'b0;
                             EXC_in_service <= 1'b1;
                           state <= 3'b010;                
                         end 
-                        else if (IRQ_ackq && (PC==IRQ_VECTOR) && (thread==assigned_thread)) begin
+                        else if (IRQ_ackq) begin
                             IRQ_ackq <= 1'b0;
                             IRQ_in_service <= 1'b1;
                           state <= 3'b010;                

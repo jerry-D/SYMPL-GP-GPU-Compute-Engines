@@ -633,10 +633,10 @@ assign global_I256_rddataA = 32'h0000_0000;
 assign global_F512_rddataB = 32'h0000_0000;
 assign global_I256_rddataB = 32'h0000_0000;
 
-assign tr0_NMI = ~tr0_done && (tr0_timer==tr0_timercmpr);
-assign tr1_NMI = ~tr1_done && (tr1_timer==tr1_timercmpr);
-assign tr2_NMI = ~tr2_done && (tr2_timer==tr2_timercmpr);
-assign tr3_NMI = ~tr3_done && (tr3_timer==tr3_timercmpr);
+assign tr0_NMI = ~tr0_done & (tr0_timer==tr0_timercmpr);
+assign tr1_NMI = ~tr1_done & (tr1_timer==tr1_timercmpr);
+assign tr2_NMI = ~tr2_done & (tr2_timer==tr2_timercmpr);
+assign tr3_NMI = ~tr3_done & (tr3_timer==tr3_timercmpr);
 
 assign  tr0_STATUS = {  2'b10,
                        14'b0000_0000_0000_00,

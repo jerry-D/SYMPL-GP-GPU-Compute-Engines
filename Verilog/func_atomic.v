@@ -78,7 +78,7 @@ trigd trigd(     //sin cos tan cot in degrees, 1 deg resolution, input range +/-
     .cot (cot_out));
 
 
-    rcp rcp(
+    invrom128x32 inv(
         .rdenA   (opcode_q2 == INV_),
         .x       (wrdata[7:0]),
         .rddataA (inv_out));

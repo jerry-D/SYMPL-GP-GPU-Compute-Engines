@@ -2,7 +2,7 @@
 `timescale 1ns/100ps
 // SYMPL FP324-AXI4 multi-thread, multi-processing core
 // Author:  Jerry D. Harthcock
-// Version:  3.00
+// Version:  3.01 August 25, 2015
 // July 11, 2015
 // Copyright (C) 2014-2015.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -867,7 +867,7 @@ aSYMPL_func fpmath(
     assign fp_ready_q1 = 1'b1;
 */
 
-/*
+
 func_atomic fatomic(
     .wrdata    (wrsrcAdata[9:0]),     
     .opcode_q2 (opcode_q2 ),
@@ -876,17 +876,18 @@ func_atomic fatomic(
     .tan_out   (tan_out   ),
     .cot_out   (cot_out   ),
     .rcp_out   (rcp_out   ));
-*/
 
+/*
     assign sin_out = 32'h0000_0000;
     assign cos_out = 32'h0000_0000;
     assign tan_out = 32'h0000_0000;
     assign cot_out = 32'h0000_0000;
     assign rcp_out = 32'h0000_0000;
-
+*/
                
-RAM_tp #(.ADDRS_WIDTH(10), .DATA_WIDTH(32))
-    global_1024 (
+//RAM_tp #(.ADDRS_WIDTH(10), .DATA_WIDTH(32))
+RAM_tp #(.ADDRS_WIDTH(8), .DATA_WIDTH(32))    
+    global (
     .CLK(CLK),
     .wren(wrcycl & (dest_q2[13:10]==4'b0001)),
     .wraddrs(dest_q2[9:0]),

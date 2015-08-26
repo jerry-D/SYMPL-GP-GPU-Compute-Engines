@@ -2,7 +2,7 @@
  `timescale 1ns/100ps
  // For use with SYMPL FP324-AXI4 multi-thread multi-processing core only
  // Author:  Jerry D. Harthcock
- // Version:  1.001 July 7, 2015
+ // Version:  1.002 August 25, 2015
  // July 7, 2015
  // Copyright (C) 2015.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -87,6 +87,9 @@ reg [31:0] rddataB;
 reg [4:0] rddataA_sel_q;
 reg [4:0] rddataB_sel_q;
 
+reg [31:0] dma_rddata;
+reg [4:0] dma_rddataB_sel_q;
+
 wire [1:0] thread_q0;
 wire [1:0] thread_q2;
 
@@ -158,8 +161,6 @@ wire [31:0] P_DATAi;
 wire [31:0] ROM_4k_rddataA;
 wire [1:0] const;
 
-wire [31:0] dma_rddata;
-
 wire ram_wr_sel;
 wire ram_rd_sel;
 wire rom_wr_sel;
@@ -176,6 +177,16 @@ wire tr2_done;
 wire tr1_done;
 wire tr0_done;
 
+wire [4:0] dma_rddataB_sel;
+
+
+
+assign dma_rddataB_sel = {(dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b00)),
+                          (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b01)),
+                          (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b10)),
+                          (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b11)),
+                          (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b00))};
+
 assign tr3_IRQ = 1'b0;
 assign tr2_IRQ = 1'b0;
 assign tr1_IRQ = 1'b0;
@@ -190,7 +201,6 @@ assign rom_wr_sel = (dma_wraddrs[31:14]==ROM_BASE) | (dma_wraddrs[31:16]=={ROM_B
 assign irb_wr_sel = (dma_wraddrs[31:14]==IRB_BASE);
 assign irb_rd_sel = (dma_rdaddrs[31:14]==IRB_BASE);
 
-assign dma_rddata = rddataB;
 
 assign rdeA_tr3 = rdenA & (thread_q0 == 2'b11) & (srcA[13:11]==3'b001);
 assign rdeA_tr2 = rdenA & (thread_q0 == 2'b10) & (srcA[13:11]==3'b001);
@@ -208,6 +218,7 @@ assign muxd_slave_wre_tr1 = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b01))
 assign muxd_slave_wre_tr0 = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 1'b1 : (thread_q2 == 2'b00) & wren & (dest_q2[13:11]==3'b001);
 
 assign muxd_slave_wre_irb = (dma_wre & irb_wr_sel & (dma_wraddrs[16:14]==IRB_BASE[16:14])) ? 1'b1 : wren & (dest_q2[13:11]==3'b100);
+
 assign muxd_slave_wraddrs_tr3[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b11)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
 assign muxd_slave_wraddrs_tr2[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b10)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
 assign muxd_slave_wraddrs_tr1[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b01)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
@@ -350,17 +361,23 @@ RAM_tp #(.ADDRS_WIDTH(IRB_RAM_ADDRS_WIDTH), .DATA_WIDTH(32)) // ADDRS_WIDTH of 1
     .rdaddrsB   (muxd_slave_rdaddrs_irb[IRB_RAM_ADDRS_WIDTH-1:0]),    
     .rddataB    (rddataB_irb));  
 
+
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
         rddataA_sel_q <= 5'b00000;
         rddataB_sel_q <= 5'b00000;
+        dma_rddataB_sel_q <= 5'b00000;
     end
     else begin
         rddataA_sel_q <= rddataA_sel;
         rddataB_sel_q <= rddataA_sel;
+        dma_rddataB_sel_q <= dma_rddataB_sel;
     end
 end            
-        
+
+// read muxes for Shader reads off A-side        
+// if DMA is writing while Shader is reading, then the Shader will read all 0s
+// Shader threads must always read semaphore of the A-side only, because DMA uses B-side to read/dump memory
 always @(*) begin
     casex (rddataA_sel_q)
         5'bxxxx1 : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 32'h0000_0000 : rddataA_tr0;
@@ -372,6 +389,9 @@ always @(*) begin
     endcase
 end         
 
+// read muxes for Shader reads off B-side 
+// if DMA is writing while Shader is reading, then the Shader will read all 0s
+// Shader threads must always read semaphore of the A-side only, because DMA uses B-side to read/dump memory
 always @(*) begin
     casex (rddataB_sel_q)
         5'bxxxx1 : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 32'h0000_0000 : rddataB_tr0;
@@ -381,6 +401,18 @@ always @(*) begin
         5'b1xxxx : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 32'h0000_0000 : rddataB_irb;
          default : rddataB = 32'h0000_0000;
     endcase
-end         
+end  
 
+//read mux for DMA reads only
+always @(*) begin
+    casex (dma_rddataB_sel_q)
+        5'bxxxx1 : dma_rddata = rddataB_tr0;
+        5'bxxx1x : dma_rddata = rddataB_tr1;
+        5'bxx1xx : dma_rddata = rddataB_tr2;
+        5'bx1xxx : dma_rddata = rddataB_tr3;
+        5'b1xxxx : dma_rddata = rddataB_irb;
+         default : dma_rddata = 32'h0000_0000;
+    endcase
+end         
+       
 endmodule

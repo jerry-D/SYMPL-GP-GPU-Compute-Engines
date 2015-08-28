@@ -1,5 +1,5 @@
-; Cross-32 instruction table for SYMPL FP324-AXI4 for use with SYMPL FP324-AXI4 multi-thread multi-processing core only.  
-; version 2.430   August 21, 2015 
+; Cross-32 instruction table for SYMPL FP32X-AXI4 for use with SYMPL FP32X-AXI4 multi-thread RISC core only.  
+; version 2.44   August 28, 2015 
 ; Author:  Jerry D. Harthcock
 ; Copyright (C) 2014-2015.  All rights reserved, without prejudice.
 ; A copy of Cross-32 can be purchased from
@@ -9,11 +9,11 @@
 ; contact the author of this table at: SYMPL.gpu@gmail.com
 ;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ;//                                                                                                               //
-;//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+;//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
 ;//                              Evaluation and Product Development License                                       //
 ;//                                                                                                               //
 ;// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-;// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+;// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
 ;// Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
 ;// non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
 ;// products and related development tools only.                                                                  //

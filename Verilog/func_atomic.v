@@ -1,18 +1,18 @@
  `timescale 1ns/100ps
 // func_atomic.v
-// aSYMPL 32-bit GP-GPU multi-thread, multi-processing core
+// atomic function instructions (trig & reciprocal) for use in SYMPL FP32X-AXI4 multi-thread RISC core only
 // Author:  Jerry D. Harthcock
-// Version:  1.01
-// August 25, 2015
+// Version:  1.01  August 27, 2015
+// December 07, 2014
 // Copyright (C) 2014-2015.  All rights reserved without prejudice.
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
 // Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
 // non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
 // products and related development tools only.                                                                  //
@@ -46,7 +46,7 @@
 //                                                                                                               //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-module func_trig (
+module func_atomic (
     wrdata,     
     opcode_q2,
     sin_out,
@@ -78,12 +78,12 @@ trigd trigd(     //sin cos tan cot in degrees, 1 deg resolution, input range +/-
     .cot (cot_out));
 
 
-    rcp rcp(
-        .rdenA   (opcode_q2 == RCP_),
-        .x       (wrdata[7:0]),
-        .rddataA (rcp_out));
+rcp rcp(
+    .rdenA   (opcode_q2 == RCP_),
+    .x       (wrdata[7:0]),
+    .rddataA (rcp_out));
 
-//    assign inv_out = 32'h0000_0000;
+//assign inv_out = 32'h0000_0000;
 
 endmodule                    
                         

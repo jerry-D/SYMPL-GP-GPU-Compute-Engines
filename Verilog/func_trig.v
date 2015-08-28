@@ -53,16 +53,16 @@ module func_trig (
     cos_out,
     tan_out,
     cot_out,
-    inv_out);
+    rcp_out);
     
 input [3:0] opcode_q2;
 input [9:0] wrdata;
-output [31:0] sin_out, cos_out, tan_out, cot_out, inv_out;
+output [31:0] sin_out, cos_out, tan_out, cot_out, rcp_out;
 
-parameter INV_ = 4'b1011;
+parameter RCP_ = 4'b1011;
 
 wire [9:0] wrdata;
-wire [31:0] inv_out;
+wire [31:0] rcp_out;
 wire [31:0] sin_out;
 wire [31:0] cos_out;
 wire [31:0] tan_out;
@@ -77,12 +77,12 @@ trigd trigd(     //sin cos tan cot in degrees, 1 deg resolution, input range +/-
     .tan (tan_out),
     .cot (cot_out));
 
-    invrom128x32 inv(
-        .rdenA   (opcode_q2 == INV_),
-        .x       (wrdata[7:0]),
-        .rddataA (inv_out));
+rcp rcp(
+    .rdenA   (opcode_q2 == RCP_),
+    .x       (wrdata[7:0]),
+    .rddataA (rcp_out));
         
-//    assign inv_out = 32'h0000_0000;
+//assign rcp_out = 32'h0000_0000;
 
 endmodule                    
                         

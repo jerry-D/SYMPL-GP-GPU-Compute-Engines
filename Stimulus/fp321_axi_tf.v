@@ -1,20 +1,19 @@
  `timescale 1ns/100ps
 
-// SYMPL32 test fixture for FP324 with AXI4
-// aSYMPL 32-bit GP^2 GPU multi-thread, multi-processing core
+// SYMPL test fixture for FP321 with AXI4
 // Author:  Jerry D. Harthcock
 // June 29, 2015
-// Version:  1.2   August 21, 2015
+// Version:  1.3   August 28, 2015
 //
 //
-// Copyright (C) 2014.  All rights reserved without prejudice.
+// Copyright (C) 2014-2105.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
 // Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
 // non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
 // products and related development tools only.                                                                  //
@@ -49,76 +48,28 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module t;
-//////////////////////////////////////////////////////////////////////////////
-// To include any or all of the shaders or sort-engines, remove corresponding
-// comment "//" below.  To exclude such modules, leave corresponding comment
-// in place.
-//////////////////////////////////////////////////////////////////////////////
 
-parameter CSR = 32'hFFFF_0004;
-parameter THREAD_IER = 32'hFFFF_0000;
+parameter CSR = 32'hFFFF_FFFC;               //shader0 control/status register address
 
-parameter thread15_ram_base = 32'hFFF7_8000;
-parameter thread14_ram_base = 32'hFFF7_0000;
-parameter thread13_ram_base = 32'hFFF6_8000;
-parameter thread12_ram_base = 32'hFFF6_0000;
-parameter thread11_ram_base = 32'hFFF5_8000;
-parameter thread10_ram_base = 32'hFFF5_0000;
-parameter thread9_ram_base = 32'hFFF4_8000;
-parameter thread8_ram_base = 32'hFFF4_0000;
+parameter rom0_base = 32'hFFFF_0000;         //shader0 ROM base address
 
-parameter thread7_ram_base = 32'hFFF3_8000;
-parameter thread6_ram_base = 32'hFFF3_0000;
-parameter thread5_ram_base = 32'hFFF2_8000;
-parameter thread4_ram_base = 32'hFFF2_0000;
-parameter thread3_ram_base = 32'hFFF1_8000;
-parameter thread2_ram_base = 32'hFFF1_0000;
-parameter thread1_ram_base = 32'hFFF0_8000;
-parameter thread0_ram_base = 32'hFFF0_0000;
+parameter shader0_IRB_base = 32'hFFFE_8000;  //IRB base address 
 
-parameter rom_global_wr_base = 32'hFFF9_0000;  //anything written to the 16k-byte window starting at this address will be written to all four ROMS
+parameter thread3_ram_base = 32'hFFFE_6000;  //shader0 thread 3 parameter/data buffer base address
+parameter thread2_ram_base = 32'hFFFE_4000;  //shader0 thread 2 parameter/data buffer base address
+parameter thread1_ram_base = 32'hFFFE_2000;  //shader0 thread 1 parameter/data buffer base address
+parameter thread0_ram_base = 32'hFFFE_0000;  //shader0 thread 0 parameter/data buffer base address
 
-parameter rom3_base = 32'hFFF8_C000;
-parameter rom2_base = 32'hFFF8_8000;
-parameter rom1_base = 32'hFFF8_4000;
-parameter rom0_base = 32'hFFF8_0000;
-
-parameter packet15_result_start = 32'h0010_8000;
-parameter packet14_result_start = 32'h0010_0000;
-parameter packet13_result_start = 32'h000F_8000;
-parameter packet12_result_start = 32'h000F_0000;
-parameter packet11_result_start = 32'h000E_8000;
-parameter packet10_result_start = 32'h000E_0000;
-parameter packet9_result_start  = 32'h000D_8000;
-parameter packet8_result_start  = 32'h000D_0000;
-parameter packet7_result_start  = 32'h000C_8000;
-parameter packet6_result_start  = 32'h000C_0000;
-parameter packet5_result_start  = 32'h000B_8000;
-parameter packet4_result_start  = 32'h000B_0000;
 parameter packet3_result_start  = 32'h000A_8000;
 parameter packet2_result_start  = 32'h000A_0000;
 parameter packet1_result_start  = 32'h0009_8000;
 parameter packet0_result_start  = 32'h0009_0000;
 
-parameter packet15_submit_start = 32'h0008_8000;
-parameter packet14_submit_start = 32'h0008_0000;
-parameter packet13_submit_start = 32'h0007_8000;
-parameter packet12_submit_start = 32'h0007_0000;
-parameter packet11_submit_start = 32'h0006_8000;
-parameter packet10_submit_start = 32'h0006_0000;
-parameter packet9_submit_start  = 32'h0005_8000;
-parameter packet8_submit_start  = 32'h0005_0000;
-parameter packet7_submit_start  = 32'h0004_8000;
-parameter packet6_submit_start  = 32'h0004_0000;
-parameter packet5_submit_start  = 32'h0003_8000;
-parameter packet4_submit_start  = 32'h0003_0000;
 parameter packet3_submit_start  = 32'h0002_8000;
 parameter packet2_submit_start  = 32'h0002_0000;
 parameter packet1_submit_start  = 32'h0001_8000;
 parameter packet0_submit_start  = 32'h0001_0000;
   
-
-
 integer		clk_high_time;						// high time for CPU clock	
 
 reg clk;
@@ -127,18 +78,6 @@ reg reset;
 reg [31:0] SYSTEM_mem[262143:0];
 reg [31:0] SYSTEM_memP[4095:0];
 
-reg [31:0] packetF[511:0];
-reg [31:0] packetE[511:0];
-reg [31:0] packetD[511:0];
-reg [31:0] packetC[511:0];
-reg [31:0] packetB[511:0];
-reg [31:0] packetA[511:0];
-reg [31:0] packet9[511:0];
-reg [31:0] packet8[511:0];
-reg [31:0] packet7[511:0];
-reg [31:0] packet6[511:0];
-reg [31:0] packet5[511:0];
-reg [31:0] packet4[511:0];
 reg [31:0] packet3[511:0];
 reg [31:0] packet2[511:0];
 reg [31:0] packet1[511:0];
@@ -206,14 +145,22 @@ wire [1:0] RRESP;
 wire RLAST;                                 
 wire RVALID;                                
    
-wire        CLK;                
-wire        RESET; 
-wire        INTREQ;
+wire CLK;                
+wire RESET; 
+wire INTREQ;
 
-assign      CLK = clk;
-assign      RESET = reset;
+wire [31:17] BASE_shader0;
+wire [2:0] AWPROT_mode;
+wire [2:0] ARPROT_mode;
 
-fp3244_axi fp3244_axi(
+assign BASE_shader0 = 15'b1111_1111_1111_111; //base address of shader0
+assign AWPROT_mode = 3'b010;
+assign ARPROT_mode = 3'b010;
+
+assign CLK = clk;
+assign RESET = reset;
+
+fp321_axi fp321_axi(
     .ACLK    (CLK    ),
     .ARESETn (~RESET ),   //active low
     
@@ -257,7 +204,11 @@ fp3244_axi fp3244_axi(
     .RVALID  (RVALID  ),
     .RREADY  (RREADY  ),
     
-    .INTREQ  (INTREQ  )
+    .INTREQ  (INTREQ  ),
+    
+    .BASE    (BASE_shader0   ),
+    .AWPROT_mode (AWPROT_mode),
+    .ARPROT_mode (ARPROT_mode)
     );
                                   
   
@@ -274,7 +225,7 @@ fp3244_axi fp3244_axi(
         AWBURST = 2'b01;   // incrementing burst type                       
         AWLOCK = 2'b00;    // normal access for now                       
         AWCACHE = 4'b0000; //not bufferable and not cacheable                          
-        AWPROT = 3'b010;    //normal, unprotected                           
+        AWPROT = AWPROT_mode;    //normal, unprotected                           
         AWVALID = 1'b0;
 
         WID = 4'b0001;                             
@@ -291,12 +242,12 @@ fp3244_axi fp3244_axi(
         ARBURST = 2'b01;                          
         ARLOCK = 2'b00;                           
         ARCACHE = 4'b0000;                          
-        ARPROT = 3'b010;                           
+        ARPROT = ARPROT_mode;                           
         ARVALID = 1'b0;                                
                                                   
         RREADY = 1'b0; 
 
-        $readmemh("c:/aSYMPL/FP3244_threads/FP3244_test1.v", SYSTEM_memP);
+        $readmemh("c:/aSYMPL/FP3244_threads/FP321_test1.v", SYSTEM_memP);
         prog_start = SYSTEM_memP[253];  //this is the entry point to the routine
         prog_len = SYSTEM_memP[254];
          i = 12'h0FD;
@@ -389,9 +340,8 @@ fp3244_axi fp3244_axi(
 //// load program memory with thread to be executed /////
 /////////////////////////////////////////////////////////
         @(posedge CLK);
-        AXI_block_write (prog_len[11:0], 18'h110FD, rom_global_wr_base+(253*4)); //copy shader program into all 4 shader program memories simultaneously
-        AXI_write (CSR, 32'h0000_0000); // clear forced-reset lines to all shaders and allow threads to spin at DONE location
-
+        AXI_block_write (prog_len[11:0], 18'h110FD, rom0_base+(253*4)); //copy shader program into all 4 shader program memories simultaneously
+        AXI_write (CSR, 32'h0000_0000); // clear forced-reset lines and allow threads to spin at DONE location
         
 /////////////////////////////////////////////////////////
 //// submit packets 0-3 to threads 0-3 respectively /////
@@ -399,8 +349,6 @@ fp3244_axi fp3244_axi(
         AXI_block_write (37, packet1_submit_start, thread0_ram_base); //submit job0/packet0 to thread0 for processing
         AXI_write (thread0_ram_base, prog_start); // push PC start address into packet semaphor location to show its ready for processing
 
-        AXI_write (CSR, 32'h0000_1000);  //disable sort-engine3 interrupt but leave global interrupt enable active
-        
         AXI_block_write (37, packet1_submit_start, thread1_ram_base); //submit job1/packet1 to thread1 for processing
         AXI_write (thread1_ram_base, prog_start); // push PC start address into packet semaphor location to show its ready for processing
         AXI_block_write (37, packet2_submit_start, thread2_ram_base); //submit job2/packet2 to thread2 for processing
@@ -408,19 +356,22 @@ fp3244_axi fp3244_axi(
         AXI_block_write (37, packet3_submit_start, thread3_ram_base); //submit job3/packet3 to thread3 for processing
         AXI_write (thread3_ram_base, prog_start); // push PC start address into packet semaphor location to show its ready for processing    
 
-        AXI_write (THREAD_IER, 32'h0000_0001);  //enable thread0-done interrupt and global interrupt enable
+////////////////////////////////////////////////////////////////////
+//// retrieve result packets 0-3 from threads 0-3 respectively /////
+////////////////////////////////////////////////////////////////////        
+        AXI_write (CSR, 32'h0000_0018);  //enable thread0-done interrupt and global interrupt enable
         wait(INTREQ);
         AXI_block_read (41, thread0_ram_base, packet0_result_start); // read results from thread0 when done
         
-        AXI_write (THREAD_IER, 32'h0000_0002);  //enable thread1-done interrupt and global interrupt enable
+        AXI_write (CSR, 32'h0000_0028);  //enable thread1-done interrupt and global interrupt enable
         wait(INTREQ);       
         AXI_block_read (41, thread1_ram_base, packet1_result_start); // read results from thread1 when done
         
-        AXI_write (THREAD_IER, 32'h0000_0004);  //enable thread2-done interrupt and global interrupt enable
+        AXI_write (CSR, 32'h0000_0048);  //enable thread2-done interrupt and global interrupt enable
         wait(INTREQ);       
         AXI_block_read (41, thread2_ram_base, packet2_result_start); // read results from thread2 when done
         
-        AXI_write (THREAD_IER, 32'h0000_0008);  //enable thread3-done interrupt and global interrupt enable
+        AXI_write (CSR, 32'h0000_0088);  //enable thread3-done interrupt and global interrupt enable
         wait(INTREQ);       
         AXI_block_read (41, thread3_ram_base, packet3_result_start); // read results from thread3 when done
 

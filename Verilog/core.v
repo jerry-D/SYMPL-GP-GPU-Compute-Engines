@@ -1,17 +1,17 @@
 // core.v
 `timescale 1ns/100ps
-// SYMPL FP324-AXI4 multi-thread, multi-processing core
+// SYMPL FP32X-AXI4 multi-thread RISC
 // Author:  Jerry D. Harthcock
-// Version:  3.01 August 25, 2015
+// Version:  3.01  August 27, 2015
 // July 11, 2015
 // Copyright (C) 2014-2015.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
 // Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
 // non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
 // products and related development tools only.                                                                  //
@@ -117,55 +117,53 @@ input          tr2_IRQ;
 input          tr1_IRQ;
 input          tr0_IRQ;
                                                                                                                                       
-parameter	THREAD3		 =  2'b11;	//P_ADDRS[31:30] indicate active thread
-parameter	THREAD2		 =  2'b10;	//P_ADDRS[31:30] indicate active thread
-parameter	THREAD1		 =  2'b01;	//P_ADDRS[31:30] indicate active thread
-parameter	THREAD0		 =  2'b00;	//P_ADDRS[31:30] indicate active thread
+parameter THREAD3      =  2'b11;  //P_ADDRS[31:30] indicate active thread
+parameter THREAD2      =  2'b10;  //P_ADDRS[31:30] indicate active thread
+parameter THREAD1      =  2'b01;  //P_ADDRS[31:30] indicate active thread
+parameter THREAD0      =  2'b00;  //P_ADDRS[31:30] indicate active thread
 
-parameter   AR3_ADDRS    = 14'h0073;
-parameter   AR2_ADDRS    = 14'h0072;
-parameter   AR1_ADDRS    = 14'h0071;
-parameter   AR0_ADDRS    = 14'h0070;
-parameter	PC_ADDRS 	 = 14'h006F;	//address of each PC in private memory
-parameter	PC_COPY 	 = 14'h006E;	//status register address for each thread
-parameter	ST_ADDRS 	 = 14'h006D;	//status register address for each thread
-parameter   SCHED_ADDRS  = 14'h006C;
-parameter   SCHEDCMP_ADDRS  = 14'h006B; //scheduler reload address
-parameter   OUTBOX_ADDRS = 14'h006A;    //cas reads are stored here and can be see by sup 
-parameter   LPCNT1_ADDRS = 14'h0069;    //loop counter 1 address
-parameter   LPCNT0_ADDRS = 14'h0068;    //loop counter 0 address
-parameter   TIMER_ADDRS  = 14'h0067;
-parameter   RPT_ADDRS    = 14'h0064;    
+parameter AR3_ADDRS    = 14'h0073;
+parameter AR2_ADDRS    = 14'h0072;
+parameter AR1_ADDRS    = 14'h0071;
+parameter AR0_ADDRS    = 14'h0070;
+parameter PC_ADDRS     = 14'h006F;    //address of each PC in private memory
+parameter PC_COPY      = 14'h006E;    //status register address for each thread
+parameter ST_ADDRS     = 14'h006D;    //status register address for each thread
+parameter SCHED_ADDRS  = 14'h006C;
+parameter SCHEDCMP_ADDRS  = 14'h006B; //scheduler reload address
+parameter OUTBOX_ADDRS = 14'h006A;    //cas reads are stored here and can be see by sup 
+parameter LPCNT1_ADDRS = 14'h0069;    //loop counter 1 address
+parameter LPCNT0_ADDRS = 14'h0068;    //loop counter 0 address
+parameter TIMER_ADDRS  = 14'h0067;
+parameter RPT_ADDRS    = 14'h0064;    
 
+parameter MOV_    = 4'b0000;      
+parameter AND_    = 4'b0001;
+parameter OR_     = 4'b0010;
+parameter XOR_    = 4'b0011;
+parameter BTB_    = 4'b0100;            //bit test and branch
+parameter BCND_   = 4'b0100;            //branch on condition
+parameter DBNZ_   = 4'b0100;            //decrement srcB and branch if result is not zero
+parameter SHFT_   = 4'b0101;
+parameter ADD_    = 4'b0110;
+parameter ADDC_   = 4'b0111;
+parameter SUB_    = 4'b1000;
+parameter SUBB_   = 4'b1001;
+parameter MUL_    = 4'b1010;
+parameter RCP_    = 4'b1011;
+parameter SIN_    = 4'b1100;
+parameter COS_    = 4'b1101;
+parameter TAN_    = 4'b1110;
+parameter COT_    = 4'b1111;
 
-parameter	MOV_	= 4'b0000;		
-parameter	AND_	= 4'b0001;
-parameter	OR_	    = 4'b0010;
-parameter	XOR_	= 4'b0011;
-parameter	BTB_	= 4'b0100;			  //bit test and branch
-parameter	BCND_	= 4'b0100; 			  //branch on condition
-parameter   DBNZ_   = 4'b0100;            //decrement srcB and branch if result is not zero
-parameter	SHFT_	= 4'b0101;
-parameter	ADD_	= 4'b0110;
-parameter	ADDC_	= 4'b0111;
-parameter   SUB_    = 4'b1000;
-parameter   SUBB_   = 4'b1001;
-parameter   MUL_    = 4'b1010;
-parameter   RCP_    = 4'b1011;
-parameter   SIN_    = 4'b1100;
-parameter   CSWP_   = 4'b1100;            //unsigned compare SRCA with SRCB, if SRCB < SRCA, then swap
-parameter   COS_    = 4'b1101;
-parameter   TAN_    = 4'b1110;
-parameter   COT_    = 4'b1111;
-
-parameter   LEFT_  = 3'b000;
-parameter   LSL_   = 3'b001;
-parameter   ASL_   = 3'b010;
-parameter   ROL_   = 3'b011;
-parameter   RIGHT_ = 3'b100;
-parameter   LSR_   = 3'b101;
-parameter   ASR_   = 3'b110;
-parameter   ROR_   = 3'b111;          
+parameter LEFT_  = 3'b000;
+parameter LSL_   = 3'b001;
+parameter ASL_   = 3'b010;
+parameter ROL_   = 3'b011;
+parameter RIGHT_ = 3'b100;
+parameter LSR_   = 3'b101;
+parameter ASR_   = 3'b110;
+parameter ROR_   = 3'b111;          
  
 // state 1 fetch
 reg [1:0] thread_q1;
@@ -185,7 +183,7 @@ reg [3:0] opcode_q2;
 reg [13:0] srcA_q2;
 reg [13:0] srcB_q2;
 reg [7:0] OPdest_q2;
-reg [7:0] OPsrcA_q2;
+reg [7:0] OPsrcA_q2;                                                              
           
 reg [31:0] tr3_AR3;
 reg [31:0] tr3_AR2;
@@ -365,26 +363,20 @@ wire rddisable;
 
 wire [2:0] shiftype;
 wire [3:0] shiftamount;
-wire       sb;
+wire sb;
 wire [16:0] sbits;
 
-wire    rdconstA;
+wire rdconstA;
 wire [1:0] thread; 
-wire    SWBRKdet;
-wire    rdcycl;
-wire    wrcycl;
+wire SWBRKdet;
+wire rdcycl;
+wire wrcycl;
 
 wire [13:0] dest_q2;
 
-wire [31:0] tr0_prvt_rddataA;  
-wire [31:0] tr1_prvt_rddataA;  
-wire [31:0] tr2_prvt_rddataA;  
-wire [31:0] tr3_prvt_rddataA; 
+wire [31:0] prvt_rddataA;  
 
-wire [31:0] tr0_prvt_rddataB;  
-wire [31:0] tr1_prvt_rddataB;  
-wire [31:0] tr2_prvt_rddataB;  
-wire [31:0] tr3_prvt_rddataB; 
+wire [31:0] prvt_rddataB;   
 
 wire [31:0] private_F128_rddataA; 
 wire [31:0] private_F128_rddataB; 
@@ -570,7 +562,6 @@ assign sched_1 = |sched_cmp[15:8] & (scheduler[15:8] == sched_cmp[15:8]) & sched
 assign sched_2 = |sched_cmp[23:16] & (scheduler[23:16] == sched_cmp[23:16]) & sched_state[2];
 assign sched_3 = |sched_cmp[31:24] & (scheduler[31:24] == sched_cmp[31:24]) & sched_state[3]; 
 
-
 /*
 assign sched_0 = sched_state[0];  //thread0
 assign sched_1 = sched_state[1];  //thread1
@@ -584,15 +575,15 @@ wire bitmatch;
 
 assign bitmatch = (|(bitsel & wrsrcBdata)) ^ OPsrcA_q2[5];
    
-assign discont = (((opcode_q2 == BTB_) & bitmatch)          | 
-                 ((dest_q2[12:0]==PC_ADDRS) & wrcycl)       | 
-                 tr0_ld_vector                              |
-                 tr1_ld_vector                              |
-                 tr2_ld_vector                              |
-                 tr3_ld_vector                              |
-                 tr0_rewind_PC                              |
-                 tr1_rewind_PC                              |
-                 tr2_rewind_PC                              |
+assign discont = (((opcode_q2 == BTB_) & bitmatch)    | 
+                 ((dest_q2[12:0]==PC_ADDRS) & wrcycl) | 
+                 tr0_ld_vector                        |
+                 tr1_ld_vector                        |
+                 tr2_ld_vector                        |
+                 tr3_ld_vector                        |
+                 tr0_rewind_PC                        |
+                 tr1_rewind_PC                        |
+                 tr2_rewind_PC                        |
                  tr3_rewind_PC                              
                  ); // goes high exactly one clock before PC discontinuity actually occurs
 
@@ -612,7 +603,7 @@ assign OPsrcB = P_DATAi[7:0];
 assign thread = P_DATAi[31:30]; 
 assign rddisable = 1'b0;
 assign SWBRKdet = (P_DATAi[27:8]== 20'h4001F);  //relative branch to self ALWAYS == swbrk
-assign fetch = STATE[2];
+
 assign rdcycl = ~rddisable;
 assign wrcycl = ~wrdisable & STATE[0] & ~pipe_flush;                                                        
 assign opcode =  P_DATAi[27:24];
@@ -778,7 +769,7 @@ assign  tr2_STATUSq2 = {2'b10,
                          Z_q2
                          };
                          
-assign  tr3_STATUSq2 = {2'b10,			
+assign  tr3_STATUSq2 = {2'b10,          
                        14'b0000_0000_0000_00,
                          tr0_IRQ,                    // tr0 general-purpose interrupt request
                          (NaN_q2 | INF_q2 | DML_q2), // floating-point exception (NaN | INF | DML)
@@ -798,7 +789,7 @@ assign  tr3_STATUSq2 = {2'b10,
                          Z_q2
                          };
                                                   
-DATA_ADDRS_mod data_addrs_mod(							
+DATA_ADDRS_mod data_addrs_mod(                          
     .tr3_AR3       (tr3_AR3[13:0]),
     .tr3_AR2       (tr3_AR2[13:0]),
     .tr3_AR1       (tr3_AR1[13:0]),
@@ -828,13 +819,13 @@ DATA_ADDRS_mod data_addrs_mod(
 
 ADDER_32 adder_32 (
     .SUBTRACT ((opcode_q2 == SUB_) | (opcode_q2 == SUBB_)),
-    .TERM_A   (wrsrcAdata), 	  
-	.TERM_B   (wrsrcBdata), 
-	.CI       (((opcode_q2 == ADDC_) | (opcode_q2 == SUBB_))? adder_CI : 1'b0),  // carry in
-	.ADDER_OUT(adder_out ), // adder out
-	.CO       (adder_CO ),  // carry out
-	.HCO      ( ), 		    // half carry out (aka aux. carry)
-	.OVO      (adder_OVO ), // overflow out
+    .TERM_A   (wrsrcAdata),       
+    .TERM_B   (wrsrcBdata), 
+    .CI       (((opcode_q2 == ADDC_) | (opcode_q2 == SUBB_))? adder_CI : 1'b0),  // carry in
+    .ADDER_OUT(adder_out ), // adder out
+    .CO       (adder_CO ),  // carry out
+    .HCO      ( ),          // half carry out (aka aux. carry)
+    .OVO      (adder_OVO ), // overflow out
     .ZERO     (adder_ZO )); // zero out
 
 
@@ -884,10 +875,10 @@ func_atomic fatomic(
     assign cot_out = 32'h0000_0000;
     assign rcp_out = 32'h0000_0000;
 */
-               
-//RAM_tp #(.ADDRS_WIDTH(10), .DATA_WIDTH(32))
-RAM_tp #(.ADDRS_WIDTH(8), .DATA_WIDTH(32))    
-    global (
+/*
+// if you need the full 1024 global RAM instead of the 256 instantiated below this module, remove comments and comment out the 256x32 module below this one               
+RAM_tp #(.ADDRS_WIDTH(10), .DATA_WIDTH(32))
+    global_1024 (  
     .CLK(CLK),
     .wren(wrcycl & (dest_q2[13:10]==4'b0001)),
     .wraddrs(dest_q2[9:0]),
@@ -898,73 +889,47 @@ RAM_tp #(.ADDRS_WIDTH(8), .DATA_WIDTH(32))
     .rdenB(rdsrcB & (srcB[13:10]==4'b0001)),
     .rdaddrsB(srcB[9:0]),
     .rddataB(global_1024_rddataB));
-    
-  
-RAM_tp #(.ADDRS_WIDTH(6), .DATA_WIDTH(32))
-    tr0_prvt(
-    .CLK(CLK),
-    .wren(wrcycl & (thread_q2 == 2'b00) & ~|dest_q2[13:7] & ((dest_q2[6:4]==3'b101) | (dest_q2[6:4]==3'b100) | (dest_q2[6:4]==3'b011) | (dest_q2[6:4]==3'b010))),
-    .wraddrs(dest_q2[5:0]),
-    .wrdata(resultout),
-    .rdenA(rdsrcA & (newthreadq == 2'b00) & ~|srcA[13:7] & ((srcA[6:4]==3'b101) | (srcA[6:4]==3'b100) | (srcA[6:4]==3'b011) | (srcA[6:4]==3'b010))),
-    .rdaddrsA(srcA[5:0]),
-    .rddataA(tr0_prvt_rddataA),
-    .rdenB(rdsrcB & (newthreadq == 2'b00) & ~|srcB[13:7] & ((srcB[6:4]==3'b101) | (srcB[6:4]==3'b100) | (srcB[6:4]==3'b011) | (srcB[6:4]==3'b010))),
-    .rdaddrsB(srcB[5:0]),
-    .rddataB(tr0_prvt_rddataB));  
- 
-     
-RAM_tp #(.ADDRS_WIDTH(6), .DATA_WIDTH(32))
-    tr1_prvt(
-    .CLK(CLK),
-    .wren(wrcycl & (thread_q2 == 2'b01) & ~|dest_q2[13:7] & ((dest_q2[6:4]==3'b101) | (dest_q2[6:4]==3'b100) | (dest_q2[6:4]==3'b011) | (dest_q2[6:4]==3'b010))),
-    .wraddrs(dest_q2[5:0]),
-    .wrdata(resultout),
-    .rdenA(rdsrcA & (newthreadq == 2'b01) & ~|srcA[13:7] & ((srcA[6:4]==3'b101) | (srcA[6:4]==3'b100) | (srcA[6:4]==3'b011) | (srcA[6:4]==3'b010))),
-    .rdaddrsA(srcA[5:0]),
-    .rddataA(tr1_prvt_rddataA),
-    .rdenB(rdsrcB & (newthreadq == 2'b01) & ~|srcB[13:7] & ((srcB[6:4]==3'b101) | (srcB[6:4]==3'b100) | (srcB[6:4]==3'b011) | (srcB[6:4]==3'b010))),
-    .rdaddrsB(srcB[5:0]),
-    .rddataB(tr1_prvt_rddataB));  
+*/
 
-RAM_tp #(.ADDRS_WIDTH(6), .DATA_WIDTH(32))
-    tr2_prvt(
+// 256x32 global RAM instead of 1024 instantiation above
+RAM_tp #(.ADDRS_WIDTH(8), .DATA_WIDTH(32))
+    global_1024 (  //using 256x32 RAM here instead of 1024x32, writes and reads wrap around in the 1024 address range
     .CLK(CLK),
-    .wren(wrcycl & (thread_q2 == 2'b10) & ~|dest_q2[13:7] & ((dest_q2[6:4]==3'b101) | (dest_q2[6:4]==3'b100) | (dest_q2[6:4]==3'b011) | (dest_q2[6:4]==3'b010))),
-    .wraddrs(dest_q2[5:0]),
+    .wren(wrcycl & (dest_q2[13:10]==4'b0001)),
+    .wraddrs(dest_q2[7:0]),
     .wrdata(resultout),
-    .rdenA(rdsrcA & (newthreadq == 2'b10) & ~|srcA[13:7] & ((srcA[6:4]==3'b101) | (srcA[6:4]==3'b100) | (srcA[6:4]==3'b011) | (srcA[6:4]==3'b010))),
-    .rdaddrsA(srcA[5:0]),
-    .rddataA(tr2_prvt_rddataA),
-    .rdenB(rdsrcB & (newthreadq == 2'b10) & ~|srcB[13:7] & ((srcB[6:4]==3'b101) | (srcB[6:4]==3'b100) | (srcB[6:4]==3'b011) | (srcB[6:4]==3'b010))),
-    .rdaddrsB(srcB[5:0]),
-    .rddataB(tr2_prvt_rddataB));  
+    .rdenA(rdsrcA & (srcA[13:10]==4'b0001)),
+    .rdaddrsA(srcA[7:0]),
+    .rddataA(global_1024_rddataA),
+    .rdenB(rdsrcB & (srcB[13:10]==4'b0001)),
+    .rdaddrsB(srcB[7:0]),
+    .rddataB(global_1024_rddataB));
     
-RAM_tp #(.ADDRS_WIDTH(6), .DATA_WIDTH(32))
-    tr3_prvt(
-    .CLK(CLK),
-    .wren(wrcycl & (thread_q2 == 2'b11) & ~|dest_q2[13:7] & ((dest_q2[6:4]==3'b101) | (dest_q2[6:4]==3'b100) | (dest_q2[6:4]==3'b011) | (dest_q2[6:4]==3'b010))),
-    .wraddrs(dest_q2[5:0]),
-    .wrdata(resultout),
-    .rdenA(rdsrcA & (newthreadq == 2'b11) & ~|srcA[13:7] & ((srcA[6:4]==3'b101) | (srcA[6:4]==3'b100) | (srcA[6:4]==3'b011) | (srcA[6:4]==3'b010))),
-    .rdaddrsA( srcA[5:0]),
-    .rddataA(tr3_prvt_rddataA),
-    .rdenB(rdsrcB & (newthreadq == 2'b11) & ~|srcB[13:7] & ((srcB[6:4]==3'b101) | (srcB[6:4]==3'b100) | (srcB[6:4]==3'b011) | (srcB[6:4]==3'b010))),
-    .rdaddrsB(srcB[5:0]),
-    .rddataB(tr3_prvt_rddataB));  
-
 RAM_tp #(.ADDRS_WIDTH(5), .DATA_WIDTH(32))
-    global_32 (
+     global_32 (
+     .CLK(CLK),
+     .wren(wrcycl & (dest_q2[13:5]==9'h002)),
+     .wraddrs(dest_q2[4:0]),
+     .wrdata(resultout),
+     .rdenA(rdsrcA & (srcA[13:5]==9'h002)),
+     .rdaddrsA(srcA[4:0]),
+     .rddataA(global_32_rddataA),
+     .rdenB(rdsrcB & (srcB[13:5]==9'h002)),
+     .rdaddrsB(srcB[4:0]),
+     .rddataB(global_32_rddataB));           
+
+RAM_tp #(.ADDRS_WIDTH(8), .DATA_WIDTH(32))
+    prvt_64(
     .CLK(CLK),
-    .wren(wrcycl & (dest_q2[13:5]==9'h000)),
-    .wraddrs(dest_q2[4:0]),
+    .wren(wrcycl & (dest_q2[13:6]==8'b00_0000_00)),
+    .wraddrs({thread_q2[1:0], dest_q2[5:0]}),
     .wrdata(resultout),
-    .rdenA(rdsrcA & (srcA[13:5]==9'h000)),
-    .rdaddrsA(srcA[4:0]),
-    .rddataA(global_32_rddataA),
-    .rdenB(rdsrcB & (srcB[13:5]==9'h000)),
-    .rdaddrsB(srcB[4:0]),
-    .rddataB(global_32_rddataB));      
+    .rdenA(rdsrcA & (srcA[13:6]==8'b00_0000_00)),
+    .rdaddrsA({newthreadq[1:0], srcA[5:0]}),
+    .rddataA(prvt_rddataA),
+    .rdenB(rdsrcB & (srcB[13:6]==8'b00_0000_00)),
+    .rdaddrsB({newthreadq[1:0], srcB[5:0]}),
+    .rddataB(prvt_rddataB));  
         
 int_cntrl int_cntrl_tr0(
     .CLK             (CLK          ),
@@ -1073,8 +1038,6 @@ sched_stack sched_stack(
     .LOCKED    (LOCKED    ),
     .RPT_not_z (RPT_not_z ));  
     
-    
-    
 always @(*) begin
     case (shiftamount)
         4'h0 : brlshft_ROR = {wrsrcAdata[0],    wrsrcAdata[31:1]} ;
@@ -1130,10 +1093,10 @@ always @(*) begin
     if (STATE[1]) casex (opcode_q2)
         BTB_  : wrdisable = 1'b1;                
         
-        MOV_  ,	 // all other opcodes write is active during q2
-        AND_  ,	
-        OR_	  ,
-        XOR_  ,	
+        MOV_  ,  // all other opcodes write is active during q2
+        AND_  , 
+        OR_   ,
+        XOR_  , 
         SHFT_ ,
         ADDC_ ,
         ADD_  ,
@@ -1144,7 +1107,7 @@ always @(*) begin
         COS_  ,
         TAN_  ,
         COT_  ,
-        RCP_  :	wrdisable = 1'b0;
+        RCP_  : wrdisable = 1'b0;
     
         default : wrdisable = 1'b1;
         endcase
@@ -1175,7 +1138,6 @@ always @(*) begin
     else if ((opcode_q2 == BTB_) && |(bitsel & wrsrcBdata))  pre_PC = pc_q2 + {dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7:0]}; 
     else pre_PC = next_PC;
 end    
-
 
 always @(*) begin 
     if (RESET) begin
@@ -1218,8 +1180,7 @@ always @(*) begin
         newthread = thread; 
         LD_newthread = 1'b0;
     end       
-end
-               
+end               
 
 always @(*) begin
             case (thread_q1)
@@ -1256,11 +1217,8 @@ always @(*) begin
                                 14'h0060,
 */                                
                                 14'h005x,
-                                14'h004x,
-                                14'h003x,
-                                14'h002x : rdSrcAdata = tr0_prvt_rddataA;
-                                14'h001x,
-                                14'h000x : rdSrcAdata = global_32_rddataA;                                           
+                                14'h004x : rdSrcAdata = global_32_rddataA;
+                                14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                         
                                 default  : rdSrcAdata = 32'h0000_0000;  
                             endcase
                         end
@@ -1297,12 +1255,9 @@ always @(*) begin
                                 14'h0061,
                                 14'h0060,
 */                                
-                                14'h005x,
-                                14'h004x,
-                                14'h003x,
-                                14'h002x : rdSrcAdata = tr1_prvt_rddataA;
-                                14'h001x,
-                                14'h000x : rdSrcAdata = global_32_rddataA;                                           
+                               14'h005x,
+                               14'h004x : rdSrcAdata = global_32_rddataA;
+                               14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                   
                                 default : rdSrcAdata = 32'h0000_0000;  
                             endcase
                         end
@@ -1339,12 +1294,9 @@ always @(*) begin
                                 14'h0061,
                                 14'h0060,
 */                                
-                                14'h005x,
-                                14'h004x,
-                                14'h003x,
-                                14'h002x : rdSrcAdata = tr2_prvt_rddataA;
-                                14'h001x,
-                                14'h000x : rdSrcAdata = global_32_rddataA;                                           
+                               14'h005x,
+                               14'h004x : rdSrcAdata = global_32_rddataA;
+                               14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                                                             
                                 default : rdSrcAdata = 32'h0000_0000;  
                             endcase
                         end
@@ -1381,12 +1333,9 @@ always @(*) begin
                                 14'h0061,
                                 14'h0060,
 */                                
-                                14'h005x,
-                                14'h004x,
-                                14'h003x,
-                                14'h002x : rdSrcAdata = tr3_prvt_rddataA;
-                                14'h001x,
-                                14'h000x : rdSrcAdata = global_32_rddataA;                                           
+                               14'h005x,
+                               14'h004x : rdSrcAdata = global_32_rddataA;
+                               14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                                                              
                                 default : rdSrcAdata = 32'h0000_0000;  
                             endcase
                         end
@@ -1426,12 +1375,9 @@ always @(*) begin
                                 14'h0061,
                                 14'h0060,
 */                                
-                                14'h005x,
-                                14'h004x,
-                                14'h003x,                                
-                                14'h002x : rdSrcBdata = tr0_prvt_rddataB;
-                                14'h001x,
-                                14'h000x : rdSrcBdata = global_32_rddataB;    
+                               14'h005x,
+                               14'h004x : rdSrcBdata = global_32_rddataB;
+                               14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;                                                                                      
                                 default : rdSrcBdata = 32'h0000_0000;  
                             endcase
                         end
@@ -1467,12 +1413,9 @@ always @(*) begin
                                 14'h0061,
                                 14'h0060,
 */                                
-                                14'h005x,
-                                14'h004x,
-                                14'h003x,
-                                14'h002x : rdSrcBdata = tr1_prvt_rddataB;
-                                14'h001x,
-                                14'h000x : rdSrcBdata = global_32_rddataB;    
+                               14'h005x,
+                               14'h004x : rdSrcBdata = global_32_rddataB;
+                               14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
                                 default : rdSrcBdata = 32'h0000_0000;  
                             endcase
                         end
@@ -1508,12 +1451,9 @@ always @(*) begin
                                 14'h0061,
                                 14'h0060,
 */                                
-                                14'h005x,
-                                14'h004x,
-                                14'h003x,
-                                14'h002x : rdSrcBdata = tr2_prvt_rddataB;
-                                14'h001x,
-                                14'h000x : rdSrcBdata = global_32_rddataB;    
+                               14'h005x,
+                               14'h004x : rdSrcBdata = global_32_rddataB;
+                               14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
                                 default : rdSrcBdata = 32'h0000_0000;  
                             endcase
                         end
@@ -1549,19 +1489,15 @@ always @(*) begin
                                 14'h0061,
                                 14'h0060,
 */                                
-                                14'h005x,
-                                14'h004x,
-                                14'h003x,
-                                14'h002x : rdSrcBdata = tr3_prvt_rddataB;
-                                14'h001x,
-                                14'h000x : rdSrcBdata = global_32_rddataB;    
+                               14'h005x,
+                               14'h004x : rdSrcBdata = global_32_rddataB;
+                               14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
                                 default : rdSrcBdata = 32'h0000_0000;  
                             endcase
                         end
             endcase
 end    
 
-    
 always @(*) begin
     if (~|STATE[1:0])  { NaN_q2, INF_q2, DML_q2, NML_q2, SZ_q2, FPN_q2} = {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
     else if ((opcode_q2==MOV_) && ~|srcA_q2[12:8] && srcA_q2[7] && fp_ready_q2) begin //update FP flags only if originating from direct or indirect read of FP operator result memory buf
@@ -1615,143 +1551,138 @@ always @(*)  begin
     end    
     else
         casex (opcode_q2)
-            MOV_  : begin
-                        case (thread_q2)
-                            2'b00 : begin
-                                        resultout = wrsrcAdata;
-                                        Z_q2 = ~|wrsrcAdata;
-                                        N_q2 = wrsrcAdata[31];
-                                        C_q2 = tr0_C;
-                                        V_q2 = tr0_V;
-                                    end 
-                            2'b01 : begin
-                                        resultout = wrsrcAdata;
-                                        Z_q2 = ~|wrsrcAdata;
-                                        N_q2 = wrsrcAdata[31];
-                                        C_q2 = tr1_C;
-                                        V_q2 = tr1_V;
-                                    end 
-                                       
-                            2'b10 : begin
-                                        resultout = wrsrcAdata;
-                                        Z_q2 = ~|wrsrcAdata;
-                                        N_q2 = wrsrcAdata[31];
-                                        C_q2 = tr2_C;
-                                        V_q2 = tr2_V;
-                                    end 
-                                       
-                            2'b11 : begin
-                                        resultout = wrsrcAdata;
-                                        Z_q2 = ~|wrsrcAdata;
-                                        N_q2 = wrsrcAdata[31];
-                                        C_q2 = tr3_C;
-                                        V_q2 = tr3_V;
-                                    end
-                        endcase                                                
-                    end    
-                                 	
-            OR_   :	begin
-                        case (thread_q2)
-                            2'b00 : begin
-                                        resultout = wrsrcAdata | wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata | wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] | wrsrcBdata[31];
-                                        C_q2 = tr0_C;
-                                        V_q2 = tr0_V;
-                                    end 
-                            2'b01 : begin
-                                        resultout = wrsrcAdata | wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata | wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] | wrsrcBdata[31];
-                                        C_q2 = tr1_C;
-                                        V_q2 = tr1_V;
-                                    end 
-                                       
-                            2'b10 : begin
-                                        resultout = wrsrcAdata | wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata | wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] | wrsrcBdata[31];
-                                        C_q2 = tr2_C;
-                                        V_q2 = tr2_V;
-                                    end 
-                                       
-                            2'b11 : begin
-                                        resultout = wrsrcAdata | wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata | wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] | wrsrcBdata[31];
-                                        C_q2 = tr3_C;
-                                        V_q2 = tr3_V;
-                                    end
-                        endcase                                                
-                    end    
-            XOR_  :	begin
-                        case (thread_q2)
-                            2'b00 : begin
-                                        resultout = wrsrcAdata ^ wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata ^ wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] ^ wrsrcBdata[31];
-                                        C_q2 = tr0_C;
-                                        V_q2 = tr0_V;
-                                    end 
-                            2'b01 : begin
-                                        resultout = wrsrcAdata ^ wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata ^ wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] ^ wrsrcBdata[31];
-                                        C_q2 = tr1_C;
-                                        V_q2 = tr1_V;
-                                    end 
-                                       
-                            2'b10 : begin
-                                        resultout = wrsrcAdata ^ wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata ^ wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] ^ wrsrcBdata[31];
-                                        C_q2 = tr2_C;
-                                        V_q2 = tr2_V;
-                                    end 
-                                       
-                            2'b11 : begin
-                                        resultout = wrsrcAdata ^ wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata ^ wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] ^ wrsrcBdata[31];
-                                        C_q2 = tr3_C;
-                                        V_q2 = tr3_V;
-                                    end
-                        endcase                                                
-                    end    
-            AND_  :	begin
-                        case (thread_q2)
-                            2'b00 : begin
-                                        resultout = wrsrcAdata & wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata & wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] & wrsrcBdata[31];
-                                        C_q2 = tr0_C;
-                                        V_q2 = tr0_V;
-                                    end 
-                            2'b01 : begin
-                                        resultout = wrsrcAdata & wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata & wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] & wrsrcBdata[31];
-                                        C_q2 = tr1_C;
-                                        V_q2 = tr1_V;
-                                    end 
-                                       
-                            2'b10 : begin
-                                        resultout = wrsrcAdata & wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata & wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] & wrsrcBdata[31];
-                                        C_q2 = tr2_C;
-                                        V_q2 = tr2_V;
-                                    end 
-                                       
-                            2'b11 : begin
-                                        resultout = wrsrcAdata & wrsrcBdata;
-                                        Z_q2 = ~|(wrsrcAdata & wrsrcBdata);
-                                        N_q2 = wrsrcAdata[31] & wrsrcBdata[31];
-                                        C_q2 = tr3_C;
-                                        V_q2 = tr3_V;
-                                    end
-                        endcase                                                
-                    end    
+            MOV_  : case (thread_q2)
+                        2'b00 : begin
+                                    resultout = wrsrcAdata;
+                                    Z_q2 = ~|wrsrcAdata;
+                                    N_q2 = wrsrcAdata[31];
+                                    C_q2 = tr0_C;
+                                    V_q2 = tr0_V;
+                                end 
+                        2'b01 : begin
+                                    resultout = wrsrcAdata;
+                                    Z_q2 = ~|wrsrcAdata;
+                                    N_q2 = wrsrcAdata[31];
+                                    C_q2 = tr1_C;
+                                    V_q2 = tr1_V;
+                                end 
+                                   
+                        2'b10 : begin
+                                    resultout = wrsrcAdata;
+                                    Z_q2 = ~|wrsrcAdata;
+                                    N_q2 = wrsrcAdata[31];
+                                    C_q2 = tr2_C;
+                                    V_q2 = tr2_V;
+                                end 
+                                   
+                        2'b11 : begin
+                                    resultout = wrsrcAdata;
+                                    Z_q2 = ~|wrsrcAdata;
+                                    N_q2 = wrsrcAdata[31];
+                                    C_q2 = tr3_C;
+                                    V_q2 = tr3_V;
+                                end
+                    endcase                                                
+                                
+            OR_   : case (thread_q2)
+                        2'b00 : begin
+                                    resultout = wrsrcAdata | wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata | wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] | wrsrcBdata[31];
+                                    C_q2 = tr0_C;
+                                    V_q2 = tr0_V;
+                                end 
+                        2'b01 : begin
+                                    resultout = wrsrcAdata | wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata | wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] | wrsrcBdata[31];
+                                    C_q2 = tr1_C;
+                                    V_q2 = tr1_V;
+                                end 
+                                   
+                        2'b10 : begin
+                                    resultout = wrsrcAdata | wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata | wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] | wrsrcBdata[31];
+                                    C_q2 = tr2_C;
+                                    V_q2 = tr2_V;
+                                end 
+                                   
+                        2'b11 : begin
+                                    resultout = wrsrcAdata | wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata | wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] | wrsrcBdata[31];
+                                    C_q2 = tr3_C;
+                                    V_q2 = tr3_V;
+                                end
+                    endcase                                                
+                        
+            XOR_  : case (thread_q2)
+                        2'b00 : begin
+                                    resultout = wrsrcAdata ^ wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata ^ wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] ^ wrsrcBdata[31];
+                                    C_q2 = tr0_C;
+                                    V_q2 = tr0_V;
+                                end 
+                        2'b01 : begin
+                                    resultout = wrsrcAdata ^ wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata ^ wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] ^ wrsrcBdata[31];
+                                    C_q2 = tr1_C;
+                                    V_q2 = tr1_V;
+                                end 
+                                   
+                        2'b10 : begin
+                                    resultout = wrsrcAdata ^ wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata ^ wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] ^ wrsrcBdata[31];
+                                    C_q2 = tr2_C;
+                                    V_q2 = tr2_V;
+                                end 
+                                   
+                        2'b11 : begin
+                                    resultout = wrsrcAdata ^ wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata ^ wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] ^ wrsrcBdata[31];
+                                    C_q2 = tr3_C;
+                                    V_q2 = tr3_V;
+                                end
+                    endcase                                                
+
+            AND_  : case (thread_q2)
+                        2'b00 : begin
+                                    resultout = wrsrcAdata & wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata & wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] & wrsrcBdata[31];
+                                    C_q2 = tr0_C;
+                                    V_q2 = tr0_V;
+                                end 
+                        2'b01 : begin
+                                    resultout = wrsrcAdata & wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata & wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] & wrsrcBdata[31];
+                                    C_q2 = tr1_C;
+                                    V_q2 = tr1_V;
+                                end 
+                                   
+                        2'b10 : begin
+                                    resultout = wrsrcAdata & wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata & wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] & wrsrcBdata[31];
+                                    C_q2 = tr2_C;
+                                    V_q2 = tr2_V;
+                                end 
+                                   
+                        2'b11 : begin
+                                    resultout = wrsrcAdata & wrsrcBdata;
+                                    Z_q2 = ~|(wrsrcAdata & wrsrcBdata);
+                                    N_q2 = wrsrcAdata[31] & wrsrcBdata[31];
+                                    C_q2 = tr3_C;
+                                    V_q2 = tr3_V;
+                                end
+                    endcase                                                
+
             ADDC_,
              ADD_,
             SUBB_, 
@@ -1762,519 +1693,496 @@ always @(*)  begin
                         C_q2 = adder_CO;
                         N_q2 = adder_out[31];
                     end 
-             MUL_ : begin
-                        case (thread_q2)
-                            2'b00 : begin             
-                                       resultout = wrsrcAdata[15:0] * wrsrcBdata[15:0];
-                                       Z_q2 = ~|wrsrcAdata[15:0] | ~|wrsrcBdata[15:0];
-                                       N_q2 = wrsrcAdata[15] ^ wrsrcBdata[15];
-                                       C_q2 = tr0_C;
-                                       V_q2 = tr0_V;
-                                    end   
-                            2'b01 : begin             
-                                       resultout = wrsrcAdata[15:0] * wrsrcBdata[15:0];
-                                       Z_q2 = ~|wrsrcAdata[15:0] | ~|wrsrcBdata[15:0];
-                                       N_q2 = wrsrcAdata[15] ^ wrsrcBdata[15];
-                                       C_q2 = tr1_C;
-                                       V_q2 = tr1_V;
-                                    end  
-                            2'b10 : begin             
-                                       resultout = wrsrcAdata[15:0] * wrsrcBdata[15:0];
-                                       Z_q2 = ~|wrsrcAdata[15:0] | ~|wrsrcBdata[15:0];
-                                       N_q2 = wrsrcAdata[15] ^ wrsrcBdata[15];
-                                       C_q2 = tr2_C;
-                                       V_q2 = tr2_V;
-                                    end   
-                            2'b11 : begin             
-                                       resultout = wrsrcAdata[15:0] * wrsrcBdata[15:0];
-                                       Z_q2 = ~|wrsrcAdata[15:0] | ~|wrsrcBdata[15:0];
-                                       N_q2 = wrsrcAdata[15] ^ wrsrcBdata[15];
-                                       C_q2 = tr3_C;
-                                       V_q2 = tr3_V;
-                                    end   
-                        endcase                                    
-                    end                                                            
-            RCP_ : begin
-                        case (thread_q2)
-                            2'b00 : begin              
-                                       resultout = rcp_out;
-                                       Z_q2 = 1'b0;
-                                       N_q2 = rcp_out[31];
-                                       C_q2 = tr0_C;
-                                       V_q2 = tr0_V;
-                                    end
-                            2'b01 : begin              
-                                       resultout = rcp_out;
-                                       Z_q2 = 1'b0;
-                                       N_q2 = rcp_out[31];
-                                       C_q2 = tr1_C;
-                                       V_q2 = tr1_V;
-                                    end
-                            2'b10 : begin              
-                                       resultout = rcp_out;
-                                       Z_q2 = 1'b0;
-                                       N_q2 = rcp_out[31];
-                                       C_q2 = tr2_C;
-                                       V_q2 = tr2_V;
-                                    end
-                            2'b11 : begin              
-                                       resultout = rcp_out;
-                                       Z_q2 = 1'b0;
-                                       N_q2 = rcp_out[31];
-                                       C_q2 = tr3_C;
-                                       V_q2 = tr3_V;
-                                    end
-                        endcase               
-                    end 
+             MUL_ : case (thread_q2)
+                        2'b00 : begin             
+                                   resultout = wrsrcAdata[15:0] * wrsrcBdata[15:0];
+                                   Z_q2 = ~|wrsrcAdata[15:0] | ~|wrsrcBdata[15:0];
+                                   N_q2 = wrsrcAdata[15] ^ wrsrcBdata[15];
+                                   C_q2 = tr0_C;
+                                   V_q2 = tr0_V;
+                                end   
+                        2'b01 : begin             
+                                   resultout = wrsrcAdata[15:0] * wrsrcBdata[15:0];
+                                   Z_q2 = ~|wrsrcAdata[15:0] | ~|wrsrcBdata[15:0];
+                                   N_q2 = wrsrcAdata[15] ^ wrsrcBdata[15];
+                                   C_q2 = tr1_C;
+                                   V_q2 = tr1_V;
+                                end  
+                        2'b10 : begin             
+                                   resultout = wrsrcAdata[15:0] * wrsrcBdata[15:0];
+                                   Z_q2 = ~|wrsrcAdata[15:0] | ~|wrsrcBdata[15:0];
+                                   N_q2 = wrsrcAdata[15] ^ wrsrcBdata[15];
+                                   C_q2 = tr2_C;
+                                   V_q2 = tr2_V;
+                                end   
+                        2'b11 : begin             
+                                   resultout = wrsrcAdata[15:0] * wrsrcBdata[15:0];
+                                   Z_q2 = ~|wrsrcAdata[15:0] | ~|wrsrcBdata[15:0];
+                                   N_q2 = wrsrcAdata[15] ^ wrsrcBdata[15];
+                                   C_q2 = tr3_C;
+                                   V_q2 = tr3_V;
+                                end   
+                    endcase                                    
+                                                                                
+             RCP_ : case (thread_q2)
+                        2'b00 : begin              
+                                   resultout = rcp_out;
+                                   Z_q2 = 1'b0;
+                                   N_q2 = rcp_out[31];
+                                   C_q2 = tr0_C;
+                                   V_q2 = tr0_V;
+                                end
+                        2'b01 : begin              
+                                   resultout = rcp_out;
+                                   Z_q2 = 1'b0;
+                                   N_q2 = rcp_out[31];
+                                   C_q2 = tr1_C;
+                                   V_q2 = tr1_V;
+                                end
+                        2'b10 : begin              
+                                   resultout = rcp_out;
+                                   Z_q2 = 1'b0;
+                                   N_q2 = rcp_out[31];
+                                   C_q2 = tr2_C;
+                                   V_q2 = tr2_V;
+                                end
+                        2'b11 : begin              
+                                   resultout = rcp_out;
+                                   Z_q2 = 1'b0;
+                                   N_q2 = rcp_out[31];
+                                   C_q2 = tr3_C;
+                                   V_q2 = tr3_V;
+                                end
+                    endcase               
 
-            SIN_  : begin     
-                        case (thread_q2)
-                            2'b00 : begin 
-                                       resultout = sin_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = sin_out[31];
-                                       C_q2 = tr0_C;
-                                       V_q2 = tr0_V;
-                                    end
-                            2'b01 : begin 
-                                       resultout = sin_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = sin_out[31];
-                                       C_q2 = tr1_C;
-                                       V_q2 = tr1_V;
-                                    end
-                            2'b10 : begin                                                               
-                                       resultout = sin_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = sin_out[31];
-                                       C_q2 = tr2_C;
-                                       V_q2 = tr2_V;
-                                    end
-                            2'b11 : begin              
-                                       resultout = sin_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = sin_out[31];
-                                       C_q2 = tr3_C;
-                                       V_q2 = tr3_V;
-                                    end
-                        endcase                                                   
-                    end                                          
-            COS_  : begin
-                        case (thread_q2)
-                            2'b00 : begin              
-                                       resultout = cos_out;
-                                       Z_q2 = &wrsrcAdata;
-                                       N_q2 = cos_out[31];
-                                       C_q2 = tr0_C;
-                                       V_q2 = tr0_V;
-                                    end
-                            2'b01 : begin              
-                                       resultout = cos_out;
-                                       Z_q2 = &wrsrcAdata;
-                                       N_q2 = cos_out[31];
-                                       C_q2 = tr1_C;
-                                       V_q2 = tr1_V;
-                                    end
-                            2'b10 : begin              
-                                       resultout = cos_out;
-                                       Z_q2 = &wrsrcAdata;
-                                       N_q2 = cos_out[31];
-                                       C_q2 = tr2_C;
-                                       V_q2 = tr2_V;
-                                    end
-                            2'b11 : begin              
-                                       resultout = cos_out;
-                                       Z_q2 = &wrsrcAdata;
-                                       N_q2 = cos_out[31];
-                                       C_q2 = tr3_C;
-                                       V_q2 = tr3_V;
-                                    end
-                                    
-                        endcase               
-                    end                                          
-            TAN_ : begin
-                        case (thread_q2)
-                            2'b00 : begin              
-                                       resultout = tan_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = tan_out[31];
-                                       C_q2 = tr0_C;
-                                       V_q2 = tr0_V;
-                                    end
-                            2'b01 : begin              
-                                       resultout = tan_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = tan_out[31];
-                                       C_q2 = tr1_C;
-                                       V_q2 = tr1_V;
-                                    end
-                            2'b10 : begin              
-                                       resultout = tan_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = tan_out[31];
-                                       C_q2 = tr2_C;
-                                       V_q2 = tr2_V;
-                                    end
-                            2'b11 : begin              
-                                       resultout = tan_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = tan_out[31];
-                                       C_q2 = tr3_C;
-                                       V_q2 = tr3_V;
-                                    end
-                        endcase               
-                   end                                          
-           COT_  : begin
-                        case (thread_q2)
-                            2'b00 : begin              
-                                       resultout = cot_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = cot_out[31];
-                                       C_q2 = tr0_C;
-                                       V_q2 = tr0_V;
-                                    end
-                            2'b01 : begin              
-                                       resultout = cot_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = cot_out[31];
-                                       C_q2 = tr1_C;
-                                       V_q2 = tr1_V;
-                                    end
-                            2'b10 : begin              
-                                       resultout = cot_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = cot_out[31];
-                                       C_q2 = tr2_C;
-                                       V_q2 = tr2_V;
-                                    end
-                            2'b11 : begin              
-                                       resultout = cot_out;
-                                       Z_q2 = ~|wrsrcAdata;
-                                       N_q2 = cot_out[31];
-                                       C_q2 = tr3_C;
-                                       V_q2 = tr3_V;
-                                    end
-                        endcase               
-                    end                                          
+            SIN_  : case (thread_q2)
+                        2'b00 : begin 
+                                   resultout = sin_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = sin_out[31];
+                                   C_q2 = tr0_C;
+                                   V_q2 = tr0_V;
+                                end
+                        2'b01 : begin 
+                                   resultout = sin_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = sin_out[31];
+                                   C_q2 = tr1_C;
+                                   V_q2 = tr1_V;
+                                end
+                        2'b10 : begin                                                               
+                                   resultout = sin_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = sin_out[31];
+                                   C_q2 = tr2_C;
+                                   V_q2 = tr2_V;
+                                end
+                        2'b11 : begin              
+                                   resultout = sin_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = sin_out[31];
+                                   C_q2 = tr3_C;
+                                   V_q2 = tr3_V;
+                                end
+                    endcase                                                   
+
+            COS_  : case (thread_q2)
+                        2'b00 : begin              
+                                   resultout = cos_out;
+                                   Z_q2 = &wrsrcAdata;
+                                   N_q2 = cos_out[31];
+                                   C_q2 = tr0_C;
+                                   V_q2 = tr0_V;
+                                end
+                        2'b01 : begin              
+                                   resultout = cos_out;
+                                   Z_q2 = &wrsrcAdata;
+                                   N_q2 = cos_out[31];
+                                   C_q2 = tr1_C;
+                                   V_q2 = tr1_V;
+                                end
+                        2'b10 : begin              
+                                   resultout = cos_out;
+                                   Z_q2 = &wrsrcAdata;
+                                   N_q2 = cos_out[31];
+                                   C_q2 = tr2_C;
+                                   V_q2 = tr2_V;
+                                end
+                        2'b11 : begin              
+                                   resultout = cos_out;
+                                   Z_q2 = &wrsrcAdata;
+                                   N_q2 = cos_out[31];
+                                   C_q2 = tr3_C;
+                                   V_q2 = tr3_V;
+                                end
+                                
+                    endcase               
+
+             TAN_ : case (thread_q2)
+                        2'b00 : begin              
+                                   resultout = tan_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = tan_out[31];
+                                   C_q2 = tr0_C;
+                                   V_q2 = tr0_V;
+                                end
+                        2'b01 : begin              
+                                   resultout = tan_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = tan_out[31];
+                                   C_q2 = tr1_C;
+                                   V_q2 = tr1_V;
+                                end
+                        2'b10 : begin              
+                                   resultout = tan_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = tan_out[31];
+                                   C_q2 = tr2_C;
+                                   V_q2 = tr2_V;
+                                end
+                        2'b11 : begin              
+                                   resultout = tan_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = tan_out[31];
+                                   C_q2 = tr3_C;
+                                   V_q2 = tr3_V;
+                                end
+                    endcase               
+                                                              
+            COT_  : case (thread_q2)
+                        2'b00 : begin              
+                                   resultout = cot_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = cot_out[31];
+                                   C_q2 = tr0_C;
+                                   V_q2 = tr0_V;
+                                end
+                        2'b01 : begin              
+                                   resultout = cot_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = cot_out[31];
+                                   C_q2 = tr1_C;
+                                   V_q2 = tr1_V;
+                                end
+                        2'b10 : begin              
+                                   resultout = cot_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = cot_out[31];
+                                   C_q2 = tr2_C;
+                                   V_q2 = tr2_V;
+                                end
+                        2'b11 : begin              
+                                   resultout = cot_out;
+                                   Z_q2 = ~|wrsrcAdata;
+                                   N_q2 = cot_out[31];
+                                   C_q2 = tr3_C;
+                                   V_q2 = tr3_V;
+                                end
+                    endcase               
                                                              
-            SHFT_ : begin
-                        case (shiftype)
-                            LEFT_  : begin
-                                        case (thread_q2)
-                                            2'b00 : begin
-                                                        resultout = wrsrcAdata << shiftamount + 1'b1;
-                                                        Z_q2 = tr0_Z;
-                                                        N_q2 = tr0_N;
-                                                        C_q2 = tr0_C;
-                                                        V_q2 = tr0_V;
-                                                    end
-                                            2'b01 : begin
-                                                        resultout = wrsrcAdata << shiftamount + 1'b1;
-                                                        Z_q2 = tr1_Z;
-                                                        N_q2 = tr1_N;
-                                                        C_q2 = tr1_C;
-                                                        V_q2 = tr1_V;
-                                                    end
-                                            2'b10 : begin
-                                                        resultout = wrsrcAdata << shiftamount + 1'b1;
-                                                        Z_q2 = tr2_Z;
-                                                        N_q2 = tr2_N;
-                                                        C_q2 = tr2_C;
-                                                        V_q2 = tr2_V;
-                                                    end
-                                            2'b11 : begin
-                                                        resultout = wrsrcAdata << shiftamount + 1'b1;
-                                                        Z_q2 = tr3_Z;
-                                                        N_q2 = tr3_N;
-                                                        C_q2 = tr3_C;
-                                                        V_q2 = tr3_V;
-                                                    end
-                                        endcase                                         
-                                     end   
-                            LSL_   : begin
-                                        case (thread_q2)
-                                            2'b00 : begin
-                                                        {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
-                                                        Z_q2 = tr0_Z;
-                                                        N_q2 = tr0_N;
-                                                        V_q2 = tr0_V;
-                                                    end
-                                            2'b01 : begin
-                                                        {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
-                                                        Z_q2 = tr1_Z;
-                                                        N_q2 = tr1_N;
-                                                        V_q2 = tr1_V;
-                                                    end
-                                            2'b10 : begin
-                                                        {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
-                                                        Z_q2 = tr2_Z;
-                                                        N_q2 = tr2_N;
-                                                        V_q2 = tr2_V;
-                                                    end
-                                            2'b11 : begin
-                                                        {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
-                                                        Z_q2 = tr3_Z;
-                                                        N_q2 = tr3_N;
-                                                        V_q2 = tr3_V;
-                                                    end
-                                        endcase                                         
-                                     end   
-                            ASL_   : begin
-                                        case (thread_q2)
-                                            2'b00 : begin
-                                                        resultout = wrsrcAdata << shiftamount + 1'b1;
-                                                        Z_q2 = tr0_Z;
-                                                        N_q2 = tr0_N;
-                                                        C_q2 = tr0_C;
-                                                        V_q2 = tr0_V;
-                                                    end
-                                            2'b01 : begin
-                                                        resultout = wrsrcAdata << shiftamount + 1'b1;
-                                                        Z_q2 = tr1_Z;
-                                                        N_q2 = tr1_N;
-                                                        C_q2 = tr1_C;
-                                                        V_q2 = tr1_V;
-                                                    end
-                                            2'b10 : begin
-                                                        resultout = wrsrcAdata << shiftamount + 1'b1;
-                                                        Z_q2 = tr2_Z;
-                                                        N_q2 = tr2_N;
-                                                        C_q2 = tr2_C;
-                                                        V_q2 = tr2_V;
-                                                    end
-                                            2'b11 : begin
-                                                        resultout = wrsrcAdata << shiftamount + 1'b1;
-                                                        Z_q2 = tr3_Z;
-                                                        N_q2 = tr3_N;
-                                                        C_q2 = tr3_C;
-                                                        V_q2 = tr3_V;
-                                                    end
-                                        endcase                                         
-                                     end   
-                            ROL_   : begin
-                                        case (thread_q2)                                        
-                                            2'b00 : begin
-                                                        resultout =  brlshft_ROL;
-                                                        Z_q2 = tr0_Z;
-                                                        N_q2 = tr0_N;
-                                                        C_q2 = tr0_C;
-                                                        V_q2 = tr0_V;
-                                                    end
-                                            2'b01 : begin
-                                                        resultout =  brlshft_ROL;
-                                                        Z_q2 = tr1_Z;
-                                                        N_q2 = tr1_N;
-                                                        C_q2 = tr1_C;
-                                                        V_q2 = tr1_V;
-                                                    end
-                                            2'b10 : begin
-                                                        resultout =  brlshft_ROL;
-                                                        Z_q2 = tr2_Z;
-                                                        N_q2 = tr2_N;
-                                                        C_q2 = tr2_C;
-                                                        V_q2 = tr2_V;
-                                                    end
-                                            2'b11 : begin
-                                                        resultout =  brlshft_ROL;
-                                                        Z_q2 = tr3_Z;
-                                                        N_q2 = tr3_N;
-                                                        C_q2 = tr3_C;
-                                                        V_q2 = tr3_V;
-                                                    end
-                                        endcase                                                                                                    
-                                     end           
-                            RIGHT_ : begin
-                                        case (thread_q2)
-                                            2'b00 : begin
-                                                        resultout = wrsrcAdata >> shiftamount + 1'b1;
-                                                        Z_q2 = tr0_Z;
-                                                        N_q2 = tr0_N;
-                                                        C_q2 = tr0_C;
-                                                        V_q2 = tr0_V;
-                                                    end
-                                            2'b01 : begin
-                                                        resultout = wrsrcAdata >> shiftamount + 1'b1;
-                                                        Z_q2 = tr1_Z;
-                                                        N_q2 = tr1_N;
-                                                        C_q2 = tr1_C;
-                                                        V_q2 = tr1_V;
-                                                    end
-                                            2'b10 : begin
-                                                        resultout = wrsrcAdata >> shiftamount + 1'b1;
-                                                        Z_q2 = tr2_Z;
-                                                        N_q2 = tr2_N;
-                                                        C_q2 = tr2_C;
-                                                        V_q2 = tr2_V;
-                                                    end
-                                            2'b11 : begin
-                                                        resultout = wrsrcAdata >> shiftamount + 1'b1;
-                                                        Z_q2 = tr3_Z;
-                                                        N_q2 = tr3_N;
-                                                        C_q2 = tr3_C;
-                                                        V_q2 = tr3_V;
-                                                    end
-                                        endcase 
-                                     end   
-                            LSR_   : begin
-                                        case (thread_q2)
-                                            2'b00 : begin
-                                                        {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
-                                                        Z_q2 = tr0_Z;
-                                                        N_q2 = tr0_N;
-                                                        V_q2 = tr0_V;
-                                                    end
-                                            2'b01 : begin
-                                                        {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
-                                                        Z_q2 = tr1_Z;
-                                                        N_q2 = tr1_N;
-                                                        V_q2 = tr1_V;
-                                                    end
-                                            2'b10 : begin
-                                                        {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
-                                                        Z_q2 = tr2_Z;
-                                                        N_q2 = tr2_N;
-                                                        V_q2 = tr2_V;
-                                                    end
-                                            2'b11 : begin
-                                                        {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
-                                                        Z_q2 = tr3_Z;
-                                                        N_q2 = tr3_N;
-                                                        V_q2 = tr3_V;
-                                                    end
-                                        endcase 
-                                     end   
-                            ASR_   : begin
-                                        case (thread_q2)
-                                            2'b00 : begin
-                                                        {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
-                                                        Z_q2 = tr0_Z;
-                                                        N_q2 = tr0_N;
-                                                        C_q2 = tr0_C;
-                                                        V_q2 = tr0_V;
-                                                    end
-                                            2'b01 : begin
-                                                        {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
-                                                        Z_q2 = tr1_Z;
-                                                        N_q2 = tr1_N;
-                                                        C_q2 = tr1_C;
-                                                        V_q2 = tr1_V;
-                                                    end
-                                            2'b10 : begin
-                                                        {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
-                                                        Z_q2 = tr2_Z;
-                                                        N_q2 = tr2_N;
-                                                        C_q2 = tr2_C;
-                                                        V_q2 = tr2_V;
-                                                    end
-                                            2'b11 : begin
-                                                        {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
-                                                        Z_q2 = tr3_Z;
-                                                        N_q2 = tr3_N;
-                                                        C_q2 = tr3_C;
-                                                        V_q2 = tr3_V;
-                                                    end
-                                        endcase 
-                                     end    
-                            ROR_   : begin
-                                        case (thread_q2)
-                                            2'b00 : begin
-                                                        resultout =  brlshft_ROR;
-                                                        Z_q2 = tr0_Z;
-                                                        N_q2 = tr0_N;
-                                                        C_q2 = tr0_C;
-                                                        V_q2 = tr0_V;
-                                                    end
-                                            2'b01 : begin
-                                                        resultout =  brlshft_ROR;
-                                                        Z_q2 = tr1_Z;
-                                                        N_q2 = tr1_N;
-                                                        C_q2 = tr1_C;
-                                                        V_q2 = tr1_V;
-                                                    end
-                                            2'b10 : begin
-                                                        resultout =  brlshft_ROR;
-                                                        Z_q2 = tr2_Z;
-                                                        N_q2 = tr2_N;
-                                                        C_q2 = tr2_C;
-                                                        V_q2 = tr2_V;
-                                                    end
-                                            2'b11 : begin
-                                                        resultout =  brlshft_ROR;
-                                                        Z_q2 = tr3_Z;
-                                                        N_q2 = tr3_N;
-                                                        C_q2 = tr3_C;
-                                                        V_q2 = tr3_V;
-                                                    end
-                                        endcase 
-                                     end    
-                        endcase
-                    end  
-                    BTB_   : begin
-                                case (thread_q2)
-                                    2'b00 : begin
-                                                resultout = wrsrcBdata;
-                                                Z_q2 = tr0_Z;
-                                                N_q2 = tr0_N;
-                                                C_q2 = tr0_C;
-                                                V_q2 = tr0_V;
-                                            end
-                                    2'b01 : begin
-                                                resultout = wrsrcBdata;
-                                                Z_q2 = tr1_Z;
-                                                N_q2 = tr1_N;
-                                                C_q2 = tr1_C;
-                                                V_q2 = tr1_V;
-                                            end
-                                    2'b10 : begin
-                                                resultout = wrsrcBdata;
-                                                Z_q2 = tr2_Z;
-                                                N_q2 = tr2_N;
-                                                C_q2 = tr2_C;
-                                                V_q2 = tr2_V;
-                                            end
-                                    2'b11 : begin
-                                                resultout = wrsrcBdata;
-                                                Z_q2 = tr3_Z;
-                                                N_q2 = tr3_N;
-                                                C_q2 = tr3_C;
-                                                V_q2 = tr3_V;
-                                            end
-                                endcase 
-                             end 
+            SHFT_ : case (shiftype)
+                        LEFT_  : case (thread_q2)
+                                     2'b00 : begin
+                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 Z_q2 = tr0_Z;
+                                                 N_q2 = tr0_N;
+                                                 C_q2 = tr0_C;
+                                                 V_q2 = tr0_V;
+                                             end
+                                     2'b01 : begin
+                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 Z_q2 = tr1_Z;
+                                                 N_q2 = tr1_N;
+                                                 C_q2 = tr1_C;
+                                                 V_q2 = tr1_V;
+                                             end
+                                     2'b10 : begin
+                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 Z_q2 = tr2_Z;
+                                                 N_q2 = tr2_N;
+                                                 C_q2 = tr2_C;
+                                                 V_q2 = tr2_V;
+                                             end
+                                     2'b11 : begin
+                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 Z_q2 = tr3_Z;
+                                                 N_q2 = tr3_N;
+                                                 C_q2 = tr3_C;
+                                                 V_q2 = tr3_V;
+                                             end
+                                 endcase                                         
+
+                        LSL_   : case (thread_q2)
+                                     2'b00 : begin
+                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
+                                                 Z_q2 = tr0_Z;
+                                                 N_q2 = tr0_N;
+                                                 V_q2 = tr0_V;
+                                             end
+                                     2'b01 : begin
+                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
+                                                 Z_q2 = tr1_Z;
+                                                 N_q2 = tr1_N;
+                                                 V_q2 = tr1_V;
+                                             end
+                                     2'b10 : begin
+                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
+                                                 Z_q2 = tr2_Z;
+                                                 N_q2 = tr2_N;
+                                                 V_q2 = tr2_V;
+                                             end
+                                     2'b11 : begin
+                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
+                                                 Z_q2 = tr3_Z;
+                                                 N_q2 = tr3_N;
+                                                 V_q2 = tr3_V;
+                                             end
+                                 endcase                                         
+
+                        ASL_   : case (thread_q2)
+                                     2'b00 : begin
+                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 Z_q2 = tr0_Z;
+                                                 N_q2 = tr0_N;
+                                                 C_q2 = tr0_C;
+                                                 V_q2 = tr0_V;
+                                             end
+                                     2'b01 : begin
+                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 Z_q2 = tr1_Z;
+                                                 N_q2 = tr1_N;
+                                                 C_q2 = tr1_C;
+                                                 V_q2 = tr1_V;
+                                             end
+                                     2'b10 : begin
+                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 Z_q2 = tr2_Z;
+                                                 N_q2 = tr2_N;
+                                                 C_q2 = tr2_C;
+                                                 V_q2 = tr2_V;
+                                             end
+                                     2'b11 : begin
+                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 Z_q2 = tr3_Z;
+                                                 N_q2 = tr3_N;
+                                                 C_q2 = tr3_C;
+                                                 V_q2 = tr3_V;
+                                             end
+                                 endcase                                         
+
+                        ROL_   : case (thread_q2)                                        
+                                     2'b00 : begin
+                                                 resultout =  brlshft_ROL;
+                                                 Z_q2 = tr0_Z;
+                                                 N_q2 = tr0_N;
+                                                 C_q2 = tr0_C;
+                                                 V_q2 = tr0_V;
+                                             end
+                                     2'b01 : begin
+                                                 resultout =  brlshft_ROL;
+                                                 Z_q2 = tr1_Z;
+                                                 N_q2 = tr1_N;
+                                                 C_q2 = tr1_C;
+                                                 V_q2 = tr1_V;
+                                             end
+                                     2'b10 : begin
+                                                 resultout =  brlshft_ROL;
+                                                 Z_q2 = tr2_Z;
+                                                 N_q2 = tr2_N;
+                                                 C_q2 = tr2_C;
+                                                 V_q2 = tr2_V;
+                                             end
+                                     2'b11 : begin
+                                                 resultout =  brlshft_ROL;
+                                                 Z_q2 = tr3_Z;
+                                                 N_q2 = tr3_N;
+                                                 C_q2 = tr3_C;
+                                                 V_q2 = tr3_V;
+                                             end
+                                 endcase
+                                                                                                                                     
+                        RIGHT_ : case (thread_q2)
+                                     2'b00 : begin
+                                                 resultout = wrsrcAdata >> shiftamount + 1'b1;
+                                                 Z_q2 = tr0_Z;
+                                                 N_q2 = tr0_N;
+                                                 C_q2 = tr0_C;
+                                                 V_q2 = tr0_V;
+                                             end
+                                     2'b01 : begin
+                                                 resultout = wrsrcAdata >> shiftamount + 1'b1;
+                                                 Z_q2 = tr1_Z;
+                                                 N_q2 = tr1_N;
+                                                 C_q2 = tr1_C;
+                                                 V_q2 = tr1_V;
+                                             end
+                                     2'b10 : begin
+                                                 resultout = wrsrcAdata >> shiftamount + 1'b1;
+                                                 Z_q2 = tr2_Z;
+                                                 N_q2 = tr2_N;
+                                                 C_q2 = tr2_C;
+                                                 V_q2 = tr2_V;
+                                             end
+                                     2'b11 : begin
+                                                 resultout = wrsrcAdata >> shiftamount + 1'b1;
+                                                 Z_q2 = tr3_Z;
+                                                 N_q2 = tr3_N;
+                                                 C_q2 = tr3_C;
+                                                 V_q2 = tr3_V;
+                                             end
+                                 endcase 
+
+                        LSR_   : case (thread_q2)
+                                     2'b00 : begin
+                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
+                                                 Z_q2 = tr0_Z;
+                                                 N_q2 = tr0_N;
+                                                 V_q2 = tr0_V;
+                                             end
+                                     2'b01 : begin
+                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
+                                                 Z_q2 = tr1_Z;
+                                                 N_q2 = tr1_N;
+                                                 V_q2 = tr1_V;
+                                             end
+                                     2'b10 : begin
+                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
+                                                 Z_q2 = tr2_Z;
+                                                 N_q2 = tr2_N;
+                                                 V_q2 = tr2_V;
+                                             end
+                                     2'b11 : begin
+                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
+                                                 Z_q2 = tr3_Z;
+                                                 N_q2 = tr3_N;
+                                                 V_q2 = tr3_V;
+                                             end
+                                 endcase 
+
+                        ASR_   : case (thread_q2)
+                                     2'b00 : begin
+                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
+                                                 Z_q2 = tr0_Z;
+                                                 N_q2 = tr0_N;
+                                                 C_q2 = tr0_C;
+                                                 V_q2 = tr0_V;
+                                             end
+                                     2'b01 : begin
+                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
+                                                 Z_q2 = tr1_Z;
+                                                 N_q2 = tr1_N;
+                                                 C_q2 = tr1_C;
+                                                 V_q2 = tr1_V;
+                                             end
+                                     2'b10 : begin
+                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
+                                                 Z_q2 = tr2_Z;
+                                                 N_q2 = tr2_N;
+                                                 C_q2 = tr2_C;
+                                                 V_q2 = tr2_V;
+                                             end
+                                     2'b11 : begin
+                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
+                                                 Z_q2 = tr3_Z;
+                                                 N_q2 = tr3_N;
+                                                 C_q2 = tr3_C;
+                                                 V_q2 = tr3_V;
+                                             end
+                                 endcase
+                                  
+                        ROR_   : case (thread_q2)
+                                     2'b00 : begin
+                                                 resultout =  brlshft_ROR;
+                                                 Z_q2 = tr0_Z;
+                                                 N_q2 = tr0_N;
+                                                 C_q2 = tr0_C;
+                                                 V_q2 = tr0_V;
+                                             end
+                                     2'b01 : begin
+                                                 resultout =  brlshft_ROR;
+                                                 Z_q2 = tr1_Z;
+                                                 N_q2 = tr1_N;
+                                                 C_q2 = tr1_C;
+                                                 V_q2 = tr1_V;
+                                             end
+                                     2'b10 : begin
+                                                 resultout =  brlshft_ROR;
+                                                 Z_q2 = tr2_Z;
+                                                 N_q2 = tr2_N;
+                                                 C_q2 = tr2_C;
+                                                 V_q2 = tr2_V;
+                                             end
+                                     2'b11 : begin
+                                                 resultout =  brlshft_ROR;
+                                                 Z_q2 = tr3_Z;
+                                                 N_q2 = tr3_N;
+                                                 C_q2 = tr3_C;
+                                                 V_q2 = tr3_V;
+                                             end
+                                 endcase 
+                    endcase
+                      
+            BTB_  : case (thread_q2)
+                        2'b00 : begin
+                                    resultout = wrsrcBdata;
+                                    Z_q2 = tr0_Z;
+                                    N_q2 = tr0_N;
+                                    C_q2 = tr0_C;
+                                    V_q2 = tr0_V;
+                                end
+                        2'b01 : begin
+                                    resultout = wrsrcBdata;
+                                    Z_q2 = tr1_Z;
+                                    N_q2 = tr1_N;
+                                    C_q2 = tr1_C;
+                                    V_q2 = tr1_V;
+                                end
+                        2'b10 : begin
+                                    resultout = wrsrcBdata;
+                                    Z_q2 = tr2_Z;
+                                    N_q2 = tr2_N;
+                                    C_q2 = tr2_C;
+                                    V_q2 = tr2_V;
+                                end
+                        2'b11 : begin
+                                    resultout = wrsrcBdata;
+                                    Z_q2 = tr3_Z;
+                                    N_q2 = tr3_N;
+                                    C_q2 = tr3_C;
+                                    V_q2 = tr3_V;
+                                end
+                    endcase 
                                            
-                   default : begin
-                                case (thread_q2)
-                                    2'b00 : begin
-                                                resultout = wrsrcAdata;
-                                                Z_q2 = tr0_Z;
-                                                N_q2 = tr0_N;
-                                                C_q2 = tr0_C;
-                                                V_q2 = tr0_V;
-                                            end
-                                    2'b01 : begin
-                                                resultout = wrsrcAdata;
-                                                Z_q2 = tr1_Z;
-                                                N_q2 = tr1_N;
-                                                C_q2 = tr1_C;
-                                                V_q2 = tr1_V;
-                                            end
-                                    2'b10 : begin
-                                                resultout = wrsrcAdata;
-                                                Z_q2 = tr2_Z;
-                                                N_q2 = tr2_N;
-                                                C_q2 = tr2_C;
-                                                V_q2 = tr2_V;
-                                            end
-                                    2'b11 : begin
-                                                resultout = wrsrcAdata;
-                                                Z_q2 = tr3_Z;
-                                                N_q2 = tr3_N;
-                                                C_q2 = tr3_C;
-                                                V_q2 = tr3_V;
-                                            end
-                                endcase 
-                             end 
-                                           
+          default : case (thread_q2)
+                        2'b00 : begin
+                                    resultout = wrsrcAdata;
+                                    Z_q2 = tr0_Z;
+                                    N_q2 = tr0_N;
+                                    C_q2 = tr0_C;
+                                    V_q2 = tr0_V;
+                                end
+                        2'b01 : begin
+                                    resultout = wrsrcAdata;
+                                    Z_q2 = tr1_Z;
+                                    N_q2 = tr1_N;
+                                    C_q2 = tr1_C;
+                                    V_q2 = tr1_V;
+                                end
+                        2'b10 : begin
+                                    resultout = wrsrcAdata;
+                                    Z_q2 = tr2_Z;
+                                    N_q2 = tr2_N;
+                                    C_q2 = tr2_C;
+                                    V_q2 = tr2_V;
+                                end
+                        2'b11 : begin
+                                    resultout = wrsrcAdata;
+                                    Z_q2 = tr3_Z;
+                                    N_q2 = tr3_N;
+                                    C_q2 = tr3_C;
+                                    V_q2 = tr3_V;
+                                end
+                    endcase 
         endcase 
 end 
 
@@ -2282,12 +2190,10 @@ always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
         REPEAT <= 11'h000;
     end
-    else if (wrcycl && (OPdest == RPT_ADDRS[7:0]) && ~RPT_not_z && ~(opcode == BCND_)) REPEAT[10:0] <= P_DATAi[10:0]; 
+    else if (wrcycl && (OPdest == RPT_ADDRS[7:0]) && ~RPT_not_z) REPEAT[10:0] <= P_DATAi[10:0]; 
     else if (|REPEAT[10:0]) REPEAT[10:0] <= REPEAT[10:0] - 1'b1;
 end   
  
-
-
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
         tr3_LPCNT1 <= 12'h000;
@@ -2301,7 +2207,6 @@ always @(posedge CLK or posedge RESET) begin
     end
         
     else begin
-    
        if ((dest_q2==LPCNT0_ADDRS) && (thread_q2==2'b00) && wrcycl) tr0_LPCNT0 <= resultout[11:0];
        else if ((opcode_q2==BTB_) && (srcB_q2==LPCNT0_ADDRS) && (thread_q2==2'b00) && |tr0_LPCNT0 && ~pipe_flush) tr0_LPCNT0 <= tr0_LPCNT0_dec;
 
@@ -2326,7 +2231,6 @@ always @(posedge CLK or posedge RESET) begin
        
        if ((dest_q2==LPCNT1_ADDRS) && (thread_q2==2'b11) && wrcycl) tr3_LPCNT1 <= resultout[11:0];
        else if ((opcode_q2==BTB_) && (srcB_q2==LPCNT1_ADDRS) && (thread_q2==2'b11) && |tr3_LPCNT1 && ~pipe_flush) tr3_LPCNT1 <= tr3_LPCNT1_dec;
-       
     end   
 end            
       
@@ -2603,7 +2507,6 @@ always @(posedge CLK or posedge RESET) begin
       if (~LOCKED && ~RPT_not_z)  sched_state[3:0] <= {sched_state[2:0], 1'b1};      // disable if RPT or LOCKED is active
       
     ////////////////////////////////////////////////////////
-    
 
          if ((dest_q2==ST_ADDRS) && wrcycl) begin
              casex (thread_q2)  
@@ -2653,25 +2556,25 @@ always @(posedge CLK or posedge RESET) begin
         STATE <= {1'b1, STATE[2:1]};    //rotate right 1 into msb  (shift right)
      
         if (LD_newthread) newthreadq <= newthread;
-        thread_q1   <= newthreadq   ; 
-        pc_q1       <= PC           ; 
-        constn_q1   <= constn        ;                 
-        opcode_q1   <= opcode       ; 
-        srcA_q1     <= srcA         ; 
-        srcB_q1     <= srcB         ; 
-        OPdest_q1   <= OPdest       ;
-        OPsrcA_q1   <= OPsrcA       ;
-        OPsrcB_q1   <= OPsrcB       ;
+        thread_q1   <= newthreadq ; 
+        pc_q1       <= PC         ; 
+        constn_q1   <= constn     ;                 
+        opcode_q1   <= opcode     ; 
+        srcA_q1     <= srcA       ; 
+        srcB_q1     <= srcB       ; 
+        OPdest_q1   <= OPdest     ;
+        OPsrcA_q1   <= OPsrcA     ;
+        OPsrcB_q1   <= OPsrcB     ;
         
-        fp_ready_q2 <= fp_ready_q1  ;
-        fp_sel_q2   <= fp_sel_q1    ;
-        thread_q2   <= thread_q1    ; 
-        pc_q2       <= pc_q1        ;  
-        opcode_q2   <= opcode_q1    ; 
-        srcA_q2     <= srcA_q1      ; 
-        srcB_q2     <= srcB_q1      ; 
-        OPdest_q2   <= OPdest_q1    ;
-        OPsrcA_q2   <= OPsrcA_q1    ;
+        fp_ready_q2 <= fp_ready_q1;
+        fp_sel_q2   <= fp_sel_q1  ;
+        thread_q2   <= thread_q1  ; 
+        pc_q2       <= pc_q1      ;  
+        opcode_q2   <= opcode_q1  ; 
+        srcA_q2     <= srcA_q1    ; 
+        srcB_q2     <= srcB_q1    ; 
+        OPdest_q2   <= OPdest_q1  ;
+        OPsrcA_q2   <= OPsrcA_q1  ;
 
         
         casex (opcode_q1)      //read data stored temporarily in wrsrcAdata and wrsrcBdata
@@ -2681,7 +2584,7 @@ always @(posedge CLK or posedge RESET) begin
            COS_,
            TAN_,
            COT_, 
-           MOV_	:  case(constn_q1)
+           MOV_ :  case(constn_q1)
                      2'b00 : begin    // both srcA and srcB are either direct or indirect
                                 wrsrcAdata <= rdSrcAdata;             
                                 wrsrcBdata <= rdSrcBdata; 
@@ -2700,16 +2603,16 @@ always @(posedge CLK or posedge RESET) begin
                              end
                    endcase           
 
-            OR_,	
-           XOR_,	
-           AND_,	
+            OR_,    
+           XOR_,    
+           AND_,    
            ADD_,
           ADDC_,
            SUB_,
           SUBB_,
            MUL_,
           SHFT_,
-           BTB_	 : begin    
+           BTB_  : begin    
                      if (constn_q1[0]) begin    //immediate
                          wrsrcBdata <= {24'h000000, OPsrcB_q1};
                          wrsrcAdata <= rdSrcAdata;
@@ -2720,239 +2623,201 @@ always @(posedge CLK or posedge RESET) begin
                      end
                    end          
         endcase
-
-        if (~(pipe_flush || RPT_not_z)) //begin
-            
-            if (&constn)      //immediate loads of ARn occur during instruction fetch (state0)
-                casex (newthreadq)
-                    2'b00 : begin
-                                casex (OPdest)   //only [12:0] written during immediate write to ARn
-                                   8'h70 : tr0_AR0[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
-                                   8'h71 : tr0_AR1[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; 
-                                   8'h72 : tr0_AR2[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; 
-                                   8'h73 : tr0_AR3[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]};
-                                endcase
-                            end         
-                    2'b01 : begin
-                                casex (OPdest)  //only [12:0] written during immediate write to ARn
-                                   8'h70 : tr1_AR0[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
-                                   8'h71 : tr1_AR1[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; 
-                                   8'h72 : tr1_AR2[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; 
-                                   8'h73 : tr1_AR3[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]};
-                                endcase
-                            end    
-                    2'b10 : begin
-                                casex (OPdest)   //only [12:0] written during immediate write to ARn
-                                   8'h70 : tr2_AR0[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
-                                   8'h71 : tr2_AR1[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; 
-                                   8'h72 : tr2_AR2[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; 
-                                   8'h73 : tr2_AR3[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]};
-                                endcase
-                            end
-                    2'b11 : begin
-                                casex (OPdest)  //only [12:0] written during immediate write to ARn
-                                   8'h70 : tr3_AR0[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
-                                   8'h71 : tr3_AR1[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; 
-                                   8'h72 : tr3_AR2[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]}; 
-                                   8'h73 : tr3_AR3[12:0] <= {OPsrcA[4:0], OPsrcB[7:0]};
-                                endcase
-                            end 
-                endcase
-            else 
-                casex (thread_q2)  //direct, indirect, or table-read loads of ARn occur during usual write (state2) 
-                    2'b00 : begin
-                                casex (OPdest_q2)
-                                   8'h70 : tr0_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR0[23:16]), 3'b000, resultout[12:0]}; //direct write to ARn during q2 has priority over any update
-                                   8'h71 : tr0_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR1[23:16]), 3'b000, resultout[12:0]}; 
-                                   8'h72 : tr0_AR2 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR2[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR2[23:16]), 3'b000, resultout[12:0]}; 
-                                   8'h73 : tr0_AR3 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR3[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR3[23:16]), 3'b000, resultout[12:0]};
-                                endcase
-                            end         
-                    2'b01 : begin
-                                casex (OPdest_q2)
-                                   8'h70 : tr1_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr1_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr1_AR0[23:16]), 3'b000, resultout[12:0]}; //direct write to ARn during q2 has priority over any update
-                                   8'h71 : tr1_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr1_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr1_AR1[23:16]), 3'b000, resultout[12:0]}; 
-                                   8'h72 : tr1_AR2 <= {(|resultout[31:24] ? resultout[31:24] : tr1_AR2[31:24]), (|resultout[23:16] ? resultout[23:16] : tr1_AR2[23:16]), 3'b000, resultout[12:0]}; 
-                                   8'h73 : tr1_AR3 <= {(|resultout[31:24] ? resultout[31:24] : tr1_AR3[31:24]), (|resultout[23:16] ? resultout[23:16] : tr1_AR3[23:16]), 3'b000, resultout[12:0]};
-                                endcase
-                            end    
-                    2'b10 : begin
-                                casex (OPdest_q2)
-                                   8'h70 : tr2_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr2_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr2_AR0[23:16]), 3'b000, resultout[12:0]}; //direct write to ARn during q2 has priority over any update
-                                   8'h71 : tr2_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr2_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr2_AR1[23:16]), 3'b000, resultout[12:0]}; 
-                                   8'h72 : tr2_AR2 <= {(|resultout[31:24] ? resultout[31:24] : tr2_AR2[31:24]), (|resultout[23:16] ? resultout[23:16] : tr2_AR2[23:16]), 3'b000, resultout[12:0]}; 
-                                   8'h73 : tr2_AR3 <= {(|resultout[31:24] ? resultout[31:24] : tr2_AR3[31:24]), (|resultout[23:16] ? resultout[23:16] : tr2_AR3[23:16]), 3'b000, resultout[12:0]};
-                                endcase
-                            end
-                    2'b11 : begin
-                                casex (OPdest_q2)
-                                   8'h70 : tr3_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr3_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr3_AR0[23:16]), 3'b000, resultout[12:0]}; //direct write to ARn during q2 has priority over any update
-                                   8'h71 : tr3_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr3_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr3_AR1[23:16]), 3'b000, resultout[12:0]}; 
-                                   8'h72 : tr3_AR2 <= {(|resultout[31:24] ? resultout[31:24] : tr3_AR2[31:24]), (|resultout[23:16] ? resultout[23:16] : tr3_AR2[23:16]), 3'b000, resultout[12:0]}; 
-                                   8'h73 : tr3_AR3 <= {(|resultout[31:24] ? resultout[31:24] : tr3_AR3[31:24]), (|resultout[23:16] ? resultout[23:16] : tr3_AR3[23:16]), 3'b000, resultout[12:0]};
-                                endcase
-                            end 
-                endcase
-//        end    
-
-        if (~pipe_flush) begin
-            if ( ~constn[1])      //ARn auto-post-increment/decrement of indirect srcA address ARn occurs during instruction fetch (state0)
-            
-                casex (newthreadq)
-                    2'b00 : begin
-                                casex (OPsrcA)
-                                    8'h78 : tr0_AR0[13:0] <= tr0_AR0[13:0] + tr0_AR0[23:16];
-                                    8'h7C : tr0_AR0[13:0] <= tr0_AR0[13:0] - tr0_AR0[31:24];
-                                    8'h79 : tr0_AR1[13:0] <= tr0_AR1[13:0] + tr0_AR1[23:16];
-                                    8'h7D : tr0_AR1[13:0] <= tr0_AR1[13:0] - tr0_AR1[31:24];
-                                    8'h7A : tr0_AR2[13:0] <= tr0_AR2[13:0] + tr0_AR2[23:16];
-                                    8'h7E : tr0_AR2[13:0] <= tr0_AR2[13:0] - tr0_AR2[31:24];
-                                    8'h7B : tr0_AR3[13:0] <= tr0_AR3[13:0] + tr0_AR3[23:16];
-                                    8'h7F : tr0_AR3[13:0] <= tr0_AR3[13:0] - tr0_AR3[31:24];
-                                endcase 
-                            end
-                    2'b01 : begin
-                                casex (OPsrcA)
-                                    8'h78 : tr1_AR0[13:0] <= tr1_AR0[13:0] + tr1_AR0[23:16];
-                                    8'h7C : tr1_AR0[13:0] <= tr1_AR0[13:0] - tr1_AR0[31:24];
-                                    8'h79 : tr1_AR1[13:0] <= tr1_AR1[13:0] + tr1_AR1[23:16];
-                                    8'h7D : tr1_AR1[13:0] <= tr1_AR1[13:0] - tr1_AR1[31:24];
-                                    8'h7A : tr1_AR2[13:0] <= tr1_AR2[13:0] + tr1_AR2[23:16];
-                                    8'h7E : tr1_AR2[13:0] <= tr1_AR2[13:0] - tr1_AR2[31:24];
-                                    8'h7B : tr1_AR3[13:0] <= tr1_AR3[13:0] + tr1_AR3[23:16];
-                                    8'h7F : tr1_AR3[13:0] <= tr1_AR3[13:0] - tr1_AR3[31:24];
-                                endcase    
-                            end
-                    2'b10 : begin
-                                casex (OPsrcA)
-                                    8'h78 : tr2_AR0[13:0] <= tr2_AR0[13:0] + tr2_AR0[23:16];
-                                    8'h7C : tr2_AR0[13:0] <= tr2_AR0[13:0] - tr2_AR0[31:24];
-                                    8'h79 : tr2_AR1[13:0] <= tr2_AR1[13:0] + tr2_AR1[23:16];
-                                    8'h7D : tr2_AR1[13:0] <= tr2_AR1[13:0] - tr2_AR1[31:24];
-                                    8'h7A : tr2_AR2[13:0] <= tr2_AR2[13:0] + tr2_AR2[23:16];
-                                    8'h7E : tr2_AR2[13:0] <= tr2_AR2[13:0] - tr2_AR2[31:24];
-                                    8'h7B : tr2_AR3[13:0] <= tr2_AR3[13:0] + tr2_AR3[23:16];
-                                    8'h7F : tr2_AR3[13:0] <= tr2_AR3[13:0] - tr2_AR3[31:24];
-                                endcase    
-                            end
-                    2'b11 : begin
-                                casex (OPsrcA)
-                                    8'h78 : tr3_AR0[13:0] <= tr3_AR0[13:0] + tr3_AR0[23:16];
-                                    8'h7C : tr3_AR0[13:0] <= tr3_AR0[13:0] - tr3_AR0[31:24];
-                                    8'h79 : tr3_AR1[13:0] <= tr3_AR1[13:0] + tr3_AR1[23:16];
-                                    8'h7D : tr3_AR1[13:0] <= tr3_AR1[13:0] - tr3_AR1[31:24];
-                                    8'h7A : tr3_AR2[13:0] <= tr3_AR2[13:0] + tr3_AR2[23:16];
-                                    8'h7E : tr3_AR2[13:0] <= tr3_AR2[13:0] - tr3_AR2[31:24];
-                                    8'h7B : tr3_AR3[13:0] <= tr3_AR3[13:0] + tr3_AR3[23:16];
-                                    8'h7F : tr3_AR3[13:0] <= tr3_AR3[13:0] - tr3_AR3[31:24];
-                                endcase    
-                            end
-                endcase 
-            
-            if (~constn[0])     //ARn auto-post-increment/decrement of indirect srcB address ARn occurs during instruction fetch (state0)
+        
+        if (~RPT_not_z && &constn)      //immediate loads of ARn occur during instruction fetch (state0)
             casex (newthreadq)
-                2'b00 : begin
-                            casex (OPsrcB)
-                                    8'h78 : tr0_AR0[13:0] <= tr0_AR0[13:0] + tr0_AR0[23:16];
-                                    8'h7C : tr0_AR0[13:0] <= tr0_AR0[13:0] - tr0_AR0[31:24];
-                                    8'h79 : tr0_AR1[13:0] <= tr0_AR1[13:0] + tr0_AR1[23:16];
-                                    8'h7D : tr0_AR1[13:0] <= tr0_AR1[13:0] - tr0_AR1[31:24];
-                                    8'h7A : tr0_AR2[13:0] <= tr0_AR2[13:0] + tr0_AR2[23:16];
-                                    8'h7E : tr0_AR2[13:0] <= tr0_AR2[13:0] - tr0_AR2[31:24];
-                                    8'h7B : tr0_AR3[13:0] <= tr0_AR3[13:0] + tr0_AR3[23:16];
-                                    8'h7F : tr0_AR3[13:0] <= tr0_AR3[13:0] - tr0_AR3[31:24];
-                            endcase 
-                        end
-                2'b01 : begin
-                            casex (OPsrcB)
-                                    8'h78 : tr1_AR0[13:0] <= tr1_AR0[13:0] + tr1_AR0[23:16];
-                                    8'h7C : tr1_AR0[13:0] <= tr1_AR0[13:0] - tr1_AR0[31:24];
-                                    8'h79 : tr1_AR1[13:0] <= tr1_AR1[13:0] + tr1_AR1[23:16];
-                                    8'h7D : tr1_AR1[13:0] <= tr1_AR1[13:0] - tr1_AR1[31:24];
-                                    8'h7A : tr1_AR2[13:0] <= tr1_AR2[13:0] + tr1_AR2[23:16];
-                                    8'h7E : tr1_AR2[13:0] <= tr1_AR2[13:0] - tr1_AR2[31:24];
-                                    8'h7B : tr1_AR3[13:0] <= tr1_AR3[13:0] + tr1_AR3[23:16];
-                                    8'h7F : tr1_AR3[13:0] <= tr1_AR3[13:0] - tr1_AR3[31:24];
-                            endcase    
-                        end
-                2'b10 : begin
-                            casex (OPsrcB)
-                                    8'h78 : tr2_AR0[13:0] <= tr2_AR0[13:0] + tr2_AR0[23:16];
-                                    8'h7C : tr2_AR0[13:0] <= tr2_AR0[13:0] - tr2_AR0[31:24];
-                                    8'h79 : tr2_AR1[13:0] <= tr2_AR1[13:0] + tr2_AR1[23:16];
-                                    8'h7D : tr2_AR1[13:0] <= tr2_AR1[13:0] - tr2_AR1[31:24];
-                                    8'h7A : tr2_AR2[13:0] <= tr2_AR2[13:0] + tr2_AR2[23:16];
-                                    8'h7E : tr2_AR2[13:0] <= tr2_AR2[13:0] - tr2_AR2[31:24];
-                                    8'h7B : tr2_AR3[13:0] <= tr2_AR3[13:0] + tr2_AR3[23:16];
-                                    8'h7F : tr2_AR3[13:0] <= tr2_AR3[13:0] - tr2_AR3[31:24];
-                            endcase    
-                        end
-                2'b11 : begin
-                            casex (OPsrcB)
-                                    8'h78 : tr3_AR0[13:0] <= tr3_AR0[13:0] + tr3_AR0[23:16];
-                                    8'h7C : tr3_AR0[13:0] <= tr3_AR0[13:0] - tr3_AR0[31:24];
-                                    8'h79 : tr3_AR1[13:0] <= tr3_AR1[13:0] + tr3_AR1[23:16];
-                                    8'h7D : tr3_AR1[13:0] <= tr3_AR1[13:0] - tr3_AR1[31:24];
-                                    8'h7A : tr3_AR2[13:0] <= tr3_AR2[13:0] + tr3_AR2[23:16];
-                                    8'h7E : tr3_AR2[13:0] <= tr3_AR2[13:0] - tr3_AR2[31:24];
-                                    8'h7B : tr3_AR3[13:0] <= tr3_AR3[13:0] + tr3_AR3[23:16];
-                                    8'h7F : tr3_AR3[13:0] <= tr3_AR3[13:0] - tr3_AR3[31:24];
-                            endcase    
-                        end
-            endcase            
-          
-            if (~(opcode_q2==BCND_)) 
-            casex (thread_q2)        //ARn auto-post-increment/decrement of indirect destination address ARn occurs during usual write (state2)
-               2'b00 : begin
-                           casex (OPdest_q2)
-                                    8'h78 : tr0_AR0[13:0] <= tr0_AR0[13:0] + tr0_AR0[23:16];
-                                    8'h7C : tr0_AR0[13:0] <= tr0_AR0[13:0] - tr0_AR0[31:24];
-                                    8'h79 : tr0_AR1[13:0] <= tr0_AR1[13:0] + tr0_AR1[23:16];
-                                    8'h7D : tr0_AR1[13:0] <= tr0_AR1[13:0] - tr0_AR1[31:24];
-                                    8'h7A : tr0_AR2[13:0] <= tr0_AR2[13:0] + tr0_AR2[23:16];
-                                    8'h7E : tr0_AR2[13:0] <= tr0_AR2[13:0] - tr0_AR2[31:24];
-                                    8'h7B : tr0_AR3[13:0] <= tr0_AR3[13:0] + tr0_AR3[23:16];
-                                    8'h7F : tr0_AR3[13:0] <= tr0_AR3[13:0] - tr0_AR3[31:24];
-                           endcase
-                       end         
-               2'b01 : begin
-                           casex (OPdest_q2)
-                                    8'h78 : tr1_AR0[13:0] <= tr1_AR0[13:0] + tr1_AR0[23:16];
-                                    8'h7C : tr1_AR0[13:0] <= tr1_AR0[13:0] - tr1_AR0[31:24];
-                                    8'h79 : tr1_AR1[13:0] <= tr1_AR1[13:0] + tr1_AR1[23:16];
-                                    8'h7D : tr1_AR1[13:0] <= tr1_AR1[13:0] - tr1_AR1[31:24];
-                                    8'h7A : tr1_AR2[13:0] <= tr1_AR2[13:0] + tr1_AR2[23:16];
-                                    8'h7E : tr1_AR2[13:0] <= tr1_AR2[13:0] - tr1_AR2[31:24];
-                                    8'h7B : tr1_AR3[13:0] <= tr1_AR3[13:0] + tr1_AR3[23:16];
-                                    8'h7F : tr1_AR3[13:0] <= tr1_AR3[13:0] - tr1_AR3[31:24];
-                           endcase
-                       end    
-               2'b10 : begin
-                           casex (OPdest_q2)
-                                    8'h78 : tr2_AR0[13:0] <= tr2_AR0[13:0] + tr2_AR0[23:16];
-                                    8'h7C : tr2_AR0[13:0] <= tr2_AR0[13:0] - tr2_AR0[31:24];
-                                    8'h79 : tr2_AR1[13:0] <= tr2_AR1[13:0] + tr2_AR1[23:16];
-                                    8'h7D : tr2_AR1[13:0] <= tr2_AR1[13:0] - tr2_AR1[31:24];
-                                    8'h7A : tr2_AR2[13:0] <= tr2_AR2[13:0] + tr2_AR2[23:16];
-                                    8'h7E : tr2_AR2[13:0] <= tr2_AR2[13:0] - tr2_AR2[31:24];
-                                    8'h7B : tr2_AR3[13:0] <= tr2_AR3[13:0] + tr2_AR3[23:16];
-                                    8'h7F : tr2_AR3[13:0] <= tr2_AR3[13:0] - tr2_AR3[31:24];
-                           endcase
-                       end
-               2'b11 : begin
-                           casex (OPdest_q2)
-                                    8'h78 : tr3_AR0[13:0] <= tr3_AR0[13:0] + tr3_AR0[23:16];
-                                    8'h7C : tr3_AR0[13:0] <= tr3_AR0[13:0] - tr3_AR0[31:24];
-                                    8'h79 : tr3_AR1[13:0] <= tr3_AR1[13:0] + tr3_AR1[23:16];
-                                    8'h7D : tr3_AR1[13:0] <= tr3_AR1[13:0] - tr3_AR1[31:24];
-                                    8'h7A : tr3_AR2[13:0] <= tr3_AR2[13:0] + tr3_AR2[23:16];
-                                    8'h7E : tr3_AR2[13:0] <= tr3_AR2[13:0] - tr3_AR2[31:24];
-                                    8'h7B : tr3_AR3[13:0] <= tr3_AR3[13:0] + tr3_AR3[23:16];
-                                    8'h7F : tr3_AR3[13:0] <= tr3_AR3[13:0] - tr3_AR3[31:24];
-                           endcase
-                       end 
+                2'b00 :casex (OPdest)   //only [12:0] written during immediate write to ARn
+                          8'h70 : tr0_AR0[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
+                          8'h71 : tr0_AR1[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
+                          8'h72 : tr0_AR2[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
+                          8'h73 : tr0_AR3[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]};
+                       endcase
+                2'b01 : casex (OPdest)  //only [12:0] written during immediate write to ARn
+                           8'h70 : tr1_AR0[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
+                           8'h71 : tr1_AR1[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
+                           8'h72 : tr1_AR2[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
+                           8'h73 : tr1_AR3[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]};
+                        endcase
+                2'b10 : casex (OPdest)   //only [12:0] written during immediate write to ARn
+                           8'h70 : tr2_AR0[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
+                           8'h71 : tr2_AR1[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
+                           8'h72 : tr2_AR2[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
+                           8'h73 : tr2_AR3[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]};
+                        endcase
+                2'b11 : casex (OPdest)  //only [12:0] written during immediate write to ARn
+                           8'h70 : tr3_AR0[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
+                           8'h71 : tr3_AR1[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
+                           8'h72 : tr3_AR2[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
+                           8'h73 : tr3_AR3[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]};
+                        endcase
             endcase
-         end                         
+        else if (wrcycl && ~RPT_not_z)
+            casex (thread_q2)  //direct, indirect, or table-read loads of ARn occur during usual write (state2) 
+                2'b00 : casex (OPdest_q2)
+                           8'h70 : tr0_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR0[23:16]), 2'b00, resultout[13:0]}; //direct write to ARn during q2 has priority over any update
+                           8'h71 : tr0_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR1[23:16]), 2'b00, resultout[13:0]}; 
+                           8'h72 : tr0_AR2 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR2[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR2[23:16]), 2'b00, resultout[13:0]}; 
+                           8'h73 : tr0_AR3 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR3[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR3[23:16]), 2'b00, resultout[13:0]};
+                        endcase
+                2'b01 : casex (OPdest_q2)
+                           8'h70 : tr1_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr1_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr1_AR0[23:16]), 2'b00, resultout[13:0]}; //direct write to ARn during q2 has priority over any update
+                           8'h71 : tr1_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr1_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr1_AR1[23:16]), 2'b00, resultout[13:0]}; 
+                           8'h72 : tr1_AR2 <= {(|resultout[31:24] ? resultout[31:24] : tr1_AR2[31:24]), (|resultout[23:16] ? resultout[23:16] : tr1_AR2[23:16]), 2'b00, resultout[13:0]}; 
+                           8'h73 : tr1_AR3 <= {(|resultout[31:24] ? resultout[31:24] : tr1_AR3[31:24]), (|resultout[23:16] ? resultout[23:16] : tr1_AR3[23:16]), 2'b00, resultout[13:0]};
+                        endcase
+                2'b10 : casex (OPdest_q2)
+                           8'h70 : tr2_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr2_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr2_AR0[23:16]), 2'b00, resultout[13:0]}; //direct write to ARn during q2 has priority over any update
+                           8'h71 : tr2_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr2_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr2_AR1[23:16]), 2'b00, resultout[13:0]}; 
+                           8'h72 : tr2_AR2 <= {(|resultout[31:24] ? resultout[31:24] : tr2_AR2[31:24]), (|resultout[23:16] ? resultout[23:16] : tr2_AR2[23:16]), 2'b00, resultout[13:0]}; 
+                           8'h73 : tr2_AR3 <= {(|resultout[31:24] ? resultout[31:24] : tr2_AR3[31:24]), (|resultout[23:16] ? resultout[23:16] : tr2_AR3[23:16]), 2'b00, resultout[13:0]};
+                        endcase
+                2'b11 : casex (OPdest_q2)
+                           8'h70 : tr3_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr3_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr3_AR0[23:16]), 2'b00, resultout[13:0]}; //direct write to ARn during q2 has priority over any update
+                           8'h71 : tr3_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr3_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr3_AR1[23:16]), 2'b00, resultout[13:0]}; 
+                           8'h72 : tr3_AR2 <= {(|resultout[31:24] ? resultout[31:24] : tr3_AR2[31:24]), (|resultout[23:16] ? resultout[23:16] : tr3_AR2[23:16]), 2'b00, resultout[13:0]}; 
+                           8'h73 : tr3_AR3 <= {(|resultout[31:24] ? resultout[31:24] : tr3_AR3[31:24]), (|resultout[23:16] ? resultout[23:16] : tr3_AR3[23:16]), 2'b00, resultout[13:0]};
+                        endcase
+            endcase   
+
+        if ( ~constn[1])      //ARn auto-post-increment/decrement of indirect srcA address ARn occurs during instruction fetch (state0)           
+        casex (newthreadq)
+            2'b00 : if (~((thread_q2==2'b00) && discont))
+                        casex (OPsrcA)
+                            8'h78 : tr0_AR0[13:0] <= tr0_AR0[13:0] + tr0_AR0[23:16];
+                            8'h7C : tr0_AR0[13:0] <= tr0_AR0[13:0] - tr0_AR0[31:24];
+                            8'h79 : tr0_AR1[13:0] <= tr0_AR1[13:0] + tr0_AR1[23:16];
+                            8'h7D : tr0_AR1[13:0] <= tr0_AR1[13:0] - tr0_AR1[31:24];
+                            8'h7A : tr0_AR2[13:0] <= tr0_AR2[13:0] + tr0_AR2[23:16];
+                            8'h7E : tr0_AR2[13:0] <= tr0_AR2[13:0] - tr0_AR2[31:24];
+                            8'h7B : tr0_AR3[13:0] <= tr0_AR3[13:0] + tr0_AR3[23:16];
+                            8'h7F : tr0_AR3[13:0] <= tr0_AR3[13:0] - tr0_AR3[31:24];
+                        endcase 
+            2'b01 : if (~((thread_q2==2'b01) && discont))
+                        casex (OPsrcA)
+                            8'h78 : tr1_AR0[13:0] <= tr1_AR0[13:0] + tr1_AR0[23:16];
+                            8'h7C : tr1_AR0[13:0] <= tr1_AR0[13:0] - tr1_AR0[31:24];
+                            8'h79 : tr1_AR1[13:0] <= tr1_AR1[13:0] + tr1_AR1[23:16];
+                            8'h7D : tr1_AR1[13:0] <= tr1_AR1[13:0] - tr1_AR1[31:24];
+                            8'h7A : tr1_AR2[13:0] <= tr1_AR2[13:0] + tr1_AR2[23:16];
+                            8'h7E : tr1_AR2[13:0] <= tr1_AR2[13:0] - tr1_AR2[31:24];
+                            8'h7B : tr1_AR3[13:0] <= tr1_AR3[13:0] + tr1_AR3[23:16];
+                            8'h7F : tr1_AR3[13:0] <= tr1_AR3[13:0] - tr1_AR3[31:24];
+                        endcase    
+            2'b10 : if (~((thread_q2==2'b10) && discont))
+                        casex (OPsrcA)
+                            8'h78 : tr2_AR0[13:0] <= tr2_AR0[13:0] + tr2_AR0[23:16];
+                            8'h7C : tr2_AR0[13:0] <= tr2_AR0[13:0] - tr2_AR0[31:24];
+                            8'h79 : tr2_AR1[13:0] <= tr2_AR1[13:0] + tr2_AR1[23:16];
+                            8'h7D : tr2_AR1[13:0] <= tr2_AR1[13:0] - tr2_AR1[31:24];
+                            8'h7A : tr2_AR2[13:0] <= tr2_AR2[13:0] + tr2_AR2[23:16];
+                            8'h7E : tr2_AR2[13:0] <= tr2_AR2[13:0] - tr2_AR2[31:24];
+                            8'h7B : tr2_AR3[13:0] <= tr2_AR3[13:0] + tr2_AR3[23:16];
+                            8'h7F : tr2_AR3[13:0] <= tr2_AR3[13:0] - tr2_AR3[31:24];
+                        endcase    
+            2'b11 : if (~((thread_q2==2'b11) && discont))
+                        casex (OPsrcA)
+                            8'h78 : tr3_AR0[13:0] <= tr3_AR0[13:0] + tr3_AR0[23:16];
+                            8'h7C : tr3_AR0[13:0] <= tr3_AR0[13:0] - tr3_AR0[31:24];
+                            8'h79 : tr3_AR1[13:0] <= tr3_AR1[13:0] + tr3_AR1[23:16];
+                            8'h7D : tr3_AR1[13:0] <= tr3_AR1[13:0] - tr3_AR1[31:24];
+                            8'h7A : tr3_AR2[13:0] <= tr3_AR2[13:0] + tr3_AR2[23:16];
+                            8'h7E : tr3_AR2[13:0] <= tr3_AR2[13:0] - tr3_AR2[31:24];
+                            8'h7B : tr3_AR3[13:0] <= tr3_AR3[13:0] + tr3_AR3[23:16];
+                            8'h7F : tr3_AR3[13:0] <= tr3_AR3[13:0] - tr3_AR3[31:24];
+                        endcase    
+        endcase 
+            
+        if (~constn[0])     //ARn auto-post-increment/decrement of indirect srcB address ARn occurs during instruction fetch (state0)
+        casex (newthreadq)
+            2'b00 : if (~((thread_q2==2'b00) && discont))
+                        casex (OPsrcB)
+                           8'h78 : tr0_AR0[13:0] <= tr0_AR0[13:0] + tr0_AR0[23:16];
+                           8'h7C : tr0_AR0[13:0] <= tr0_AR0[13:0] - tr0_AR0[31:24];
+                           8'h79 : tr0_AR1[13:0] <= tr0_AR1[13:0] + tr0_AR1[23:16];
+                           8'h7D : tr0_AR1[13:0] <= tr0_AR1[13:0] - tr0_AR1[31:24];
+                           8'h7A : tr0_AR2[13:0] <= tr0_AR2[13:0] + tr0_AR2[23:16];
+                           8'h7E : tr0_AR2[13:0] <= tr0_AR2[13:0] - tr0_AR2[31:24];
+                           8'h7B : tr0_AR3[13:0] <= tr0_AR3[13:0] + tr0_AR3[23:16];
+                           8'h7F : tr0_AR3[13:0] <= tr0_AR3[13:0] - tr0_AR3[31:24];
+                        endcase 
+            2'b01 : if (~((thread_q2==2'b01) && discont))
+                        casex (OPsrcB)
+                           8'h78 : tr1_AR0[13:0] <= tr1_AR0[13:0] + tr1_AR0[23:16];
+                           8'h7C : tr1_AR0[13:0] <= tr1_AR0[13:0] - tr1_AR0[31:24];
+                           8'h79 : tr1_AR1[13:0] <= tr1_AR1[13:0] + tr1_AR1[23:16];
+                           8'h7D : tr1_AR1[13:0] <= tr1_AR1[13:0] - tr1_AR1[31:24];
+                           8'h7A : tr1_AR2[13:0] <= tr1_AR2[13:0] + tr1_AR2[23:16];
+                           8'h7E : tr1_AR2[13:0] <= tr1_AR2[13:0] - tr1_AR2[31:24];
+                           8'h7B : tr1_AR3[13:0] <= tr1_AR3[13:0] + tr1_AR3[23:16];
+                           8'h7F : tr1_AR3[13:0] <= tr1_AR3[13:0] - tr1_AR3[31:24];
+                        endcase    
+            2'b10 : if (~((thread_q2==2'b10) && discont))
+                        casex (OPsrcB)
+                           8'h78 : tr2_AR0[13:0] <= tr2_AR0[13:0] + tr2_AR0[23:16];
+                           8'h7C : tr2_AR0[13:0] <= tr2_AR0[13:0] - tr2_AR0[31:24];
+                           8'h79 : tr2_AR1[13:0] <= tr2_AR1[13:0] + tr2_AR1[23:16];
+                           8'h7D : tr2_AR1[13:0] <= tr2_AR1[13:0] - tr2_AR1[31:24];
+                           8'h7A : tr2_AR2[13:0] <= tr2_AR2[13:0] + tr2_AR2[23:16];
+                           8'h7E : tr2_AR2[13:0] <= tr2_AR2[13:0] - tr2_AR2[31:24];
+                           8'h7B : tr2_AR3[13:0] <= tr2_AR3[13:0] + tr2_AR3[23:16];
+                           8'h7F : tr2_AR3[13:0] <= tr2_AR3[13:0] - tr2_AR3[31:24];
+                        endcase    
+            2'b11 : if (~((thread_q2==2'b11) && discont))
+                        casex (OPsrcB)
+                           8'h78 : tr3_AR0[13:0] <= tr3_AR0[13:0] + tr3_AR0[23:16];
+                           8'h7C : tr3_AR0[13:0] <= tr3_AR0[13:0] - tr3_AR0[31:24];
+                           8'h79 : tr3_AR1[13:0] <= tr3_AR1[13:0] + tr3_AR1[23:16];
+                           8'h7D : tr3_AR1[13:0] <= tr3_AR1[13:0] - tr3_AR1[31:24];
+                           8'h7A : tr3_AR2[13:0] <= tr3_AR2[13:0] + tr3_AR2[23:16];
+                           8'h7E : tr3_AR2[13:0] <= tr3_AR2[13:0] - tr3_AR2[31:24];
+                           8'h7B : tr3_AR3[13:0] <= tr3_AR3[13:0] + tr3_AR3[23:16];
+                           8'h7F : tr3_AR3[13:0] <= tr3_AR3[13:0] - tr3_AR3[31:24];
+                        endcase    
+        endcase            
+          
+        if (wrcycl) 
+        casex (thread_q2)        //ARn auto-post-increment/decrement of indirect destination address ARn occurs during usual write (state2)
+           2'b00 : casex (OPdest_q2)
+                      8'h78 : tr0_AR0[13:0] <= tr0_AR0[13:0] + tr0_AR0[23:16];
+                      8'h7C : tr0_AR0[13:0] <= tr0_AR0[13:0] - tr0_AR0[31:24];
+                      8'h79 : tr0_AR1[13:0] <= tr0_AR1[13:0] + tr0_AR1[23:16];
+                      8'h7D : tr0_AR1[13:0] <= tr0_AR1[13:0] - tr0_AR1[31:24];
+                      8'h7A : tr0_AR2[13:0] <= tr0_AR2[13:0] + tr0_AR2[23:16];
+                      8'h7E : tr0_AR2[13:0] <= tr0_AR2[13:0] - tr0_AR2[31:24];
+                      8'h7B : tr0_AR3[13:0] <= tr0_AR3[13:0] + tr0_AR3[23:16];
+                      8'h7F : tr0_AR3[13:0] <= tr0_AR3[13:0] - tr0_AR3[31:24];
+                   endcase
+           2'b01 : casex (OPdest_q2)
+                      8'h78 : tr1_AR0[13:0] <= tr1_AR0[13:0] + tr1_AR0[23:16];
+                      8'h7C : tr1_AR0[13:0] <= tr1_AR0[13:0] - tr1_AR0[31:24];
+                      8'h79 : tr1_AR1[13:0] <= tr1_AR1[13:0] + tr1_AR1[23:16];
+                      8'h7D : tr1_AR1[13:0] <= tr1_AR1[13:0] - tr1_AR1[31:24];
+                      8'h7A : tr1_AR2[13:0] <= tr1_AR2[13:0] + tr1_AR2[23:16];
+                      8'h7E : tr1_AR2[13:0] <= tr1_AR2[13:0] - tr1_AR2[31:24];
+                      8'h7B : tr1_AR3[13:0] <= tr1_AR3[13:0] + tr1_AR3[23:16];
+                      8'h7F : tr1_AR3[13:0] <= tr1_AR3[13:0] - tr1_AR3[31:24];
+                       endcase
+           2'b10 : casex (OPdest_q2)
+                      8'h78 : tr2_AR0[13:0] <= tr2_AR0[13:0] + tr2_AR0[23:16];
+                      8'h7C : tr2_AR0[13:0] <= tr2_AR0[13:0] - tr2_AR0[31:24];
+                      8'h79 : tr2_AR1[13:0] <= tr2_AR1[13:0] + tr2_AR1[23:16];
+                      8'h7D : tr2_AR1[13:0] <= tr2_AR1[13:0] - tr2_AR1[31:24];
+                      8'h7A : tr2_AR2[13:0] <= tr2_AR2[13:0] + tr2_AR2[23:16];
+                      8'h7E : tr2_AR2[13:0] <= tr2_AR2[13:0] - tr2_AR2[31:24];
+                      8'h7B : tr2_AR3[13:0] <= tr2_AR3[13:0] + tr2_AR3[23:16];
+                      8'h7F : tr2_AR3[13:0] <= tr2_AR3[13:0] - tr2_AR3[31:24];
+                       endcase
+           2'b11 : casex (OPdest_q2)
+                      8'h78 : tr3_AR0[13:0] <= tr3_AR0[13:0] + tr3_AR0[23:16];
+                      8'h7C : tr3_AR0[13:0] <= tr3_AR0[13:0] - tr3_AR0[31:24];
+                      8'h79 : tr3_AR1[13:0] <= tr3_AR1[13:0] + tr3_AR1[23:16];
+                      8'h7D : tr3_AR1[13:0] <= tr3_AR1[13:0] - tr3_AR1[31:24];
+                      8'h7A : tr3_AR2[13:0] <= tr3_AR2[13:0] + tr3_AR2[23:16];
+                      8'h7E : tr3_AR2[13:0] <= tr3_AR2[13:0] - tr3_AR2[31:24];
+                      8'h7B : tr3_AR3[13:0] <= tr3_AR3[13:0] + tr3_AR3[23:16];
+                      8'h7F : tr3_AR3[13:0] <= tr3_AR3[13:0] - tr3_AR3[31:24];
+                   endcase
+        endcase                        
     end           
 end
                                                       

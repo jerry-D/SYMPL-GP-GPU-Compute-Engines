@@ -2,16 +2,16 @@
  `timescale 1ns/100ps
  // For use with SYMPL FP324-AXI4 multi-thread multi-processing core only
  // Author:  Jerry D. Harthcock
- // Version:  1.002 August 25, 2015
+ // Version:  1.03 August 27, 2015
  // July 7, 2015
  // Copyright (C) 2015.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
 // Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
 // non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
 // products and related development tools only.                                                                  //
@@ -60,9 +60,7 @@ module shader #(parameter PKT_RAM_ADDRS_WIDTH = 8, IRB_RAM_ADDRS_WIDTH = 10)
     tr2_done,
     tr1_done,
     tr0_done,
-    ROM_BASE,
-    RAM_BASE,
-    IRB_BASE
+    BASE
     );
     
 input CLK;
@@ -77,9 +75,7 @@ output tr3_done;
 output tr2_done;
 output tr1_done;
 output tr0_done;
-input [31:14] ROM_BASE;
-input [31:17] RAM_BASE;
-input [31:14] IRB_BASE;
+input [31:17] BASE;
 
 reg [31:0] rddataA;
 reg [31:0] rddataB;
@@ -159,7 +155,6 @@ wire [11:0] PC;
 wire [11:0] pre_PC;
 wire [31:0] P_DATAi;
 wire [31:0] ROM_4k_rddataA;
-wire [1:0] const;
 
 wire ram_wr_sel;
 wire ram_rd_sel;
@@ -179,28 +174,24 @@ wire tr0_done;
 
 wire [4:0] dma_rddataB_sel;
 
-
-
-assign dma_rddataB_sel = {(dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b00)),
-                          (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b01)),
-                          (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b10)),
-                          (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b11)),
-                          (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b00))};
+assign dma_rddataB_sel = {(dma_rde & irb_rd_sel),
+                          (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b11)),
+                          (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b10)),
+                          (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b01)),
+                          (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b00))};
 
 assign tr3_IRQ = 1'b0;
 assign tr2_IRQ = 1'b0;
 assign tr1_IRQ = 1'b0;
 assign tr0_IRQ = 1'b0;
 
-assign const = P_DATAi[29:28];
-
-assign ram_wr_sel = (dma_wraddrs[31:17]==RAM_BASE);
-assign ram_rd_sel = (dma_rdaddrs[31:17]==RAM_BASE);
-assign rom_wr_sel = (dma_wraddrs[31:14]==ROM_BASE) | (dma_wraddrs[31:16]=={ROM_BASE[31:17], 1'b1}); 
+assign ram_wr_sel = (dma_wraddrs[31:15]=={BASE, 2'b00});
+assign ram_rd_sel = (dma_rdaddrs[31:15]=={BASE, 2'b00});
    
-assign irb_wr_sel = (dma_wraddrs[31:14]==IRB_BASE);
-assign irb_rd_sel = (dma_rdaddrs[31:14]==IRB_BASE);
+assign irb_wr_sel = (dma_wraddrs[31:15]=={BASE, 2'b01});
+assign irb_rd_sel = (dma_rdaddrs[31:15]=={BASE, 2'b01});
 
+assign rom_wr_sel = (dma_wraddrs[31:15]=={BASE, 2'b10}); 
 
 assign rdeA_tr3 = rdenA & (thread_q0 == 2'b11) & (srcA[13:11]==3'b001);
 assign rdeA_tr2 = rdenA & (thread_q0 == 2'b10) & (srcA[13:11]==3'b001);
@@ -212,41 +203,40 @@ assign rdeA_irb = rdenA & (srcA[13:11]==3'b100);    //global intermediat result 
 assign rddataA_sel = {rdeA_irb, rdeA_tr3, rdeA_tr2, rdeA_tr1, rdeA_tr0};
 assign rddataB_sel = {muxd_slave_rdeB_irb, muxd_slave_rdeB_tr3, muxd_slave_rdeB_tr2, muxd_slave_rdeB_tr1, muxd_slave_rdeB_tr0};
 
-assign muxd_slave_wre_tr3 = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b11)) ? 1'b1 : (thread_q2 == 2'b11) & wren & (dest_q2[13:11]==3'b001);
-assign muxd_slave_wre_tr2 = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b10)) ? 1'b1 : (thread_q2 == 2'b10) & wren & (dest_q2[13:11]==3'b001);
-assign muxd_slave_wre_tr1 = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b01)) ? 1'b1 : (thread_q2 == 2'b01) & wren & (dest_q2[13:11]==3'b001);
-assign muxd_slave_wre_tr0 = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 1'b1 : (thread_q2 == 2'b00) & wren & (dest_q2[13:11]==3'b001);
+assign muxd_slave_wre_tr3 = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b11)) ? 1'b1 : (thread_q2 == 2'b11) & wren & (dest_q2[13:11]==3'b001);
+assign muxd_slave_wre_tr2 = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b10)) ? 1'b1 : (thread_q2 == 2'b10) & wren & (dest_q2[13:11]==3'b001);
+assign muxd_slave_wre_tr1 = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b01)) ? 1'b1 : (thread_q2 == 2'b01) & wren & (dest_q2[13:11]==3'b001);
+assign muxd_slave_wre_tr0 = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b00)) ? 1'b1 : (thread_q2 == 2'b00) & wren & (dest_q2[13:11]==3'b001);
 
-assign muxd_slave_wre_irb = (dma_wre & irb_wr_sel & (dma_wraddrs[16:14]==IRB_BASE[16:14])) ? 1'b1 : wren & (dest_q2[13:11]==3'b100);
+assign muxd_slave_wre_irb = (dma_wre & irb_wr_sel) ? 1'b1 : wren & (dest_q2[13:11]==3'b100);
 
-assign muxd_slave_wraddrs_tr3[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b11)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
-assign muxd_slave_wraddrs_tr2[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b10)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
-assign muxd_slave_wraddrs_tr1[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b01)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
-assign muxd_slave_wraddrs_tr0[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
+assign muxd_slave_wraddrs_tr3[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b11)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
+assign muxd_slave_wraddrs_tr2[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b10)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
+assign muxd_slave_wraddrs_tr1[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b01)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
+assign muxd_slave_wraddrs_tr0[12:0] = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b00)) ? dma_wraddrs[14:2] : dest_q2[12:0];    
 
-assign muxd_slave_wraddrs_irb[12:0] = (dma_wre & irb_wr_sel & (dma_wraddrs[16:14]==IRB_BASE[16:14])) ? dma_wraddrs[14:2] : dest_q2[12:0];    
+assign muxd_slave_wraddrs_irb[12:0] = (dma_wre & irb_wr_sel) ? dma_wraddrs[14:2] : dest_q2[12:0];    
 
-assign muxd_slave_rdaddrs_tr3[12:0] = (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b11)) ? dma_rdaddrs[14:2] : srcB[12:0]; 
-assign muxd_slave_rdaddrs_tr2[12:0] = (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b10)) ? dma_rdaddrs[14:2] : srcB[12:0]; 
-assign muxd_slave_rdaddrs_tr1[12:0] = (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b01)) ? dma_rdaddrs[14:2] : srcB[12:0]; 
-assign muxd_slave_rdaddrs_tr0[12:0] = (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b00)) ? dma_rdaddrs[14:2] : srcB[12:0]; 
+assign muxd_slave_rdaddrs_tr3[12:0] = (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b11)) ? dma_rdaddrs[14:2] : srcB[12:0]; 
+assign muxd_slave_rdaddrs_tr2[12:0] = (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b10)) ? dma_rdaddrs[14:2] : srcB[12:0]; 
+assign muxd_slave_rdaddrs_tr1[12:0] = (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b01)) ? dma_rdaddrs[14:2] : srcB[12:0]; 
+assign muxd_slave_rdaddrs_tr0[12:0] = (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b00)) ? dma_rdaddrs[14:2] : srcB[12:0]; 
 
-assign muxd_slave_rdaddrs_irb[12:0] = (dma_rde & irb_rd_sel & (dma_rdaddrs[16:14]==IRB_BASE[16:14])) ? dma_rdaddrs[14:2] : srcB[12:0]; 
+assign muxd_slave_rdaddrs_irb[12:0] = (dma_rde & irb_rd_sel) ? dma_rdaddrs[14:2] : srcB[12:0]; 
 
-assign muxd_slave_wrdata_tr3[31:0]  = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b11)) ? dma_wrdata[31:0] : wrdata[31:0];
-assign muxd_slave_wrdata_tr2[31:0]  = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b10)) ? dma_wrdata[31:0] : wrdata[31:0];
-assign muxd_slave_wrdata_tr1[31:0]  = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b01)) ? dma_wrdata[31:0] : wrdata[31:0];
-assign muxd_slave_wrdata_tr0[31:0]  = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? dma_wrdata[31:0] : wrdata[31:0];
+assign muxd_slave_wrdata_tr3[31:0]  = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b11)) ? dma_wrdata[31:0] : wrdata[31:0];
+assign muxd_slave_wrdata_tr2[31:0]  = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b10)) ? dma_wrdata[31:0] : wrdata[31:0];
+assign muxd_slave_wrdata_tr1[31:0]  = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b01)) ? dma_wrdata[31:0] : wrdata[31:0];
+assign muxd_slave_wrdata_tr0[31:0]  = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b00)) ? dma_wrdata[31:0] : wrdata[31:0];
 
-assign muxd_slave_wrdata_irb[31:0]  = (dma_wre & irb_wr_sel & (dma_wraddrs[16:14]==IRB_BASE[16:14])) ? dma_wrdata[31:0] : wrdata[31:0];
+assign muxd_slave_wrdata_irb[31:0]  = (dma_wre & irb_wr_sel) ? dma_wrdata[31:0] : wrdata[31:0];
 
-assign muxd_slave_rdeB_tr3 = (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b11)) ? 1'b1 : (thread_q0 == 2'b11) & rdenB & (srcB[13:11]==3'b001);
-assign muxd_slave_rdeB_tr2 = (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b10)) ? 1'b1 : (thread_q0 == 2'b10) & rdenB & (srcB[13:11]==3'b001);
-assign muxd_slave_rdeB_tr1 = (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b01)) ? 1'b1 : (thread_q0 == 2'b01) & rdenB & (srcB[13:11]==3'b001);
-assign muxd_slave_rdeB_tr0 = (dma_rde & ram_rd_sel & (dma_rdaddrs[16:15]==2'b00)) ? 1'b1 : (thread_q0 == 2'b00) & rdenB & (srcB[13:11]==3'b001);
+assign muxd_slave_rdeB_tr3 = (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b11)) ? 1'b1 : (thread_q0 == 2'b11) & rdenB & (srcB[13:11]==3'b001);
+assign muxd_slave_rdeB_tr2 = (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b10)) ? 1'b1 : (thread_q0 == 2'b10) & rdenB & (srcB[13:11]==3'b001);
+assign muxd_slave_rdeB_tr1 = (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b01)) ? 1'b1 : (thread_q0 == 2'b01) & rdenB & (srcB[13:11]==3'b001);
+assign muxd_slave_rdeB_tr0 = (dma_rde & ram_rd_sel & (dma_rdaddrs[14:13]==2'b00)) ? 1'b1 : (thread_q0 == 2'b00) & rdenB & (srcB[13:11]==3'b001);
 
-assign muxd_slave_rdeB_irb = (dma_rde & irb_rd_sel & (dma_rdaddrs[16:14]==IRB_BASE[16:14])) ? 1'b1 : rdenB & (srcB[13:11]==3'b100);
-
+assign muxd_slave_rdeB_irb = (dma_rde & irb_rd_sel) ? 1'b1 : rdenB & (srcB[13:11]==3'b100);
 
 core core(
     .PC                  (PC             ),   
@@ -370,35 +360,35 @@ always @(posedge CLK or posedge RESET) begin
     end
     else begin
         rddataA_sel_q <= rddataA_sel;
-        rddataB_sel_q <= rddataA_sel;
+        rddataB_sel_q <= rddataB_sel;
         dma_rddataB_sel_q <= dma_rddataB_sel;
     end
 end            
 
 // read muxes for Shader reads off A-side        
-// if DMA is writing while Shader is reading, then the Shader will read all 0s
+// if DMA is writing while Shader is reading semaphore, then the Shader will read all 0s
 // Shader threads must always read semaphore of the A-side only, because DMA uses B-side to read/dump memory
 always @(*) begin
     casex (rddataA_sel_q)
-        5'bxxxx1 : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 32'h0000_0000 : rddataA_tr0;
-        5'bxxx1x : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b01)) ? 32'h0000_0000 : rddataA_tr1;
-        5'bxx1xx : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b10)) ? 32'h0000_0000 : rddataA_tr2;
-        5'bx1xxx : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b11)) ? 32'h0000_0000 : rddataA_tr3;
-        5'b1xxxx : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 32'h0000_0000 : rddataA_irb;
+        5'bxxxx1 : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b00)) ? 32'h0000_0000 : rddataA_tr0;
+        5'bxxx1x : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b01)) ? 32'h0000_0000 : rddataA_tr1;
+        5'bxx1xx : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b10)) ? 32'h0000_0000 : rddataA_tr2;
+        5'bx1xxx : rddataA = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b11)) ? 32'h0000_0000 : rddataA_tr3;
+        5'b1xxxx : rddataA = (dma_wre & irb_wr_sel) ? 32'h0000_0000 : rddataA_irb;
         default : rddataA = 32'h0000_0000;
     endcase
 end         
 
 // read muxes for Shader reads off B-side 
-// if DMA is writing while Shader is reading, then the Shader will read all 0s
+// if DMA is writing while Shader is reading semaphore, then the Shader will read all 0s
 // Shader threads must always read semaphore of the A-side only, because DMA uses B-side to read/dump memory
 always @(*) begin
     casex (rddataB_sel_q)
-        5'bxxxx1 : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 32'h0000_0000 : rddataB_tr0;
-        5'bxxx1x : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b01)) ? 32'h0000_0000 : rddataB_tr1;
-        5'bxx1xx : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b10)) ? 32'h0000_0000 : rddataB_tr2;
-        5'bx1xxx : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b11)) ? 32'h0000_0000 : rddataB_tr3;
-        5'b1xxxx : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[16:15]==2'b00)) ? 32'h0000_0000 : rddataB_irb;
+        5'bxxxx1 : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b00)) ? 32'h0000_0000 : rddataB_tr0;
+        5'bxxx1x : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b01)) ? 32'h0000_0000 : rddataB_tr1;
+        5'bxx1xx : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b10)) ? 32'h0000_0000 : rddataB_tr2;
+        5'bx1xxx : rddataB = (dma_wre & ram_wr_sel & (dma_wraddrs[14:13]==2'b11)) ? 32'h0000_0000 : rddataB_tr3;
+        5'b1xxxx : rddataB = (dma_wre & irb_wr_sel) ? 32'h0000_0000 : rddataB_irb;
          default : rddataB = 32'h0000_0000;
     endcase
 end  

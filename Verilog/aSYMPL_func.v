@@ -1,14 +1,14 @@
  `timescale 1ns/100ps
-// aSYMPL Floating-Point Math Block 
-// Version 2.00 August 15, 2015.
+// aSYMPL Floating-Point Math Block for use with SYMPL FP32X multi-thread RISC cores only
+// Version 2.01 August 27, 2015.
 // Copyright (C) 2014-2015 by Jerry D. Harthcock.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
 // Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
 // non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
 // products and related development tools only.                                                                  //
@@ -313,8 +313,8 @@ always @(posedge CLK or posedge RESET) begin
         fwrsrcBdata <= 32'h00000000;
     end
     else if (&constn_q1 && (opcode_q1==MOV_)) begin        // MOV immediate
-            fwrsrcAdata <= {16'h0000, OPsrcA_q1, OPsrcB_q1};
-            fwrsrcBdata <= rdSrcBdata; 
+        fwrsrcAdata <= {16'h0000, OPsrcA_q1, OPsrcB_q1};
+        fwrsrcBdata <= rdSrcBdata; 
     end        
     else begin     // any combination of direct or indirect
         fwrsrcAdata <= rdSrcAdata;             
@@ -375,8 +375,8 @@ always @(*)
                       end  
         endcase 
         else begin
-                rddataA_out = 34'h0_0000_0000;
-                readyA = rdenB_q1;
+           rddataA_out = 34'h0_0000_0000;
+           readyA = rdenB_q1;
         end
                       
 always @(*) 
@@ -416,8 +416,8 @@ always @(*)
                       end  
         endcase 
     else begin
-            rddataB_out = 34'h0_0000_0000;
-            readyB = rdenA_q1;
+       rddataB_out = 34'h0_0000_0000;
+       readyB = rdenA_q1;
     end
 
 always @(*) begin

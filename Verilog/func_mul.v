@@ -1,20 +1,20 @@
  `timescale 1ns/100ps
 // wrapper for FP multiplier 
-// For use in SYMPL FP324-AXI4 multi-thread multi-processing coreonly
+// For use in SYMPL FP32X-AXI4 multi-thread RISC core only
 // Author:  Jerry D. Harthcock
-// Version:  2.00
+// Version:  2.01  August 27, 2015
 // August 15, 2015
 // Copyright (C) 2014-2015.  All rights reserved without prejudice.
 //
-// latency for FMUL is 4 clocks
+// latency for FMUL is 2 clocks
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
 // Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
 // non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
 // products and related development tools only.                                                                  //
@@ -182,7 +182,7 @@ end
 always@(posedge CLK or posedge RESET) begin
     if (RESET) begin
         delay0 <= 7'h00;
- //       delay1 <= 7'h00;
+//        delay1 <= 7'h00;
 //        delay2 <= 7'h00;
 //        delay3 <= 7'h00;
     end    

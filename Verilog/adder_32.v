@@ -1,17 +1,17 @@
  `timescale 1ns/100ps
 
-// Adder module for FP324-AXI4.  August 15, 2015
+// Adder module for FP32X-AXI4.  August 15, 2015
 // Author:  Jerry D. Harthcock
-// Version:  1.000
+// Version:  1.01  August 27, 2015
 // September 10, 2014
 // Copyright (C) 2014-2015.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                           SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor                                 //
+//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP324-AXI4 32-Bit Mult-Thread Multi-Processor //
+// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
 // Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
 // non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
 // products and related development tools only.                                                                  //
@@ -47,37 +47,37 @@
 
 module ADDER_32 (
               SUBTRACT,
-              TERM_A, 	  
-			  TERM_B, 
-			  CI, 		  // carry in
-			  ADDER_OUT,  // adder out
-			  CO, 		  // carry out
-			  HCO, 		  // half carry out (aka aux. carry)
-			  OVO,
-              ZERO);	  // overflow out
+              TERM_A,     
+              TERM_B, 
+              CI,         // carry in
+              ADDER_OUT,  // adder out
+              CO,         // carry out
+              HCO,        // half carry out (aka aux. carry)
+              OVO,
+              ZERO);      // overflow out
 
 input         SUBTRACT;
 input  [31:0] TERM_A;
 input  [31:0] TERM_B;
-input  		  CI;
+input         CI;
 output [31:0] ADDER_OUT;
-output 	      CO;
-output 		  HCO;
-output 		  OVO;
+output        CO;
+output        HCO;
+output        OVO;
 output        ZERO;
 
 wire   [31:0] ADDER_OUT;
-wire  		  CO;
-wire		  CO30;
-wire		  HCO;
-wire	      OVO;
+wire          CO;
+wire          CO30;
+wire          HCO;
+wire          OVO;
 wire          ZERO;
 wire          CIS;
 wire          HC;
 wire          C;
 
 
-wire		  MSB;
+wire          MSB;
 wire   [26:0] HI_NYBS;
 wire    [3:0] LO_NYB;
 wire   [31:0] TERM_BS;
@@ -86,10 +86,10 @@ assign        TERM_BS         = SUBTRACT ? (TERM_B ^ 32'hFFFFFFFF) : TERM_B;
 assign        CIS             = SUBTRACT ? ~CI : CI;
 assign        HCO             = SUBTRACT ? ~HC : HC;
 assign        CO              = SUBTRACT ? ~C : C;
-assign        {C, MSB} 	      = TERM_A[31]   + TERM_BS[31]   + CO30;
+assign        {C, MSB}        = TERM_A[31]   + TERM_BS[31]   + CO30;
 assign        {CO30, HI_NYBS} = TERM_A[30:4] + TERM_BS[30:4] + HC;
 assign        {HC, LO_NYB}    = TERM_A[3:0] + TERM_BS[3:0] + CIS;
-assign        ADDER_OUT 	  = {MSB, HI_NYBS, LO_NYB};
+assign        ADDER_OUT       = {MSB, HI_NYBS, LO_NYB};
 assign        ZERO            = ~|ADDER_OUT;
 assign        OVO             = C ^ CO30;
 

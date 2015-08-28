@@ -1,8 +1,8 @@
            CPU  "aSYMPL32.TBL"
            HOF  "MOT32"
            WDLN 4
-; FP324-AXI4 test1
-; version 1.01   July 30, 2015
+; FP321-AXI4 test1
+; version 1.02   August 28, 2015
 ; Author:  Jerry D. Harthcock
 ; Copyright (C) 2015.  All rights reserved without prejudice.
            

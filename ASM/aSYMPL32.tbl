@@ -1,5 +1,5 @@
 ; Cross-32 instruction table for SYMPL FP32X-AXI4 for use with SYMPL FP32X-AXI4 multi-thread RISC core only.  
-; version 2.44   August 28, 2015 
+; version 2.50   September 21, 2015 
 ; Author:  Jerry D. Harthcock
 ; Copyright (C) 2014-2015.  All rights reserved, without prejudice.
 ; A copy of Cross-32 can be purchased from
@@ -51,7 +51,7 @@
 ;Register/Flag definition section
 ;---------------------------------
 1, "LEFT", "LSL", "ASL", "ROL", "RIGHT", "LSR", "ASR", "ROR"   ;type of SHFT
-2, "Z", "C", "N", "V", "LOCKED", "DONE", "FPN", "SZ", "NML", "DML", "INF", "NaN", "EXC", "EXCIE", "IRQIE", "*$%", "@#$*", "%%@@", "@@!!", "!~#", "&^$", "#~$", "&&!!", "!!$$", "%^!", "*&^", "&%@", "%$*", "&$%", "%!#", "NEVER", "ALWAYS"
+2, "Z", "C", "N", "V", "LOCKED", "DONE", "INV", "DIVBY0", "OVFL", "UNFL", "NXACT", "ALTINV", "ALTDVBY0", "ALTOVFL", "ALTUNFL", "ALTNXACT", "DALTINV", "DALTDVBY0", "DALTOVFL", "DALTUNFL", "DALTNXACT", "IRQEN", "IRQ", "!!$$", "%^!", "*&^", "&%@", "%$*", "&$%", "ZorN", "NEVER", "ALWAYS"
 6, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"
 7, "LPCNT0", "LPCNT1", "LPCNT2", "LPCNT3"
 ;           1111111111222222222233                       
@@ -469,36 +469,37 @@ SQRT_D:     EQU     0x0DD
 SQRT_E:     EQU     0x0DE
 SQRT_F:     EQU     0x0DF
 
-LOG_0:      EQU     0x0E0
-LOG_1:      EQU     0x0E1
-LOG_2:      EQU     0x0E2
-LOG_3:      EQU     0x0E3
-LOG_4:      EQU     0x0E4
-LOG_5:      EQU     0x0E5
-LOG_6:      EQU     0x0E6
-LOG_7:      EQU     0x0E7
-LOG_8:      EQU     0x0E8
-LOG_9:      EQU     0x0E9
-LOG_A:      EQU     0x0EA
-LOG_B:      EQU     0x0EB
-LOG_C:      EQU     0x0EC
-LOG_D:      EQU     0x0ED
-LOG_E:      EQU     0x0EE
-LOG_F:      EQU     0x0EF
+FMA_0:      EQU     0x0E0
+FMA_1:      EQU     0x0E1
+FMA_2:      EQU     0x0E2
+FMA_3:      EQU     0x0E3
+FMA_4:      EQU     0x0E4
+FMA_5:      EQU     0x0E5
+FMA_6:      EQU     0x0E6
+FMA_7:      EQU     0x0E7
+FMA_8:      EQU     0x0E8
+FMA_9:      EQU     0x0E9
+FMA_A:      EQU     0x0EA
+FMA_B:      EQU     0x0EB
+FMA_C:      EQU     0x0EC
+FMA_D:      EQU     0x0ED
+FMA_E:      EQU     0x0EE
+FMA_F:      EQU     0x0EF
 
-EXP_0:      EQU     0x0F0
-EXP_1:      EQU     0x0F1
-EXP_2:      EQU     0x0F2
-EXP_3:      EQU     0x0F3
-EXP_4:      EQU     0x0F4
-EXP_5:      EQU     0x0F5
-EXP_6:      EQU     0x0F6
-EXP_7:      EQU     0x0F7
-EXP_8:      EQU     0x0F8
-EXP_9:      EQU     0x0F9
-EXP_A:      EQU     0x0FA
-EXP_B:      EQU     0x0FB
-EXP_C:      EQU     0x0FC
-EXP_D:      EQU     0x0FD
-EXP_E:      EQU     0x0FE
-EXP_F:      EQU     0x0FF
+LOG_0:      EQU     0x0F0
+LOG_1:      EQU     0x0F1
+LOG_2:      EQU     0x0F2
+LOG_3:      EQU     0x0F3
+LOG_4:      EQU     0x0F4
+LOG_5:      EQU     0x0F5
+LOG_6:      EQU     0x0F6
+LOG_7:      EQU     0x0F7
+
+EXP_0:      EQU     0x0F8
+EXP_1:      EQU     0x0F9
+EXP_2:      EQU     0x0FA
+EXP_3:      EQU     0x0FB
+EXP_4:      EQU     0x0FC
+EXP_5:      EQU     0x0FD
+EXP_6:      EQU     0x0FE
+EXP_7:      EQU     0x0FF

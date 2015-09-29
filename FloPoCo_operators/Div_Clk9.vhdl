@@ -1,12 +1,13 @@
--- ./flopoco -name=Div_Clk -frequency=200 -useHardMult=no FPDiv 8 23
+-- vagrant@vagrant-ubuntu-trusty-32:~/flopoco-3.0.beta5$ ./flopoco -name=Div_Clk -frequency=200 -useHardMult=no FPDiv 9 23
+-- Updating entity name to: Div_Clk
 -- 
 -- Final report:
 -- Entity Div_Clk
 --    Pipeline depth = 10
---
---------------------------------------------------------------------------------
---                                Div_Clk
---                                (FPDiv_8_23)
+-- Output file: flopoco.vhdl
+-- --------------------------------------------------------------------------------
+--                                  Div_Clk
+--                                (FPDiv_9_23)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors:
@@ -23,16 +24,22 @@ library work;
 
 entity Div_Clk is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(8+23+2 downto 0);
-          Y : in  std_logic_vector(8+23+2 downto 0);
-          R : out  std_logic_vector(8+23+2 downto 0)   );
+          X : in  std_logic_vector(9+23+2 downto 0);
+          Y : in  std_logic_vector(9+23+2 downto 0);
+          R : out  std_logic_vector(9+23+2 downto 0);
+--- mod by JDH Sept 21, 2015 -----          
+          sR_d9 : buffer std_logic;
+          round : buffer std_logic;
+          roundit : in std_logic    );
+-----------------------------------          
 end entity;
 
 architecture arch of Div_Clk is
 signal fX :  std_logic_vector(23 downto 0);
 signal fY, fY_d1, fY_d2, fY_d3, fY_d4, fY_d5, fY_d6, fY_d7 :  std_logic_vector(23 downto 0);
-signal expR0, expR0_d1, expR0_d2, expR0_d3, expR0_d4, expR0_d5, expR0_d6, expR0_d7, expR0_d8, expR0_d9 :  std_logic_vector(9 downto 0);
-signal sR, sR_d1, sR_d2, sR_d3, sR_d4, sR_d5, sR_d6, sR_d7, sR_d8, sR_d9, sR_d10 :  std_logic;
+signal expR0, expR0_d1, expR0_d2, expR0_d3, expR0_d4, expR0_d5, expR0_d6, expR0_d7, expR0_d8, expR0_d9 :  std_logic_vector(10 downto 0);
+--signal sR, sR_d1, sR_d2, sR_d3, sR_d4, sR_d5, sR_d6, sR_d7, sR_d8, sR_d9, sR_d10 :  std_logic;
+signal sR, sR_d1, sR_d2, sR_d3, sR_d4, sR_d5, sR_d6, sR_d7, sR_d8, sR_d10 :  std_logic;
 signal exnXY :  std_logic_vector(3 downto 0);
 signal exnR0, exnR0_d1, exnR0_d2, exnR0_d3, exnR0_d4, exnR0_d5, exnR0_d6, exnR0_d7, exnR0_d8, exnR0_d9, exnR0_d10 :  std_logic_vector(1 downto 0);
 signal fYTimes3, fYTimes3_d1, fYTimes3_d2, fYTimes3_d3, fYTimes3_d4, fYTimes3_d5, fYTimes3_d6, fYTimes3_d7 :  std_logic_vector(25 downto 0);
@@ -149,10 +156,11 @@ signal qM :  std_logic_vector(27 downto 0);
 signal fR0, fR0_d1 :  std_logic_vector(27 downto 0);
 signal fR :  std_logic_vector(26 downto 0);
 signal fRn1, fRn1_d1 :  std_logic_vector(24 downto 0);
-signal expR1, expR1_d1 :  std_logic_vector(9 downto 0);
-signal round, round_d1 :  std_logic;
-signal expfrac :  std_logic_vector(32 downto 0);
-signal expfracR :  std_logic_vector(32 downto 0);
+signal expR1, expR1_d1 :  std_logic_vector(10 downto 0);
+--signal round, round_d1 :  std_logic;
+signal round_d1 :  std_logic;
+signal expfrac :  std_logic_vector(33 downto 0);
+signal expfracR :  std_logic_vector(33 downto 0);
 signal exnR :  std_logic_vector(1 downto 0);
 signal exnRfinal :  std_logic_vector(1 downto 0);
 begin
@@ -262,16 +270,17 @@ begin
             fR0_d1 <=  fR0;
             fRn1_d1 <=  fRn1;
             expR1_d1 <=  expR1;
-            round_d1 <=  round;
+--            round_d1 <=  round;
+            round_d1 <=  roundit;    --mod by JDH Sept 21, 2015
          end if;
       end process;
    fX <= "1" & X(22 downto 0);
    fY <= "1" & Y(22 downto 0);
    -- exponent difference, sign and exception combination computed early, to have less bits to pipeline
-   expR0 <= ("00" & X(30 downto 23)) - ("00" & Y(30 downto 23));
-   sR <= X(31) xor Y(31);
+   expR0 <= ("00" & X(31 downto 23)) - ("00" & Y(31 downto 23));
+   sR <= X(32) xor Y(32);
    -- early exception handling
-   exnXY <= X(33 downto 32) & Y(33 downto 32);
+   exnXY <= X(34 downto 33) & Y(34 downto 33);
    with exnXY select
       exnR0 <=
          "01"  when "0101",                   -- normal
@@ -631,7 +640,7 @@ begin
    qM1 <=      q1_d1(2) & "0";
    qP0 <= q0(1 downto 0);
    qM0 <= q0(2)  & "0";
-   qP <= qP13 & qP12 & qP11 & qP10 & qP9 & qP8 & qP7 & qP6 & qP5 & qP4 & qP3 & qP2 &qP1 & qP0;
+   qP <= qP13 & qP12 & qP11 & qP10 & qP9 & qP8 & qP7 & qP6 & qP5 & qP4 & qP3 & qP2 & qP1 & qP0;
    qM <= qM13(0) & qM12 & qM11 & qM10 & qM9 & qM8 & qM7 & qM6 & qM5 & qM4 & qM3 & qM2 & qM1 & qM0 & "0";
    fR0 <= qP - qM;
    ----------------Synchro barrier, entering cycle 9----------------
@@ -640,18 +649,18 @@ begin
    with fR(26) select
       fRn1 <= fR(25 downto 2) & (fR(1) or fR(0)) when '1',
               fR(24 downto 0)                    when others;
-   expR1 <= expR0_d9 + ("000" & (6 downto 1 => '1') & fR(26)); -- add back bias
+   expR1 <= expR0_d9 + ("000" & (7 downto 1 => '1') & fR(26)); -- add back bias
    round <= fRn1(1) and (fRn1(2) or fRn1(0)); -- fRn1(0) is the sticky bit
    ----------------Synchro barrier, entering cycle 10----------------
    -- final rounding
    expfrac <= expR1_d1 & fRn1_d1(24 downto 2) ;
-   expfracR <= expfrac + ((32 downto 1 => '0') & round_d1);
-   exnR <=      "00"  when expfracR(32) = '1'   -- underflow
-           else "10"  when  expfracR(32 downto 31) =  "01" -- overflow
+   expfracR <= expfrac + ((33 downto 1 => '0') & round_d1);
+   exnR <=      "00"  when expfracR(33) = '1'   -- underflow
+           else "10"  when  expfracR(33 downto 32) =  "01" -- overflow
            else "01";      -- 00, normal case
    with exnR0_d10 select
       exnRfinal <=
          exnR   when "01", -- normal
          exnR0_d10  when others;
-   R <= exnRfinal & sR_d10 & expfracR(30 downto 0);
+   R <= exnRfinal & sR_d10 & expfracR(31 downto 0);
 end architecture;

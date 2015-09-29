@@ -265,7 +265,6 @@ core core(
     .newthreadq          (thread_q0      ),
     .thread_q2           (thread_q2      ),    
     .SWBRKdet            (               ),
-    .OUTBOX              (               ),
     .tr3_IRQ             (tr3_IRQ        ),
     .tr2_IRQ             (tr2_IRQ        ),
     .tr1_IRQ             (tr1_IRQ        ),

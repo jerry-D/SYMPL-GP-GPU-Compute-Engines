@@ -1,12 +1,12 @@
  `timescale 1ns/100ps
-// wrapper for itof
-// For use in SYMPL FP32X-AXI4 multi-thread multi-processing core only
+// sub-wrapper for Dot_Clk
+// For use in SYMPL FP32X-AXI4 multi-thread RISC only
 // Author:  Jerry D. Harthcock
-// Version:  2.02  Sept 17, 2015
-// August 15, 2015
-// Copyright (C) 2014-2015.  All rights reserved without prejudice.
+// Version:  1.03 September 27, 2015
+// September 9, 2015
+// Copyright (C) 2015.  All rights reserved without prejudice.
 //
-// latency for ITOF is 2 clocks
+// latency for DOT is 9 clocks
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
@@ -47,149 +47,185 @@
 // Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
 //                                                                                                               //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-module func_itof (
-    RESET,
+module Dot_Clk (
     CLK,
-    opcode_q1,
-    wren,
-    wraddrs,
-    wrdata,
-    rdenA,
-    rdaddrsA,
-    rddataA,
-    rdenB,
-    rdaddrsB,
-    rddataB,
-    ready);
+    RESET,
+    X,
+    Y,
+    R,
+    tr0_ClearC,
+    tr1_ClearC,
+    tr2_ClearC,
+    tr3_ClearC,
+    tr0_add_acc_sel,
+    tr1_add_acc_sel,
+    tr2_add_acc_sel,
+    tr3_add_acc_sel,
+    tr0_acc_enable,
+    tr1_acc_enable,
+    tr2_acc_enable,
+    tr3_acc_enable,
+    Invalid_Add_Op,
+    round,
+    sign,
+    roundit, 
+    supress_Ovfl_sig,
+    Round_del
+    );
+input CLK, RESET;
+input tr0_add_acc_sel;
+input tr1_add_acc_sel;
+input tr2_add_acc_sel;
+input tr3_add_acc_sel;
+input tr0_acc_enable;
+input tr1_acc_enable;
+input tr2_acc_enable;
+input tr3_acc_enable;
+input tr0_ClearC; 
+input tr1_ClearC; 
+input tr2_ClearC; 
+input tr3_ClearC;  
+input [34:0] X, Y;
+output [34:0] R;
+output Invalid_Add_Op;
+output round;
+output sign;
+input  roundit;
+output supress_Ovfl_sig;
+output Round_del;
 
-input RESET, CLK, wren, rdenA, rdenB;
-input [3:0] opcode_q1;
-input [4:0] wraddrs, rdaddrsA, rdaddrsB;
-input [31:0] wrdata;
-output [35:0] rddataA, rddataB;
-output ready;
+reg [49:0] tr0_C, tr1_C, tr2_C, tr3_C;
+reg delay0, delay1, delay2, delay3, delay4, delay5, delay6;
+reg Round_del, Round_del_0;
+reg [49:0] C;
+reg [49:0] C_del;
 
-parameter BTB_ = 4'b0100;
+reg [3:0] acc_sel_del;
 
-//reg [5:0] delay0, delay1;
-reg [5:0] delay0, delay1;
-reg [31:0] semaphor;  // one for each memory location
-reg readyA;
-reg readyB;
-reg [4:0] rdaddrsA_q1;
-reg [4:0] rdaddrsB_q1;
-reg rdenA_q1;
-reg rdenB_q1;
-reg nA_sel;
+wire Rmult_is_infinite;
+wire C_is_infinite;
+wire Invalid_Add_Op;
+wire [3:0] C_sel;
 
-reg [31:0] nAq;
+wire [49:0] Rmult;
+wire [49:0] Radd;
+wire [34:0] R;
 
-wire ready;
+wire round;
+wire sign;
+wire rnd;
+wire supress_Ovfl_sig;
 
-wire [31:0] nA;
-wire [35:0] rddataA, rddataB; 
-wire [33:0] nRA_FP, nRB_FP;
-wire wrenq;
-wire [4:0] wraddrsq;
+assign supress_Ovfl_sig = delay6;
 
-wire [33:0] nR;
+assign C_sel = {tr3_add_acc_sel,  tr2_add_acc_sel, tr1_add_acc_sel,  tr0_add_acc_sel}; 
 
-assign ready = readyA & readyB;
-assign wrenq = delay1[5];
-assign wraddrsq = delay1[4:0]; 
-assign nA = wrdata;
 
-FXP_To_FP itof_0(
-    .clk(CLK),
-    .I (nAq),
-    .O (nR));
-   
-FP_To_IEEE754 fptoieeeA(
-    .X (nRA_FP),
-    .R (rddataA[31:0]));
-       
- FP_To_IEEE754 fptoieeeB(
-    .X (nRB_FP),
-    .R (rddataB[31:0])); 
- 
-assign rddataA[35:32] = 4'b0000;  
-assign rddataB[35:32] = 4'b0000;                     
+assign Rmult_is_infinite = (Rmult[49:48]==2'b10);
+assign C_is_infinite = (C[49:48]==2'b10);    //C has overflowed if true
+assign Invalid_Add_Op =  Rmult_is_infinite & C_is_infinite & (Rmult[47] ^ C[47]);
 
-/*
-    assign nR = 36'h0_0000_0000; 
-    assign rddataA = nRA_FP;
-    assign rddataB = nRB_FP;                             
-*/
 
-RAM_tp #(.ADDRS_WIDTH(5), .DATA_WIDTH(34))
-    ram32_itof(
-    .CLK        (CLK      ),
-    .wren       (wrenq    ),
-    .wraddrs    (wraddrsq ),
-    .wrdata     ({ nR}),
-    .rdenA      (rdenA    ),
-    .rdaddrsA   (rdaddrsA ),
-    .rddataA    (nRA_FP   ),
-    .rdenB      (rdenB    ),
-    .rdaddrsB   (rdaddrsB ),
-    .rddataB    (nRB_FP   ));
+//mult pipe is 1 stages            9 23 23 9 38
+//FPMult_8_23_8_23_8_38_uid2 fatMUL(
+FPMult_9_23_9_23_9_38_uid2 fatMUL(
+    .clk (CLK  ),
+    .rst (RESET),
+    .X   (X    ),
+    .Y   (Y    ),
+    .R   (Rmult)     // modified internally so result is not rounded
+    );
 
-always @(posedge CLK or posedge RESET) begin
-    if (RESET) begin
-        nAq <= 32'h0000_0000;
-    end
-    else begin
-        if (wren) nAq <= nA;
-        else nAq <= 32'h0000_0000;
-    end    
-end         
+// add pipe is 5 stages       9 38 38 9 38
+fusedADD38 fatADD(
+    .clk (CLK  ),
+    .rst (RESET),
+    .X   ((Rmult[49:48]==2'b01) ? Rmult : 50'h0_0000_0000_0000),
+    .Y   (C    ),
+    .R   (Radd ),
+    .rnd (rnd  )    // modified internally so result is not rounded, thus this bit simply detects if the result is inexact
+    );
 
-always @(posedge CLK or posedge RESET) begin
-    if (RESET) begin
-        semaphor <= 32'h0000_0000;
-        rdenA_q1 <= 1'b0;
-        rdenB_q1 <= 1'b0;
-        rdaddrsA_q1 <= 5'h00;
-        rdaddrsB_q1 <= 5'h00;
-    end    
-    else begin
-        rdenA_q1 <= rdenA;
-        rdenB_q1 <= rdenB;
-        rdaddrsA_q1 <= rdaddrsA;
+
+always @(*) begin
+    casex(C_sel)
+        4'bxxx1 : C = tr0_C;
+        4'bxx1x : C = tr1_C;
+        4'bx1xx : C = tr2_C;
+        4'b1xxx : C = tr3_C;
+        default : C = tr0_C;
+    endcase
+end    
+
+always @(*) begin
+    casex(acc_sel_del)
+        4'bxxx1 : C_del = tr0_C;
+        4'bxx1x : C_del = tr1_C;
+        4'bx1xx : C_del = tr2_C;
+        4'b1xxx : C_del = tr3_C;
+        default : C_del = tr0_C;
+    endcase
+end    
         
-        if (rdenA_q1 && rdenB_q1 && (rdaddrsA_q1==rdaddrsB_q1) && ~(opcode_q1==BTB_) && semaphor[rdaddrsA_q1]) semaphor[rdaddrsA_q1] <= 1'b0;
-        else begin
-            if (rdenA_q1 && ~(opcode_q1==BTB_) && semaphor[rdaddrsA_q1]) semaphor[rdaddrsA_q1] <= 1'b0;
-            if (wrenq && ~(rdenA_q1 & (wraddrsq == rdaddrsA_q1))) semaphor[wraddrsq] <= 1'b1;
-            if (rdenB_q1 && ~(opcode_q1==BTB_) && semaphor[rdaddrsB_q1]) semaphor[rdaddrsB_q1] <= 1'b0;
-            if (wrenq && ~(rdenB_q1 & (wraddrsq == rdaddrsB_q1))) semaphor[wraddrsq] <= 1'b1;
-        end
-    end
-end            
-
-always@(posedge CLK or posedge RESET) begin
+        
+// accumulators
+always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
-        delay0  <= 6'h00;
-        delay1  <= 6'h00;
-    end    
+        tr0_C <= 50'h0_0000_0000_0000;
+        tr1_C <= 50'h0_0000_0000_0000;
+        tr2_C <= 50'h0_0000_0000_0000;
+        tr3_C <= 50'h0_0000_0000_0000;
+    end        
     else begin
-        delay0  <= {wren, wraddrs};
-        delay1  <= delay0;    
-    end 
-end        
+        if (tr0_ClearC) tr0_C <= 50'h0_0000_0000_0000;
+        else if (tr0_acc_enable) tr0_C <= Radd;
+        if (tr1_ClearC) tr1_C <= 50'h0_0000_0000_0000;
+        else if (tr1_acc_enable) tr1_C <= Radd;
+        if (tr2_ClearC) tr2_C <= 50'h0_0000_0000_0000;
+        else if (tr2_acc_enable) tr2_C <= Radd;
+        if (tr3_ClearC) tr3_C <= 50'h0_0000_0000_0000;
+        else if (tr3_acc_enable) tr3_C <= Radd;
+    end        
+end   
 
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
-        readyA <= 1'b0;
-        readyB <= 1'b0;
-    end  
+        delay0 <= 1'b0; 
+        delay1 <= 1'b0; 
+        delay2 <= 1'b0; 
+        delay3 <= 1'b0; 
+        delay4 <= 1'b0; 
+        delay5 <= 1'b0;
+        delay6 <= 1'b0;
+        Round_del <= 1'b0;
+        Round_del_0 <= 1'b0;
+        acc_sel_del <= 4'b0000;
+    end    
     else begin
-        if (rdenA) readyA <= (wrenq & (rdaddrsA == wraddrsq)) ? 1'b1 : semaphor[rdaddrsA];
-        else readyA <= rdenB;         
-        if (rdenB) readyB <= (wrenq & (rdaddrsB == wraddrsq)) ? 1'b1 : semaphor[rdaddrsB];
-        else readyB <=rdenA;
-    end   
-end
+        delay0 <= (Rmult_is_infinite | C_is_infinite) & ~Invalid_Add_Op;    
+        delay1 <= delay0;
+        delay2 <= delay1;
+        delay3 <= delay2;
+        delay4 <= delay3;
+        delay5 <= delay4;
+        delay6 <= delay5;
+        Round_del_0 <= rnd;
+        Round_del <= Round_del_0;
+        acc_sel_del <= {tr3_acc_enable,  tr2_acc_enable, tr1_acc_enable,  tr0_acc_enable};
+    end
+end     
+
+// (1 * C) this mult pipe is 1 stage deep used to convert back to 8 23
+//FPMult_8_1_8_38_8_23_uid2 thinMUL(
+FPMult_9_1_9_38_9_23_uid2 thinMUL(     // 9 1 9 38 9 23
+    .clk (CLK  ),
+    .rst (RESET),
+    .X   (13'b01_0_0111_1111_10),      // +1.0 
+    .Y   (C_del),
+    .R   (R    ),
+    .round  (round  ),
+    .sign   (sign   ),
+    .roundit(roundit)
+    );
 
 endmodule

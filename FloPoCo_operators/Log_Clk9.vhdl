@@ -1,4 +1,5 @@
--- ./flopoco -name=Log_Clk -frequency=200 -useHardMult=no FPLog 8 23 0
+-- vagrant@vagrant-ubuntu-trusty-32:~/flopoco-3.0.beta5$ ./flopoco -name=Log_Clk -frequency=200 -useHardMult=no FPLog 9 23 0
+-- Updating entity name to: Log_Clk
 -- 
 -- Final report:
 -- |---Entity LZOC_23_5_uid3
@@ -25,26 +26,25 @@
 -- |      Not pipelined
 -- |   |---Entity KCMTable_6_93032640_unsigned
 -- |   |      Not pipelined
--- |   |---Entity KCMTable_2_93032640_unsigned
+-- |   |---Entity KCMTable_3_93032640_unsigned
 -- |   |      Not pipelined
--- |   |---Entity IntAdder_29_f200_uid64
+-- |   |---Entity IntAdder_30_f200_uid64
 -- |   |      Not pipelined
--- |---Entity IntIntKCM_8_93032640_unsigned
+-- |---Entity IntIntKCM_9_93032640_unsigned
 -- |      Not pipelined
--- |---Entity IntAdder_48_f200_uid72
+-- |---Entity IntAdder_49_f200_uid72
 -- |      Not pipelined
--- |---Entity LZCShifter_48_to_40_counting_64_uid79
+-- |---Entity LZCShifter_49_to_40_counting_64_uid79
 -- |      Pipeline depth = 2
 -- |---Entity RightShifter_16_by_max_15_uid82
 -- |      Not pipelined
 -- |---Entity IntAdder_29_f200_uid85
 -- |      Not pipelined
--- |---Entity IntAdder_31_f200_uid92
+-- |---Entity IntAdder_32_f200_uid92
 -- |      Not pipelined
 -- Entity Log_Clk
 --    Pipeline depth = 8
--- 
---
+-- Output file: flopoco.vhdl
 --------------------------------------------------------------------------------
 --                               LZOC_23_5_uid3
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
@@ -1690,7 +1690,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                        KCMTable_2_93032640_unsigned
+--                        KCMTable_3_93032640_unsigned
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Florent de Dinechin (2007-2012)
@@ -1699,25 +1699,29 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 library work;
-entity KCMTable_2_93032640_unsigned is
+entity KCMTable_3_93032640_unsigned is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(1 downto 0);
-          Y : out  std_logic_vector(28 downto 0)   );
+          X : in  std_logic_vector(2 downto 0);
+          Y : out  std_logic_vector(29 downto 0)   );
 end entity;
 
-architecture arch of KCMTable_2_93032640_unsigned is
+architecture arch of KCMTable_3_93032640_unsigned is
 begin
   with X select  Y <=
-   "00000000000000000000000000000" when "00",
-   "00101100010111001000011000000" when "01",
-   "01011000101110010000110000000" when "10",
-   "10000101000101011001001000000" when "11",
-   "-----------------------------" when others;
+   "000000000000000000000000000000" when "000",
+   "000101100010111001000011000000" when "001",
+   "001011000101110010000110000000" when "010",
+   "010000101000101011001001000000" when "011",
+   "010110001011100100001100000000" when "100",
+   "011011101110011101001111000000" when "101",
+   "100001010001010110010010000000" when "110",
+   "100110110100001111010101000000" when "111",
+   "------------------------------" when others;
 end architecture;
 
 --------------------------------------------------------------------------------
---                           IntAdder_29_f200_uid64
---                    (IntAdderAlternative_29_f200_uid68)
+--                           IntAdder_30_f200_uid64
+--                    (IntAdderAlternative_30_f200_uid68)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Pasca, Florent de Dinechin (2008-2010)
@@ -1732,15 +1736,15 @@ library std;
 use std.textio.all;
 library work;
 
-entity IntAdder_29_f200_uid64 is
+entity IntAdder_30_f200_uid64 is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(28 downto 0);
-          Y : in  std_logic_vector(28 downto 0);
+          X : in  std_logic_vector(29 downto 0);
+          Y : in  std_logic_vector(29 downto 0);
           Cin : in  std_logic;
-          R : out  std_logic_vector(28 downto 0)   );
+          R : out  std_logic_vector(29 downto 0)   );
 end entity;
 
-architecture arch of IntAdder_29_f200_uid64 is
+architecture arch of IntAdder_30_f200_uid64 is
 begin
    process(clk)
       begin
@@ -1752,7 +1756,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                       IntIntKCM_8_93032640_unsigned
+--                       IntIntKCM_9_93032640_unsigned
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Pasca, Florent de Dinechin (2009,2010)
@@ -1767,25 +1771,25 @@ library std;
 use std.textio.all;
 library work;
 
-entity IntIntKCM_8_93032640_unsigned is
+entity IntIntKCM_9_93032640_unsigned is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(7 downto 0);
-          R : out  std_logic_vector(34 downto 0)   );
+          X : in  std_logic_vector(8 downto 0);
+          R : out  std_logic_vector(35 downto 0)   );
 end entity;
 
-architecture arch of IntIntKCM_8_93032640_unsigned is
-   component IntAdder_29_f200_uid64 is
+architecture arch of IntIntKCM_9_93032640_unsigned is
+   component IntAdder_30_f200_uid64 is
       port ( clk, rst : in std_logic;
-             X : in  std_logic_vector(28 downto 0);
-             Y : in  std_logic_vector(28 downto 0);
+             X : in  std_logic_vector(29 downto 0);
+             Y : in  std_logic_vector(29 downto 0);
              Cin : in  std_logic;
-             R : out  std_logic_vector(28 downto 0)   );
+             R : out  std_logic_vector(29 downto 0)   );
    end component;
 
-   component KCMTable_2_93032640_unsigned is
+   component KCMTable_3_93032640_unsigned is
       port ( clk, rst : in std_logic;
-             X : in  std_logic_vector(1 downto 0);
-             Y : out  std_logic_vector(28 downto 0)   );
+             X : in  std_logic_vector(2 downto 0);
+             Y : out  std_logic_vector(29 downto 0)   );
    end component;
 
    component KCMTable_6_93032640_unsigned is
@@ -1796,16 +1800,16 @@ architecture arch of IntIntKCM_8_93032640_unsigned is
 
 signal d0 :  std_logic_vector(5 downto 0);
 signal pp0 :  std_logic_vector(32 downto 0);
-signal d1 :  std_logic_vector(1 downto 0);
-signal pp1 :  std_logic_vector(28 downto 0);
-signal addOp0 :  std_logic_vector(28 downto 0);
-signal addOp1 :  std_logic_vector(28 downto 0);
-signal OutRes :  std_logic_vector(28 downto 0);
+signal d1 :  std_logic_vector(2 downto 0);
+signal pp1 :  std_logic_vector(29 downto 0);
+signal addOp0 :  std_logic_vector(29 downto 0);
+signal addOp1 :  std_logic_vector(29 downto 0);
+signal OutRes :  std_logic_vector(29 downto 0);
 attribute rom_extract: string;
 attribute rom_style: string;
-attribute rom_extract of KCMTable_2_93032640_unsigned: component is "yes";
+attribute rom_extract of KCMTable_3_93032640_unsigned: component is "yes";
 attribute rom_extract of KCMTable_6_93032640_unsigned: component is "yes";
-attribute rom_style of KCMTable_2_93032640_unsigned: component is "distributed";
+attribute rom_style of KCMTable_3_93032640_unsigned: component is "distributed";
 attribute rom_style of KCMTable_6_93032640_unsigned: component is "distributed";
 begin
    process(clk)
@@ -1819,15 +1823,15 @@ begin
                  rst  => rst,
                  X => d0,
                  Y => pp0);
-   d1 <= X(7 downto 6);
-   KCMTable_1: KCMTable_2_93032640_unsigned  -- pipelineDepth=0 maxInDelay=0
+   d1 <= X(8 downto 6);
+   KCMTable_1: KCMTable_3_93032640_unsigned  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => d1,
                  Y => pp1);
-   addOp0 <= (28 downto 27 => '0') & pp0(32 downto 6) & "";
-   addOp1 <= pp1(28 downto 0) & "";
-   Result_Adder: IntAdder_29_f200_uid64  -- pipelineDepth=0 maxInDelay=1.2196e-09
+   addOp0 <= (29 downto 27 => '0') & pp0(32 downto 6) & "";
+   addOp1 <= pp1(29 downto 0) & "";
+   Result_Adder: IntAdder_30_f200_uid64  -- pipelineDepth=0 maxInDelay=1.22832e-09
       port map ( clk  => clk,
                  rst  => rst,
                  Cin => '0',
@@ -1838,8 +1842,8 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                           IntAdder_48_f200_uid72
---                    (IntAdderAlternative_48_f200_uid76)
+--                           IntAdder_49_f200_uid72
+--                    (IntAdderAlternative_49_f200_uid76)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Pasca, Florent de Dinechin (2008-2010)
@@ -1854,15 +1858,15 @@ library std;
 use std.textio.all;
 library work;
 
-entity IntAdder_48_f200_uid72 is
+entity IntAdder_49_f200_uid72 is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(47 downto 0);
-          Y : in  std_logic_vector(47 downto 0);
+          X : in  std_logic_vector(48 downto 0);
+          Y : in  std_logic_vector(48 downto 0);
           Cin : in  std_logic;
-          R : out  std_logic_vector(47 downto 0)   );
+          R : out  std_logic_vector(48 downto 0)   );
 end entity;
 
-architecture arch of IntAdder_48_f200_uid72 is
+architecture arch of IntAdder_49_f200_uid72 is
 begin
    process(clk)
       begin
@@ -1874,7 +1878,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                   LZCShifter_48_to_40_counting_64_uid79
+--                   LZCShifter_49_to_40_counting_64_uid79
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Florent de Dinechin, Bogdan Pasca (2007)
@@ -1889,19 +1893,19 @@ library std;
 use std.textio.all;
 library work;
 
-entity LZCShifter_48_to_40_counting_64_uid79 is
+entity LZCShifter_49_to_40_counting_64_uid79 is
    port ( clk, rst : in std_logic;
-          I : in  std_logic_vector(47 downto 0);
+          I : in  std_logic_vector(48 downto 0);
           Count : out  std_logic_vector(5 downto 0);
           O : out  std_logic_vector(39 downto 0)   );
 end entity;
 
-architecture arch of LZCShifter_48_to_40_counting_64_uid79 is
-signal level6, level6_d1 :  std_logic_vector(47 downto 0);
+architecture arch of LZCShifter_49_to_40_counting_64_uid79 is
+signal level6, level6_d1 :  std_logic_vector(48 downto 0);
 signal count5, count5_d1 :  std_logic;
-signal level5 :  std_logic_vector(47 downto 0);
+signal level5 :  std_logic_vector(48 downto 0);
 signal count4, count4_d1 :  std_logic;
-signal level4 :  std_logic_vector(47 downto 0);
+signal level4 :  std_logic_vector(48 downto 0);
 signal count3, count3_d1 :  std_logic;
 signal level3, level3_d1 :  std_logic_vector(46 downto 0);
 signal count2, count2_d1 :  std_logic;
@@ -1925,14 +1929,14 @@ begin
       end process;
    level6 <= I ;
    ----------------Synchro barrier, entering cycle 1----------------
-   count5<= '1' when level6_d1(47 downto 16) = (47 downto 16=>'0') else '0';
-   level5<= level6_d1(47 downto 0) when count5='0' else level6_d1(15 downto 0) & (31 downto 0 => '0');
+   count5<= '1' when level6_d1(48 downto 17) = (48 downto 17=>'0') else '0';
+   level5<= level6_d1(48 downto 0) when count5='0' else level6_d1(16 downto 0) & (31 downto 0 => '0');
 
-   count4<= '1' when level5(47 downto 32) = (47 downto 32=>'0') else '0';
-   level4<= level5(47 downto 0) when count4='0' else level5(31 downto 0) & (15 downto 0 => '0');
+   count4<= '1' when level5(48 downto 33) = (48 downto 33=>'0') else '0';
+   level4<= level5(48 downto 0) when count4='0' else level5(32 downto 0) & (15 downto 0 => '0');
 
-   count3<= '1' when level4(47 downto 40) = (47 downto 40=>'0') else '0';
-   level3<= level4(47 downto 1) when count3='0' else level4(39 downto 0) & (6 downto 0 => '0');
+   count3<= '1' when level4(48 downto 41) = (48 downto 41=>'0') else '0';
+   level3<= level4(48 downto 2) when count3='0' else level4(40 downto 0) & (5 downto 0 => '0');
 
    count2<= '1' when level3(46 downto 43) = (46 downto 43=>'0') else '0';
    ----------------Synchro barrier, entering cycle 2----------------
@@ -2031,8 +2035,8 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                           IntAdder_31_f200_uid92
---                    (IntAdderAlternative_31_f200_uid96)
+--                           IntAdder_32_f200_uid92
+--                    (IntAdderAlternative_32_f200_uid96)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Pasca, Florent de Dinechin (2008-2010)
@@ -2047,15 +2051,15 @@ library std;
 use std.textio.all;
 library work;
 
-entity IntAdder_31_f200_uid92 is
+entity IntAdder_32_f200_uid92 is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(30 downto 0);
-          Y : in  std_logic_vector(30 downto 0);
+          X : in  std_logic_vector(31 downto 0);
+          Y : in  std_logic_vector(31 downto 0);
           Cin : in  std_logic;
-          R : out  std_logic_vector(30 downto 0)   );
+          R : out  std_logic_vector(31 downto 0)   );
 end entity;
 
-architecture arch of IntAdder_31_f200_uid92 is
+architecture arch of IntAdder_32_f200_uid92 is
 begin
    process(clk)
       begin
@@ -2068,7 +2072,7 @@ end architecture;
 
 --------------------------------------------------------------------------------
 --                                  Log_Clk
---                         (IterativeLog_8_23_0_200)
+--                         (IterativeLog_9_23_0_200)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: F. de Dinechin, C. Klein  (2008-2011)
@@ -2085,8 +2089,13 @@ library work;
 
 entity Log_Clk is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(8+23+2 downto 0);
-          R : out  std_logic_vector(8+23+2 downto 0)   );
+          X : in  std_logic_vector(9+23+2 downto 0);
+          R : out  std_logic_vector(9+23+2 downto 0);
+--- mod by JDH Sept 21, 2015 --------          
+          round : buffer std_logic;
+         sR_d77 : out std_logic;
+          roundit : in std_logic   );
+-------------------------------------          
 end entity;
 
 architecture arch of Log_Clk is
@@ -2122,12 +2131,12 @@ architecture arch of Log_Clk is
              R : out  std_logic_vector(28 downto 0)   );
    end component;
 
-   component IntAdder_31_f200_uid92 is
+   component IntAdder_32_f200_uid92 is
       port ( clk, rst : in std_logic;
-             X : in  std_logic_vector(30 downto 0);
-             Y : in  std_logic_vector(30 downto 0);
+             X : in  std_logic_vector(31 downto 0);
+             Y : in  std_logic_vector(31 downto 0);
              Cin : in  std_logic;
-             R : out  std_logic_vector(30 downto 0)   );
+             R : out  std_logic_vector(31 downto 0)   );
    end component;
 
    component IntAdder_40_f200_uid45 is
@@ -2146,18 +2155,18 @@ architecture arch of Log_Clk is
              R : out  std_logic_vector(39 downto 0)   );
    end component;
 
-   component IntAdder_48_f200_uid72 is
+   component IntAdder_49_f200_uid72 is
       port ( clk, rst : in std_logic;
-             X : in  std_logic_vector(47 downto 0);
-             Y : in  std_logic_vector(47 downto 0);
+             X : in  std_logic_vector(48 downto 0);
+             Y : in  std_logic_vector(48 downto 0);
              Cin : in  std_logic;
-             R : out  std_logic_vector(47 downto 0)   );
+             R : out  std_logic_vector(48 downto 0)   );
    end component;
 
-   component IntIntKCM_8_93032640_unsigned is
+   component IntIntKCM_9_93032640_unsigned is
       port ( clk, rst : in std_logic;
-             X : in  std_logic_vector(7 downto 0);
-             R : out  std_logic_vector(34 downto 0)   );
+             X : in  std_logic_vector(8 downto 0);
+             R : out  std_logic_vector(35 downto 0)   );
    end component;
 
    component IntSquarer_16_uid25 is
@@ -2172,9 +2181,9 @@ architecture arch of Log_Clk is
              Y : out  std_logic_vector(9 downto 0)   );
    end component;
 
-   component LZCShifter_48_to_40_counting_64_uid79 is
+   component LZCShifter_49_to_40_counting_64_uid79 is
       port ( clk, rst : in std_logic;
-             I : in  std_logic_vector(47 downto 0);
+             I : in  std_logic_vector(48 downto 0);
              Count : out  std_logic_vector(5 downto 0);
              O : out  std_logic_vector(39 downto 0)   );
    end component;
@@ -2218,8 +2227,8 @@ signal Y0, Y0_d1, Y0_d2 :  std_logic_vector(24 downto 0);
 signal Y0h :  std_logic_vector(22 downto 0);
 signal sR, sR_d1, sR_d2, sR_d3, sR_d4, sR_d5, sR_d6, sR_d7, sR_d8 :  std_logic;
 signal absZ0, absZ0_d1 :  std_logic_vector(11 downto 0);
-signal E :  std_logic_vector(7 downto 0);
-signal absE, absE_d1, absE_d2, absE_d3, absE_d4, absE_d5, absE_d6 :  std_logic_vector(7 downto 0);
+signal E :  std_logic_vector(8 downto 0);
+signal absE, absE_d1, absE_d2, absE_d3, absE_d4, absE_d5, absE_d6 :  std_logic_vector(8 downto 0);
 signal EeqZero, EeqZero_d1 :  std_logic;
 signal lzo, lzo_d1, lzo_d2, lzo_d3, lzo_d4, lzo_d5, lzo_d6 :  std_logic_vector(4 downto 0);
 signal pfinal_s :  std_logic_vector(4 downto 0);
@@ -2229,8 +2238,7 @@ signal shiftvalinR, shiftvalinR_d1, shiftvalinR_d2, shiftvalinR_d3, shiftvalinR_
 signal doRR, doRR_d1, doRR_d2, doRR_d3 :  std_logic;
 signal small, small_d1, small_d2, small_d3, small_d4, small_d5, small_d6, small_d7 :  std_logic;
 signal small_absZ0_normd_full :  std_logic_vector(23 downto 0);
-signal small_absZ0_normd, small_absZ0_normd_d1, small_absZ0_normd_d2, small_absZ0_normd_d3, small_absZ0_normd_d4, small_absZ0_normd_d5 :  std_logic_vector(11
-downto 0);
+signal small_absZ0_normd, small_absZ0_normd_d1, small_absZ0_normd_d2, small_absZ0_normd_d3, small_absZ0_normd_d4, small_absZ0_normd_d5 :  std_logic_vector(11 downto 0);
 signal A0, A0_d1, A0_d2, A0_d3, A0_d4, A0_d5 :  std_logic_vector(8 downto 0);
 signal InvA0, InvA0_d1 :  std_logic_vector(9 downto 0);
 signal P0, P0_d1 :  std_logic_vector(34 downto 0);
@@ -2260,12 +2268,12 @@ signal S2, S2_d1 :  std_logic_vector(39 downto 0);
 signal almostLog :  std_logic_vector(39 downto 0);
 signal adderLogF_normalY :  std_logic_vector(39 downto 0);
 signal LogF_normal :  std_logic_vector(39 downto 0);
-signal absELog2 :  std_logic_vector(34 downto 0);
-signal absELog2_pad :  std_logic_vector(47 downto 0);
-signal LogF_normal_pad :  std_logic_vector(47 downto 0);
-signal lnaddX :  std_logic_vector(47 downto 0);
-signal lnaddY :  std_logic_vector(47 downto 0);
-signal Log_normal :  std_logic_vector(47 downto 0);
+signal absELog2 :  std_logic_vector(35 downto 0);
+signal absELog2_pad :  std_logic_vector(48 downto 0);
+signal LogF_normal_pad :  std_logic_vector(48 downto 0);
+signal lnaddX :  std_logic_vector(48 downto 0);
+signal lnaddY :  std_logic_vector(48 downto 0);
+signal Log_normal :  std_logic_vector(48 downto 0);
 signal E_normal :  std_logic_vector(5 downto 0);
 signal Log_normal_normd :  std_logic_vector(39 downto 0);
 signal Z2o2_small_bs :  std_logic_vector(15 downto 0);
@@ -2277,21 +2285,21 @@ signal nsRCin :  std_logic;
 signal Log_small, Log_small_d1 :  std_logic_vector(28 downto 0);
 signal E0_sub, E0_sub_d1 :  std_logic_vector(1 downto 0);
 signal ufl, ufl_d1, ufl_d2 :  std_logic;
-signal E_small, E_small_d1 :  std_logic_vector(7 downto 0);
+signal E_small, E_small_d1 :  std_logic_vector(8 downto 0);
 signal Log_small_normd, Log_small_normd_d1 :  std_logic_vector(26 downto 0);
-signal E0offset :  std_logic_vector(7 downto 0);
-signal ER :  std_logic_vector(7 downto 0);
+signal E0offset :  std_logic_vector(8 downto 0);
+signal ER :  std_logic_vector(8 downto 0);
 signal Log_g :  std_logic_vector(26 downto 0);
-signal round :  std_logic;
-signal fraX :  std_logic_vector(30 downto 0);
-signal fraY :  std_logic_vector(30 downto 0);
-signal EFR :  std_logic_vector(30 downto 0);
+-- signal round :  std_logic;
+signal fraX :  std_logic_vector(31 downto 0);
+signal fraY :  std_logic_vector(31 downto 0);
+signal EFR :  std_logic_vector(31 downto 0);
 constant g: positive := 4;
 constant log2wF: positive := 5;
 constant pfinal: positive := 13;
 constant sfinal: positive := 27;
 constant targetprec: positive := 40;
-constant wE: positive := 8;
+constant wE: positive := 9;
 constant wF: positive := 23;
 attribute rom_extract: string;
 attribute rom_style: string;
@@ -2318,6 +2326,7 @@ begin
             sR_d5 <=  sR_d4;
             sR_d6 <=  sR_d5;
             sR_d7 <=  sR_d6;
+            sR_d77 <= sR_d6; --mod by JDH Sept 21, 2015
             sR_d8 <=  sR_d7;
             absZ0_d1 <=  absZ0;
             absE_d1 <=  absE;
@@ -2389,7 +2398,7 @@ begin
    absE <= ((wE-1 downto 0 => '0') - E)   when sR = '1' else E;
    EeqZero <= '1' when E=(wE-1 downto 0 => '0') else '0';
    ---------------- cycle 0----------------
-   lzoc1: LZOC_23_5_uid3  -- pipelineDepth=1 maxInDelay=5.46e-10
+   lzoc1: LZOC_23_5_uid3  -- pipelineDepth=1 maxInDelay=5.69e-10
       port map ( clk  => clk,
                  rst  => rst,
                  I => Y0h,
@@ -2515,7 +2524,7 @@ begin
                  X => almostLog,
                  Y => adderLogF_normalY);
    ----------------Synchro barrier, entering cycle 6----------------
-   Log2KCM: IntIntKCM_8_93032640_unsigned  -- pipelineDepth=0 maxInDelay=0
+   Log2KCM: IntIntKCM_9_93032640_unsigned  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  R => absELog2,
@@ -2525,7 +2534,7 @@ begin
    LogF_normal_pad <= (wE-1  downto 0 => LogF_normal(targetprec-1))  & LogF_normal;
    lnaddX <= absELog2_pad;
    lnaddY <= LogF_normal_pad when sR_d6='0' else not(LogF_normal_pad);
-   lnadder: IntAdder_48_f200_uid72  -- pipelineDepth=0 maxInDelay=2.5546e-09
+   lnadder: IntAdder_49_f200_uid72  -- pipelineDepth=0 maxInDelay=2.58632e-09
       port map ( clk  => clk,
                  rst  => rst,
                  Cin => sR_d6,
@@ -2533,7 +2542,7 @@ begin
                  X => lnaddX,
                  Y => lnaddY);
 
-   final_norm: LZCShifter_48_to_40_counting_64_uid79  -- pipelineDepth=2 maxInDelay=4.77132e-09
+   final_norm: LZCShifter_49_to_40_counting_64_uid79  -- pipelineDepth=2 maxInDelay=4.82604e-09
       port map ( clk  => clk,
                  rst  => rst,
                  Count => E_normal,
@@ -2568,7 +2577,7 @@ begin
           else "10" when Log_small(wF+g+1 downto wF+g) = "01"
           else "01" ;
    -- The smallest log will be log(1+2^{-wF}) \approx 2^{-wF}  = 2^-23
-   -- The smallest representable number is 2^{1-2^(wE-1)} = 2^-127
+   -- The smallest representable number is 2^{1-2^(wE-1)} = 2^-255
    -- No underflow possible
    ufl <= '0';
    ----------------Synchro barrier, entering cycle 7----------------
@@ -2577,17 +2586,18 @@ begin
            else Log_small_d1(wF+g downto 1)  when Log_small_d1(wF+g)='1'  -- remove the first zero
            else Log_small_d1(wF+g-1 downto 0)  ; -- remove two zeroes (extremely rare, 001000000 only)
    ----------------Synchro barrier, entering cycle 8----------------
-   E0offset <= "10000110"; -- E0 + wE
-   ER <= E_small_d1(7 downto 0) when small_d7='1'
-      else E0offset - ((7 downto 6 => '0') & E_normal);
+   E0offset <= "100000111"; -- E0 + wE
+   ER <= E_small_d1(8 downto 0) when small_d7='1'
+      else E0offset - ((8 downto 6 => '0') & E_normal);
    ---------------- cycle 8----------------
    Log_g <=  Log_small_normd_d1(wF+g-2 downto 0) & "0" when small_d7='1'           -- remove implicit 1
       else Log_normal_normd(targetprec-2 downto targetprec-wF-g-1 );  -- remove implicit 1
    round <= Log_g(g-1) ; -- sticky is always 1 for a transcendental function
    -- if round leads to a change of binade, the carry propagation magically updates both mantissa and exponent
    fraX <= (ER & Log_g(wF+g-1 downto g)) ;
-   fraY <= ((wE+wF-1 downto 1 => '0') & round);
-   finalRoundAdder: IntAdder_31_f200_uid92  -- pipelineDepth=0 maxInDelay=2.86488e-09
+--   fraY <= ((wE+wF-1 downto 1 => '0') & round);
+   fraY <= ((wE+wF-1 downto 1 => '0') & roundit); -- mod by JDH Sept 21, 2015
+   finalRoundAdder: IntAdder_32_f200_uid92  -- pipelineDepth=0 maxInDelay=2.86488e-09
       port map ( clk  => clk,
                  rst  => rst,
                  Cin => '0',
@@ -2601,3 +2611,4 @@ begin
                                "01" & sR_d8;
    R(wE+wF-1 downto 0) <=  EFR;
 end architecture;
+

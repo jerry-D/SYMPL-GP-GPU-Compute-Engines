@@ -247,7 +247,8 @@ fp321_axi fp321_axi(
                                                   
         RREADY = 1'b0; 
 
-        $readmemh("c:/aSYMPL/FP3244_threads/FP321_test1.v", SYSTEM_memP);
+//        $readmemh("c:/aSYMPL/FP3244_threads/FP321_test1.v", SYSTEM_memP);
+        $readmemh("FP321_test1.v", SYSTEM_memP);
         prog_start = SYSTEM_memP[253];  //this is the entry point to the routine
         prog_len = SYSTEM_memP[254];
          i = 12'h0FD;

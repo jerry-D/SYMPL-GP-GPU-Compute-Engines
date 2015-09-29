@@ -152,7 +152,11 @@ library work;
 entity FP_To_FXP is
    port ( clk, rst : in std_logic;
           I : in  std_logic_vector(8+23+2 downto 0);
-          O : out  std_logic_vector(31 downto 0)   );
+          O : out  std_logic_vector(31 downto 0);
+--- mod by JDH Sept 16, 2015 -------          
+          round : buffer std_logic;
+          roundit : in std_logic   );
+------------------------------------          
 end entity;
 
 architecture arch of FP_To_FXP is
@@ -187,7 +191,7 @@ signal shiftedby :  std_logic_vector(5 downto 0);
 signal fA1 :  std_logic_vector(57 downto 0);
 signal fA2a :  std_logic_vector(32 downto 0);
 signal notallzero :  std_logic;
-signal round :  std_logic;
+--signal round :  std_logic;
 signal fA2b :  std_logic_vector(32 downto 0);
 signal fA3 :  std_logic_vector(32 downto 0);
 signal fA4 :  std_logic_vector(31 downto 0);
@@ -221,7 +225,8 @@ begin
    fA2a<= '0' & fA1(55 downto 24);
    notallzero <= '0' when fA1(22 downto 0) = (22 downto 0 => '0') else '1';
    round <= fA1(23) and notallzero ;
-   fA2b<= '0' & (31 downto 1 => '0') & round;
+--   fA2b<= '0' & (31 downto 1 => '0') & round;
+     fA2b<= '0' & (31 downto 1 => '0') & roundit; -- mod by JDH Sept 16, 2015
    MantSum: FP2Fix_8_23_0_31_US_NTMantSum  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,

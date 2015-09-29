@@ -2,7 +2,7 @@
 `timescale 1ns/100ps
 // SYMPL FP32X-AXI4 multi-thread RISC
 // Author:  Jerry D. Harthcock
-// Version:  3.01  August 27, 2015
+// Version:  3.03  Sept 23, 2015
 // July 11, 2015
 // Copyright (C) 2014-2015.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +73,6 @@ module core (
          thread_q2,
                                  
          SWBRKdet,
-         OUTBOX,
          
          tr3_IRQ,
          tr2_IRQ,
@@ -110,7 +109,6 @@ output [1:0]   newthreadq;
 output [1:0]   thread_q2;
         
 output         SWBRKdet;
-output [31:0]  OUTBOX;
 
 input          tr3_IRQ;
 input          tr2_IRQ;
@@ -131,11 +129,17 @@ parameter PC_COPY      = 14'h006E;    //status register address for each thread
 parameter ST_ADDRS     = 14'h006D;    //status register address for each thread
 parameter SCHED_ADDRS  = 14'h006C;
 parameter SCHEDCMP_ADDRS  = 14'h006B; //scheduler reload address
-parameter OUTBOX_ADDRS = 14'h006A;    //cas reads are stored here and can be see by sup 
+parameter CREG_ADDRS =   14'h006A;    // "C" register for FMA operator
 parameter LPCNT1_ADDRS = 14'h0069;    //loop counter 1 address
 parameter LPCNT0_ADDRS = 14'h0068;    //loop counter 0 address
 parameter TIMER_ADDRS  = 14'h0067;
-parameter RPT_ADDRS    = 14'h0064;    
+parameter QOS_ADDRS    = 14'h0066;    // FP quality of service address
+parameter DOT_ADDRS    = 14'h0065;    // DOT FP operator
+parameter RPT_ADDRS    = 14'h0064;
+parameter CAPT3_ADDRS  = 14'h0063;    //delayed alternate exception handling captured rounding mode, thread and PC
+parameter CAPT2_ADDRS  = 14'h0062;    //delayed alternate exception handling captured srcB, srcA and corresponding FP exception code
+parameter CAPT1_ADDRS  = 14'h0061;    //delayed alternate exception handling captured resultB
+parameter CAPT0_ADDRS  = 14'h0060;    //delayed alternate exception handling captured resultA
 
 parameter MOV_    = 4'b0000;      
 parameter AND_    = 4'b0001;
@@ -226,50 +230,105 @@ reg [19:0] tr2_timercmpr;
 reg [19:0] tr1_timercmpr;
 reg [19:0] tr0_timercmpr;
 
-reg NaN_q2;
-reg INF_q2;
-reg DML_q2;
-reg NML_q2;
-reg SZ_q2; 
-reg FPN_q2;
+reg [7:0] tr3_underflow_QOS;   
+reg [7:0] tr2_underflow_QOS;   
+reg [7:0] tr1_underflow_QOS;   
+reg [7:0] tr0_underflow_QOS;   
 
-reg tr0_NaN;
-reg tr0_INF;
-reg tr0_DML;
-reg tr0_NML;
-reg tr0_SZ; 
-reg tr0_FPN;
+reg [7:0] tr3_overflow_QOS;
+reg [7:0] tr2_overflow_QOS;
+reg [7:0] tr1_overflow_QOS;
+reg [7:0] tr0_overflow_QOS;
 
-reg tr1_NaN;
-reg tr1_INF;
-reg tr1_DML;
-reg tr1_NML;
-reg tr1_SZ; 
-reg tr1_FPN;
+reg [7:0] tr3_divby0_QOS;
+reg [7:0] tr2_divby0_QOS;
+reg [7:0] tr1_divby0_QOS;
+reg [7:0] tr0_divby0_QOS;
 
-reg tr2_NaN;
-reg tr2_INF;
-reg tr2_DML;
-reg tr2_NML;
-reg tr2_SZ; 
-reg tr2_FPN;
+reg [7:0] tr3_invalid_QOS;
+reg [7:0] tr2_invalid_QOS;
+reg [7:0] tr1_invalid_QOS;
+reg [7:0] tr0_invalid_QOS;
 
-reg tr3_NaN;
-reg tr3_INF;
-reg tr3_DML;
-reg tr3_NML;
-reg tr3_SZ; 
-reg tr3_FPN;
+reg tr3_invalid_flag;
+reg tr2_invalid_flag;
+reg tr1_invalid_flag;
+reg tr0_invalid_flag;
+    
+reg tr3_divby0_flag;
+reg tr2_divby0_flag;
+reg tr1_divby0_flag;
+reg tr0_divby0_flag;
+    
+reg tr3_overflow_flag;
+reg tr2_overflow_flag;
+reg tr1_overflow_flag;                                                       
+reg tr0_overflow_flag;                                                       
+                                                                             
+reg tr3_underflow_flag;                                                      
+reg tr2_underflow_flag;                                                      
+reg tr1_underflow_flag;                                                      
+reg tr0_underflow_flag;                                                      
+                                                                             
+reg tr3_inexact_flag;                                                        
+reg tr2_inexact_flag;                                                        
+reg tr1_inexact_flag;
+reg tr0_inexact_flag;
+    
+reg tr3_alt_inv_handl;
+reg tr2_alt_inv_handl;
+reg tr1_alt_inv_handl;
+reg tr0_alt_inv_handl;
+    
+reg tr3_alt_div0_handl;
+reg tr2_alt_div0_handl;
+reg tr1_alt_div0_handl;
+reg tr0_alt_div0_handl;
+    
+reg tr3_alt_ovfl_handl;
+reg tr2_alt_ovfl_handl;
+reg tr1_alt_ovfl_handl;
+reg tr0_alt_ovfl_handl;
+    
+reg tr3_alt_unfl_handl;
+reg tr2_alt_unfl_handl;
+reg tr1_alt_unfl_handl;
+reg tr0_alt_unfl_handl;
+
+reg tr3_alt_nxact_handl;
+reg tr2_alt_nxact_handl;
+reg tr1_alt_nxact_handl;
+reg tr0_alt_nxact_handl;
+
+reg tr3_alt_del_nxact;
+reg tr2_alt_del_nxact;
+reg tr1_alt_del_nxact;
+reg tr0_alt_del_nxact;
+
+reg tr3_alt_del_unfl; 
+reg tr2_alt_del_unfl; 
+reg tr1_alt_del_unfl; 
+reg tr0_alt_del_unfl; 
+
+reg tr3_alt_del_ovfl; 
+reg tr2_alt_del_ovfl; 
+reg tr1_alt_del_ovfl; 
+reg tr0_alt_del_ovfl; 
+
+reg tr3_alt_del_div0; 
+reg tr2_alt_del_div0; 
+reg tr1_alt_del_div0; 
+reg tr0_alt_del_div0; 
+
+reg tr3_alt_del_inv;  
+reg tr2_alt_del_inv;  
+reg tr1_alt_del_inv;  
+reg tr0_alt_del_inv;  
 
 reg tr0_IRQ_IE;
 reg tr1_IRQ_IE;
 reg tr2_IRQ_IE;
 reg tr3_IRQ_IE;
-
-reg tr0_EXC_IE;
-reg tr1_EXC_IE;
-reg tr2_EXC_IE;
-reg tr3_EXC_IE;
 
 reg tr3_Z;
 reg tr2_Z;
@@ -305,7 +364,10 @@ reg [31:0] scheduler;
 reg [31:0] sched_cmp;
 reg [3:0] sched_state;
 
-reg [31:0] OUTBOX;
+reg [31:0] tr0_C_reg;
+reg [31:0] tr1_C_reg;
+reg [31:0] tr2_C_reg;
+reg [31:0] tr3_C_reg;
 
 reg [2:0] STATE;
 wire [1:0] ACT_THREAD;
@@ -346,6 +408,7 @@ reg [1:0]  newthreadq;
 reg        LD_newthread;
 
 reg [11:0] PC_adder_input;
+reg [1:0]  round_mode_q1;
 
 reg [10:0] REPEAT;
 
@@ -363,11 +426,12 @@ wire rddisable;
 
 wire [2:0] shiftype;
 wire [3:0] shiftamount;
+wire [4:0] shiftamount1;
 wire sb;
 wire [16:0] sbits;
 
 wire rdconstA;
-wire [1:0] thread; 
+wire [1:0] round_mode; 
 wire SWBRKdet;
 wire rdcycl;
 wire wrcycl;
@@ -458,13 +522,87 @@ wire [31:0] rcp_out;
 
 wire pipe_flush;
 
-wire [1:0] fp_flags;
+wire [3:0] exc_codeA;
+wire [3:0] exc_codeB;
+
 wire fp_ready_q1;
 
 wire tr0_rewind_PC;
 wire tr1_rewind_PC;
 wire tr2_rewind_PC;
 wire tr3_rewind_PC;
+
+wire tr3_invalid;  
+wire tr3_divby0; 
+wire tr3_overflow; 
+wire tr3_underflow;
+wire tr3_inexact;  
+
+wire tr2_invalid;  
+wire tr2_divby0; 
+wire tr2_overflow; 
+wire tr2_underflow;
+wire tr2_inexact;  
+
+wire tr1_invalid;  
+wire tr1_divby0; 
+wire tr1_overflow; 
+wire tr1_underflow;
+wire tr1_inexact;  
+
+wire tr0_invalid;  
+wire tr0_divby0; 
+wire tr0_overflow; 
+wire tr0_underflow;
+wire tr0_inexact;
+
+wire tr3_invalid_imm;  
+wire tr3_divby0_imm;   
+wire tr3_overflow_imm; 
+wire tr3_underflow_imm;
+wire tr3_inexact_imm;  
+
+wire tr2_invalid_imm;  
+wire tr2_divby0_imm;   
+wire tr2_overflow_imm; 
+wire tr2_underflow_imm;
+wire tr2_inexact_imm;  
+
+wire tr1_invalid_imm;  
+wire tr1_divby0_imm;   
+wire tr1_overflow_imm; 
+wire tr1_underflow_imm;
+wire tr1_inexact_imm;  
+
+wire tr0_invalid_imm;  
+wire tr0_divby0_imm;   
+wire tr0_overflow_imm; 
+wire tr0_underflow_imm;
+wire tr0_inexact_imm;  
+
+wire tr3_invalid_del;  
+wire tr3_divby0_del;   
+wire tr3_overflow_del; 
+wire tr3_underflow_del;
+wire tr3_inexact_del;  
+
+wire tr2_invalid_del;  
+wire tr2_divby0_del;   
+wire tr2_overflow_del; 
+wire tr2_underflow_del;
+wire tr2_inexact_del;  
+
+wire tr1_invalid_del;  
+wire tr1_divby0_del;   
+wire tr1_overflow_del; 
+wire tr1_underflow_del;
+wire tr1_inexact_del;  
+
+wire tr0_invalid_del;  
+wire tr0_divby0_del;   
+wire tr0_overflow_del; 
+wire tr0_underflow_del;
+wire tr0_inexact_del;  
 
 wire [11:0] tr3_LPCNT1_dec;
 wire [11:0] tr3_LPCNT0_dec;
@@ -516,13 +654,74 @@ wire [11:0] tr3_vector;
 wire tr3_ld_vector;
 wire tr3_NMI_ack;  
 wire tr3_EXC_ack;  
-wire tr3_IRQ_ack;  
+wire tr3_IRQ_ack; 
 
-assign tr0_EXC = (tr0_NaN | tr0_INF | tr0_DML) & (thread_q2==2'b00);
-assign tr1_EXC = (tr1_NaN | tr1_INF | tr1_DML) & (thread_q2==2'b01);
-assign tr2_EXC = (tr2_NaN | tr2_INF | tr2_DML) & (thread_q2==2'b10);
-assign tr3_EXC = (tr3_NaN | tr3_INF | tr3_DML) & (thread_q2==2'b11);
+wire [31:0] tr0_capt_dataA;
+wire [31:0] tr0_capt_dataB;
 
+wire [31:0] tr1_capt_dataA;
+wire [31:0] tr1_capt_dataB;
+
+wire [31:0] tr2_capt_dataA;
+wire [31:0] tr2_capt_dataB;
+
+wire [31:0] tr3_capt_dataA;
+wire [31:0] tr3_capt_dataB;
+
+wire tr0_EXC_in_service;      
+wire tr0_invalid_in_service;  
+wire tr0_divby0_in_service;   
+wire tr0_overflow_in_service; 
+wire tr0_underflow_in_service;
+wire tr0_inexact_in_service;  
+
+wire tr1_EXC_in_service;      
+wire tr1_invalid_in_service;  
+wire tr1_divby0_in_service;   
+wire tr1_overflow_in_service; 
+wire tr1_underflow_in_service;
+wire tr1_inexact_in_service;  
+
+wire tr2_EXC_in_service;      
+wire tr2_invalid_in_service;  
+wire tr2_divby0_in_service;                                                                                                            
+wire tr2_overflow_in_service;                                                                                                          
+wire tr2_underflow_in_service;                                                                                                         
+wire tr2_inexact_in_service;                                                                                                           
+
+wire tr3_EXC_in_service;                                                                                                               
+wire tr3_invalid_in_service;                                                                                                           
+wire tr3_divby0_in_service;                                                                                                            
+wire tr3_overflow_in_service;                                                                                                          
+wire tr3_underflow_in_service;
+wire tr3_inexact_in_service;                                                                                                           
+                                                                                                                                       
+                                                                                                                                       
+assign tr3_invalid   = tr3_invalid_imm;
+assign tr3_divby0    = tr3_alt_del_div0  ? tr3_divby0_del    : tr3_divby0_imm;
+assign tr3_overflow  = tr3_alt_del_ovfl  ? tr3_overflow_del  : tr3_overflow_imm;
+assign tr3_underflow = tr3_alt_del_unfl  ? tr3_underflow_del : tr3_underflow_imm;
+assign tr3_inexact   = tr3_alt_del_nxact ? tr3_inexact_del   : tr3_inexact_imm;
+                                                                                                                                       
+assign tr2_invalid   = tr2_invalid_imm;
+assign tr2_divby0    = tr2_alt_del_div0  ? tr2_divby0_del    : tr2_divby0_imm;
+assign tr2_overflow  = tr2_alt_del_ovfl  ? tr2_overflow_del  : tr2_overflow_imm;
+assign tr2_underflow = tr2_alt_del_unfl  ? tr2_underflow_del : tr2_underflow_imm;
+assign tr2_inexact   = tr2_alt_del_nxact ? tr2_inexact_del   : tr2_inexact_imm;
+
+assign tr1_invalid   = tr1_invalid_imm;
+assign tr1_divby0    = tr1_alt_del_div0  ? tr1_divby0_del    : tr1_divby0_imm;
+assign tr1_overflow  = tr1_alt_del_ovfl  ? tr1_overflow_del  : tr1_overflow_imm;
+assign tr1_underflow = tr1_alt_del_unfl  ? tr1_underflow_del : tr1_underflow_imm;
+assign tr1_inexact   = tr1_alt_del_nxact ? tr1_inexact_del   : tr1_inexact_imm;
+
+assign tr0_invalid   = tr0_invalid_imm;
+assign tr0_divby0    = tr0_alt_del_div0  ? tr0_divby0_del    : tr0_divby0_imm;
+assign tr0_overflow  = tr0_alt_del_ovfl  ? tr0_overflow_del  : tr0_overflow_imm;
+assign tr0_underflow = tr0_alt_del_unfl  ? tr0_underflow_del : tr0_underflow_imm;
+assign tr0_inexact   = tr0_alt_del_nxact ? tr0_inexact_del   : tr0_inexact_imm;
+
+        
 assign fp_sel_q1 = (((~|srcA_q1[12:8] & srcA_q1[7]) & ~constn_q1[1]) | ((~|srcB_q1[12:8] & srcB_q1[7]) & ~constn_q1[0])) & ~(opcode_q1==BTB_);
 
 assign tr0_rewind_PC = (opcode_q2[3:2]==2'b00) & ~fp_ready_q2 & (thread_q2==2'b00) & fp_sel_q2;
@@ -600,7 +799,7 @@ assign OPdest = P_DATAi[23:16];
 assign OPsrcA = P_DATAi[15:8];
 assign OPsrcB = P_DATAi[7:0];
 
-assign thread = P_DATAi[31:30]; 
+assign round_mode = P_DATAi[31:30]; 
 assign rddisable = 1'b0;
 assign SWBRKdet = (P_DATAi[27:8]== 20'h4001F);  //relative branch to self ALWAYS == swbrk
 
@@ -616,6 +815,7 @@ assign sbits = {sb, sb, sb, sb, sb, sb, sb, sb, sb, sb, sb, sb, sb, sb, sb, sb, 
 
 assign shiftype = srcB_q2[6:4];
 assign shiftamount = srcB_q2[3:0];
+assign shiftamount1 = shiftamount + 1'b1;
 
 assign rdconstA =  constn[1] & ~constn[0];
 
@@ -630,37 +830,53 @@ assign tr2_NMI = ~tr2_done & (tr2_timer==tr2_timercmpr);
 assign tr3_NMI = ~tr3_done & (tr3_timer==tr3_timercmpr);
 
 assign  tr0_STATUS = {  2'b10,
-                       14'b0000_0000_0000_00,
+                         tr0_Z | tr0_N,
+                        6'b000000,
                          tr0_IRQ,                   // tr0 general-purpose interrupt request
-                         tr0_EXC,                   // floating-point exception (NaN | INF | DML)
                          tr0_IRQ_IE,                // tr0 general-purpose interrupt request interrupt enable
-                         tr0_EXC_IE,                // tr0 FP exception interrupt enable  
-                         tr0_NaN,                   // floating-point Not a Number exception
-                         tr0_INF,                   // floating-point infinity exception
-                         tr0_DML,                   // floating-point denormal exception
-                         tr0_NML,                   // floating-point normal
-                         tr0_SZ,                    // floating-point signed-zero normal
-                         tr0_FPN,                   // floating-point negative normal
+                         tr0_alt_del_nxact,         // 1 = alternate delayed handler, 0 = immediate
+                         tr0_alt_del_unfl,          // 1 = alternate delayed handler, 0 = immediate
+                         tr0_alt_del_ovfl,          // 1 = alternate delayed handler, 0 = immediate
+                         tr0_alt_del_div0,          // 1 = alternate delayed handler, 0 = immediate
+                         tr0_alt_del_inv,           // 1 = alternate delayed handler, 0 = immediate
+                         tr0_alt_nxact_handl,       // enable interrupt for alternate inexact exception handler
+                         tr0_alt_unfl_handl,        // enable interrupt for alternate underflow exception handler
+                         tr0_alt_ovfl_handl,        // enable interrupt for alternate overflow exception handler
+                         tr0_alt_div0_handl,        // enable interrupt for alternate divide by 0 exception handler
+                         tr0_alt_inv_handl,         // enable interrupt for alternate invalid operation exception handler
+                         tr0_inexact_flag,          // flag indicating inexact result
+                         tr0_underflow_flag,        // flag indicating result underflow
+                         tr0_overflow_flag,         // flag indicating result overflow
+                         tr0_divby0_flag,           // flag indicating result is from divide by zero (divide or log)
+                         tr0_invalid_flag,          // flag indicating invalid operation
                          tr0_done, 
                          tr0_locked,
-                         tr0_V,     
-                         tr0_N,     
-                         tr0_C,                     // "<" less than if set, ">=" greater than or equal to if cleared
-                         tr0_Z                      // "==" equal to if set, "!=" not equal to if cleared
+                         tr0_V,                     // integer overflow flag
+                         tr0_N,                     // negative (sign) flag for both float and integer
+                         tr0_C,                     // integer arithmatic carry flag "<" less than if set, ">=" greater than or equal to if cleared
+                         tr0_Z                      // zero flag for both integer and float "==" equal to if set, "!=" not equal to if cleared
                          };            
 
 assign  tr1_STATUS = {  2'b10,
-                       14'b0000_0000_0000_00,
-                         tr1_IRQ,                   // tr0 general-purpose interrupt request
-                         tr1_EXC,                   // floating-point exception (NaN | INF | DML)
-                         tr1_IRQ_IE,                // tr0 general-purpose interrupt request interrupt enable
-                         tr1_EXC_IE,                // tr0 FP exception interrupt enable  
-                         tr1_NaN,                   // floating-point Not a Number exception
-                         tr1_INF,                   // floating-point infinity exception
-                         tr1_DML,                   // floating-point denormal exception
-                         tr1_NML,                   // floating-point normal
-                         tr1_SZ,                    // floating-point signed-zero normal
-                         tr1_FPN,                   // floating-point negative normal
+                         tr1_Z | tr1_N,
+                        6'b000000,
+                         tr1_IRQ,                   // tr1 general-purpose interrupt request
+                         tr1_IRQ_IE,                // tr1 general-purpose interrupt request interrupt enable
+                         tr1_alt_del_nxact,         // 1 = alternate delayed handler, 0 = immediate
+                         tr1_alt_del_unfl,          // 1 = alternate delayed handler, 0 = immediate
+                         tr1_alt_del_ovfl,          // 1 = alternate delayed handler, 0 = immediate
+                         tr1_alt_del_div0,          // 1 = alternate delayed handler, 0 = immediate
+                         tr1_alt_del_inv,           // 1 = alternate delayed handler, 0 = immediate
+                         tr1_alt_nxact_handl,       // enable interrupt for alternate inexact exception handler
+                         tr1_alt_unfl_handl,        // enable interrupt for alternate underflow exception handler
+                         tr1_alt_ovfl_handl,        // enable interrupt for alternate overflow exception handler
+                         tr1_alt_div0_handl,        // enable interrupt for alternate divide by 0 exception handler
+                         tr1_alt_inv_handl,         // enable interrupt for alternate invalid operation exception handler
+                         tr1_inexact_flag,          // flag indicating inexact result
+                         tr1_underflow_flag,        // flag indicating result underflow
+                         tr1_overflow_flag,         // flag indicating result overflow
+                         tr1_divby0_flag,           // flag indicating result is from divide by zero (divide or log)
+                         tr1_invalid_flag,          // flag indicating invalid operation
                          tr1_done, 
                          tr1_locked,
                          tr1_V,     
@@ -670,17 +886,25 @@ assign  tr1_STATUS = {  2'b10,
                          };            
                          
 assign  tr2_STATUS = {  2'b10,
-                       14'b0000_0000_0000_00,
-                         tr2_IRQ,                   // tr0 general-purpose interrupt request
-                         tr2_EXC,                   // floating-point exception (NaN | INF | DML)
-                         tr2_IRQ_IE,                // tr0 general-purpose interrupt request interrupt enable
-                         tr2_EXC_IE,                // tr0 FP exception interrupt enable  
-                         tr2_NaN,                   // floating-point Not a Number exception
-                         tr2_INF,                   // floating-point infinity exception
-                         tr2_DML,                   // floating-point denormal exception
-                         tr2_NML,                   // floating-point normal
-                         tr2_SZ,                    // floating-point signed-zero normal
-                         tr2_FPN,                   // floating-point negative normal
+                         tr2_Z | tr2_N,
+                         6'b000000,
+                         tr2_IRQ,                   // tr2 general-purpose interrupt request
+                         tr2_IRQ_IE,                // tr2 general-purpose interrupt request interrupt enable
+                         tr2_alt_del_nxact,         // 1 = alternate delayed handler, 0 = immediate
+                         tr2_alt_del_unfl,          // 1 = alternate delayed handler, 0 = immediate
+                         tr2_alt_del_ovfl,          // 1 = alternate delayed handler, 0 = immediate
+                         tr2_alt_del_div0,          // 1 = alternate delayed handler, 0 = immediate
+                         tr2_alt_del_inv,           // 1 = alternate delayed handler, 0 = immediate
+                         tr2_alt_nxact_handl,       // enable interrupt for alternate inexact exception handler
+                         tr2_alt_unfl_handl,        // enable interrupt for alternate underflow exception handler
+                         tr2_alt_ovfl_handl,        // enable interrupt for alternate overflow exception handler
+                         tr2_alt_div0_handl,        // enable interrupt for alternate divide by 0 exception handler
+                         tr2_alt_inv_handl,         // enable interrupt for alternate invalid operation exception handler
+                         tr2_inexact_flag,          // flag indicating inexact result
+                         tr2_underflow_flag,        // flag indicating result underflow
+                         tr2_overflow_flag,         // flag indicating result overflow
+                         tr2_divby0_flag,           // flag indicating result is from divide by zero (divide or log)
+                         tr2_invalid_flag,          // flag indicating invalid operation
                          tr2_done, 
                          tr2_locked,
                          tr2_V,     
@@ -690,17 +914,25 @@ assign  tr2_STATUS = {  2'b10,
                          };            
 
 assign  tr3_STATUS = {  2'b10,
-                       14'b0000_0000_0000_00,
-                         tr3_IRQ,                   // tr0 general-purpose interrupt request
-                         tr3_EXC,                   // floating-point exception (NaN | INF | DML)
-                         tr3_IRQ_IE,                // tr0 general-purpose interrupt request interrupt enable
-                         tr3_EXC_IE,                // tr0 FP exception interrupt enable  
-                         tr3_NaN,                   // floating-point Not a Number exception
-                         tr3_INF,                   // floating-point infinity exception
-                         tr3_DML,                   // floating-point denormal exception
-                         tr3_NML,                   // floating-point normal
-                         tr3_SZ,                    // floating-point signed-zero normal
-                         tr3_FPN,                   // floating-point negative normal
+                         tr3_Z | tr3_N,
+                        6'b000000,
+                         tr3_IRQ,                   // tr3 general-purpose interrupt request
+                         tr3_IRQ_IE,                // tr3 general-purpose interrupt request interrupt enable
+                         tr3_alt_del_nxact,         // 1 = alternate delayed handler, 0 = immediate
+                         tr3_alt_del_unfl,          // 1 = alternate delayed handler, 0 = immediate
+                         tr3_alt_del_ovfl,          // 1 = alternate delayed handler, 0 = immediate
+                         tr3_alt_del_div0,          // 1 = alternate delayed handler, 0 = immediate
+                         tr3_alt_del_inv,           // 1 = alternate delayed handler, 0 = immediate
+                         tr3_alt_nxact_handl,       // enable interrupt for alternate inexact exception handler
+                         tr3_alt_unfl_handl,        // enable interrupt for alternate underflow exception handler
+                         tr3_alt_ovfl_handl,        // enable interrupt for alternate overflow exception handler
+                         tr3_alt_div0_handl,        // enable interrupt for alternate divide by 0 exception handler
+                         tr3_alt_inv_handl,         // enable interrupt for alternate invalid operation exception handler
+                         tr3_inexact_flag,          // flag indicating inexact result
+                         tr3_underflow_flag,        // flag indicating result underflow
+                         tr3_overflow_flag,         // flag indicating result overflow
+                         tr3_divby0_flag,           // flag indicating result is from divide by zero (divide or log)
+                         tr3_invalid_flag,          // flag indicating invalid operation
                          tr3_done, 
                          tr3_locked,
                          tr3_V,     
@@ -710,19 +942,27 @@ assign  tr3_STATUS = {  2'b10,
                          };            
                          
 assign  tr0_STATUSq2 = {2'b10,
-                       14'b0000_0000_0000_00,
+                         Z_q2 | N_q2,
+                         6'b000000,
                          tr0_IRQ,                    // tr0 general-purpose interrupt request
-                         (NaN_q2 | INF_q2 | DML_q2), // floating-point exception (NaN | INF | DML)
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[13] : tr0_IRQ_IE,
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[12] : tr0_EXC_IE,
-                         NaN_q2,
-                         INF_q2,
-                         DML_q2,                         
-                         NML_q2,                         
-                         SZ_q2,                                     
-                         FPN_q2,
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[5] : tr0_done, 
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[4] : tr0_locked,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[21] : tr0_IRQ_IE,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[20] : tr0_alt_del_nxact,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[19] : tr0_alt_del_unfl,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[18] : tr0_alt_del_ovfl,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[17] : tr0_alt_del_div0,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[16] : tr0_alt_del_inv,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[15] : tr0_alt_nxact_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[14] : tr0_alt_unfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[13] : tr0_alt_ovfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[12] : tr0_alt_div0_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[11] : tr0_alt_inv_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[10] : tr0_inexact_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[9]  : tr0_underflow_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[8]  : tr0_overflow_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[7]  : tr0_divby0_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[6]  : tr0_invalid_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[5]  : tr0_done, 
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[4]  : tr0_locked,
                          V_q2,     
                          N_q2,     
                          C_q2,     
@@ -730,19 +970,27 @@ assign  tr0_STATUSq2 = {2'b10,
                          };
                          
 assign  tr1_STATUSq2 = {2'b10,
-                       14'b0000_0000_0000_00,
-                         tr0_IRQ,                    // tr0 general-purpose interrupt request
-                         (NaN_q2 | INF_q2 | DML_q2), // floating-point exception (NaN | INF | DML)
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[13] : tr1_IRQ_IE,
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[12] : tr1_EXC_IE,
-                         NaN_q2,
-                         INF_q2,
-                         DML_q2,                         
-                         NML_q2,                         
-                         SZ_q2,                                     
-                         FPN_q2,
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[5] : tr1_done, 
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[4] : tr1_locked,
+                         Z_q2 | N_q2,
+                        6'b000000,
+                         tr1_IRQ,                    // tr1 general-purpose interrupt request
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[21] : tr1_IRQ_IE,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[20] : tr1_alt_del_nxact,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[19] : tr1_alt_del_unfl,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[18] : tr1_alt_del_ovfl,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[17] : tr1_alt_del_div0,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[16] : tr1_alt_del_inv,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[15] : tr1_alt_nxact_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[14] : tr1_alt_unfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[13] : tr1_alt_ovfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[12] : tr1_alt_div0_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[11] : tr1_alt_inv_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[10] : tr1_inexact_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[9]  : tr1_underflow_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[8]  : tr1_overflow_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[7]  : tr1_divby0_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[6]  : tr1_invalid_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[5]  : tr1_done, 
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[4]  : tr1_locked,
                          V_q2,     
                          N_q2,     
                          C_q2,     
@@ -750,39 +998,55 @@ assign  tr1_STATUSq2 = {2'b10,
                          };
                                                   
 assign  tr2_STATUSq2 = {2'b10,
-                       14'b0000_0000_0000_00,
-                         tr0_IRQ,                    // tr0 general-purpose interrupt request
-                         (NaN_q2 | INF_q2 | DML_q2), // floating-point exception (NaN | INF | DML)
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[13] : tr2_IRQ_IE,
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[12] : tr2_EXC_IE,
-                         NaN_q2,
-                         INF_q2,
-                         DML_q2,                         
-                         NML_q2,                         
-                         SZ_q2,                                     
-                         FPN_q2,
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[5] : tr2_done, 
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[4] : tr2_locked,
+                         Z_q2 | N_q2,
+                        6'b000000,
+                         tr2_IRQ,                    // tr2 general-purpose interrupt request
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[21] : tr2_IRQ_IE,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[20] : tr2_alt_del_nxact,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[19] : tr2_alt_del_unfl,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[18] : tr2_alt_del_ovfl,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[17] : tr2_alt_del_div0,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[16] : tr2_alt_del_inv,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[15] : tr2_alt_nxact_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[14] : tr2_alt_unfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[13] : tr2_alt_ovfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[12] : tr2_alt_div0_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[11] : tr2_alt_inv_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[10] : tr2_inexact_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[9]  : tr2_underflow_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[8]  : tr2_overflow_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[7]  : tr2_divby0_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[6]  : tr2_invalid_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[5]  : tr2_done, 
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[4]  : tr2_locked,
                          V_q2,     
                          N_q2,     
                          C_q2,     
                          Z_q2
                          };
                          
-assign  tr3_STATUSq2 = {2'b10,          
-                       14'b0000_0000_0000_00,
-                         tr0_IRQ,                    // tr0 general-purpose interrupt request
-                         (NaN_q2 | INF_q2 | DML_q2), // floating-point exception (NaN | INF | DML)
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[13] : tr3_IRQ_IE,
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[12] : tr3_EXC_IE,
-                         NaN_q2,
-                         INF_q2,
-                         DML_q2,                         
-                         NML_q2,                         
-                         SZ_q2,                                     
-                         FPN_q2,
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[5] : tr3_done, 
-                         ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[4] : tr3_locked,
+assign  tr3_STATUSq2 = {2'b10,
+                         Z_q2 | N_q2,
+                        6'b000000,
+                         tr3_IRQ,                    // tr3 general-purpose interrupt request
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[21] : tr3_IRQ_IE,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[20] : tr3_alt_del_nxact,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[19] : tr3_alt_del_unfl,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[18] : tr3_alt_del_ovfl,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[17] : tr3_alt_del_div0,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[16] : tr3_alt_del_inv,                         
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[15] : tr3_alt_nxact_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[14] : tr3_alt_unfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[13] : tr3_alt_ovfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[12] : tr3_alt_div0_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[11] : tr3_alt_inv_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[10] : tr3_inexact_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[9]  : tr3_underflow_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[8]  : tr3_overflow_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[7]  : tr3_divby0_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[6]  : tr3_invalid_flag,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[5]  : tr3_done, 
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[4]  : tr3_locked,
                          V_q2,     
                          N_q2,     
                          C_q2,     
@@ -832,24 +1096,61 @@ ADDER_32 adder_32 (
 aSYMPL_func fpmath( 
    .RESET    (RESET),
    .CLK      (CLK ),
+   .pc_q2    (pc_q2),
    .thread   (newthreadq),
+   .thread_q1(thread_q1),
    .thread_q2(thread_q2),
    .opcode_q1(opcode_q1),
    .constn_q1 (constn_q1 ),
    .OPsrcA_q1(OPsrcA_q1),
    .OPsrcB_q1(OPsrcB_q1),
    .wren     (wrcycl & ~|dest_q2[13:8] & dest_q2[7]),
+   .wren_DOT (wrcycl & (dest_q2==DOT_ADDRS)), 
    .wraddrs  (dest_q2[6:0]),
    .rdSrcAdata (rdSrcAdata ),
    .rdSrcBdata (rdSrcBdata ),
    .rdenA    (rdsrcA & ~|srcA[13:8] & srcA[7]),
-   .rdaddrsA (srcA[6:0]),
+   .rdenA_DOT(rdsrcA & (srcA==DOT_ADDRS)),
+   .rdaddrsA (srcA[7:0]),
    .rddataA  (private_F128_rddataA),
    .rdenB    (rdsrcB & ~|srcB[13:8] & srcB[7]),
-   .rdaddrsB (srcB[6:0]),
+   .rdenB_DOT(rdsrcB & (srcB==DOT_ADDRS)),
    .rddataB  (private_F128_rddataB),
-   .fp_flags (fp_flags),
-   .ready    (fp_ready_q1)
+   .rdaddrsB (srcB[7:0]),
+   .tr0_C_reg(tr0_C_reg ),
+   .tr1_C_reg(tr1_C_reg ),
+   .tr2_C_reg(tr2_C_reg ),
+   .tr3_C_reg(tr3_C_reg ),
+   .exc_codeA(exc_codeA ), 
+   .exc_codeB(exc_codeB ), 
+   
+   .ready    (fp_ready_q1),
+   
+   .round_mode_q1(round_mode_q1    ),
+   
+   .tr3_invalid  (tr3_invalid_imm  ),
+   .tr3_div_by_0 (tr3_divby0_imm   ),
+   .tr3_overflow (tr3_overflow_imm ),
+   .tr3_underflow(tr3_underflow_imm),
+   .tr3_inexact  (tr3_inexact_imm  ),
+   
+   .tr2_invalid  (tr2_invalid_imm  ),
+   .tr2_div_by_0 (tr2_divby0_imm   ),
+   .tr2_overflow (tr2_overflow_imm ),
+   .tr2_underflow(tr2_underflow_imm),
+   .tr2_inexact  (tr2_inexact_imm  ),
+   
+   .tr1_invalid  (tr1_invalid_imm  ),
+   .tr1_div_by_0 (tr1_divby0_imm   ),
+   .tr1_overflow (tr1_overflow_imm ),
+   .tr1_underflow(tr1_underflow_imm),
+   .tr1_inexact  (tr1_inexact_imm  ),
+   
+   .tr0_invalid  (tr0_invalid_imm  ),
+   .tr0_div_by_0 (tr0_divby0_imm   ),
+   .tr0_overflow (tr0_overflow_imm ),
+   .tr0_underflow(tr0_underflow_imm),
+   .tr0_inexact  (tr0_inexact_imm  )
    );
 /*
     assign private_F128_rddataA = 32'h0000_0000;
@@ -858,7 +1159,7 @@ aSYMPL_func fpmath(
     assign fp_ready_q1 = 1'b1;
 */
 
-
+/*
 func_atomic fatomic(
     .wrdata    (wrsrcAdata[9:0]),     
     .opcode_q2 (opcode_q2 ),
@@ -867,14 +1168,14 @@ func_atomic fatomic(
     .tan_out   (tan_out   ),
     .cot_out   (cot_out   ),
     .rcp_out   (rcp_out   ));
+*/
 
-/*
     assign sin_out = 32'h0000_0000;
     assign cos_out = 32'h0000_0000;
     assign tan_out = 32'h0000_0000;
     assign cot_out = 32'h0000_0000;
     assign rcp_out = 32'h0000_0000;
-*/
+
 /*
 // if you need the full 1024 global RAM instead of the 256 instantiated below this module, remove comments and comment out the 256x32 module below this one               
 RAM_tp #(.ADDRS_WIDTH(10), .DATA_WIDTH(32))
@@ -930,99 +1231,262 @@ RAM_tp #(.ADDRS_WIDTH(8), .DATA_WIDTH(32))
     .rdenB(rdsrcB & (srcB[13:6]==8'b00_0000_00)),
     .rdaddrsB({newthreadq[1:0], srcB[5:0]}),
     .rddataB(prvt_rddataB));  
-        
+
 int_cntrl int_cntrl_tr0(
-    .CLK             (CLK          ),
-    .RESET           (RESET        ),
-    .PC              (PC           ),
-    .opcode_q2       (opcode_q2    ),
-    .thread          (newthreadq   ),
-    .thread_q2       (thread_q2    ),
-    .srcA_q2         (srcA_q2      ),
-    .dest_q2         (dest_q2      ),
-    .NMI             (tr0_NMI      ),
-    .EXC             (tr0_EXC      ),
-    .EXC_IE          (tr0_EXC_IE   ),
-    .IRQ             (tr0_IRQ      ),
-    .IRQ_IE          (tr0_IRQ_IE   ),
-    .vector          (tr0_vector   ),
-    .ld_vector       (tr0_ld_vector),
-    .NMI_ack         (tr0_NMI_ack  ),
-    .EXC_ack         (tr0_EXC_ack  ),
-    .IRQ_ack         (tr0_IRQ_ack  ),
+    .CLK                  (CLK          ),
+    .RESET                (RESET        ),
+    .PC                   (PC           ),
+    .opcode_q2            (opcode_q2    ),
+    .thread               (newthreadq   ),
+    .thread_q2            (thread_q2    ),
+    .srcA_q2              (srcA_q2      ),
+    .dest_q2              (dest_q2      ),
+    .NMI                  (tr0_NMI      ),
+    .inexact_exc          (tr0_inexact   & tr0_alt_nxact_handl),
+    .underflow_exc        (tr0_underflow & tr0_alt_unfl_handl ),
+    .overflow_exc         (tr0_overflow  & tr0_alt_ovfl_handl ),
+    .divby0_exc           (tr0_divby0    & tr0_alt_div0_handl ),
+    .invalid_exc          (tr0_invalid   & tr0_alt_inv_handl  ),
+    .IRQ                  (tr0_IRQ      ),
+    .IRQ_IE               (tr0_IRQ_IE   ),
+    .vector               (tr0_vector   ),
+    .ld_vector            (tr0_ld_vector),
+    .NMI_ack              (tr0_NMI_ack  ),
+    .EXC_ack              (tr0_EXC_ack  ),
+    .IRQ_ack              (tr0_IRQ_ack  ),
+    .EXC_in_service       (tr0_EXC_in_service      ),
+    .invalid_in_service   (tr0_invalid_in_service  ),
+    .divby0_in_service    (tr0_divby0_in_service   ),
+    .overflow_in_service  (tr0_overflow_in_service ),
+    .underflow_in_service (tr0_underflow_in_service),
+    .inexact_in_service   (tr0_inexact_in_service  ),
     .wrcycl          (wrcycl       ),
     .assigned_thread (2'b00        )
     );   
 
 int_cntrl int_cntrl_tr1(
-    .CLK             (CLK          ),
-    .RESET           (RESET        ),
-    .PC              (PC           ),
-    .opcode_q2       (opcode_q2    ),
-    .thread          (newthreadq   ),
-    .thread_q2       (thread_q2    ),
-    .srcA_q2         (srcA_q2      ),
-    .dest_q2         (dest_q2      ),
-    .NMI             (tr1_NMI      ),
-    .EXC             (tr1_EXC      ),
-    .EXC_IE          (tr1_EXC_IE   ),
-    .IRQ             (tr1_IRQ      ),
-    .IRQ_IE          (tr1_IRQ_IE   ),
-    .vector          (tr1_vector   ),
-    .ld_vector       (tr1_ld_vector),
-    .NMI_ack         (tr1_NMI_ack  ),
-    .EXC_ack         (tr1_EXC_ack  ),
-    .IRQ_ack         (tr1_IRQ_ack  ),
+    .CLK                  (CLK          ),
+    .RESET                (RESET        ),
+    .PC                   (PC           ),
+    .opcode_q2            (opcode_q2    ),
+    .thread               (newthreadq   ),
+    .thread_q2            (thread_q2    ),
+    .srcA_q2              (srcA_q2      ),
+    .dest_q2              (dest_q2      ),
+    .NMI                  (tr1_NMI      ),
+    .inexact_exc          (tr1_inexact   & tr1_alt_nxact_handl),
+    .underflow_exc        (tr1_underflow & tr1_alt_unfl_handl ),
+    .overflow_exc         (tr1_overflow  & tr1_alt_ovfl_handl ),
+    .divby0_exc           (tr1_divby0    & tr1_alt_div0_handl ),
+    .invalid_exc          (tr1_invalid   & tr1_alt_inv_handl  ),
+    .IRQ                  (tr1_IRQ      ),
+    .IRQ_IE               (tr1_IRQ_IE   ),
+    .vector               (tr1_vector   ),
+    .ld_vector            (tr1_ld_vector),
+    .NMI_ack              (tr1_NMI_ack  ),
+    .EXC_ack              (tr1_EXC_ack  ),
+    .IRQ_ack              (tr1_IRQ_ack  ),
+    .EXC_in_service       (tr1_EXC_in_service      ),
+    .invalid_in_service   (tr1_invalid_in_service  ),
+    .divby0_in_service    (tr1_divby0_in_service   ),
+    .overflow_in_service  (tr1_overflow_in_service ),
+    .underflow_in_service (tr1_underflow_in_service),
+    .inexact_in_service   (tr1_inexact_in_service  ),
     .wrcycl          (wrcycl       ),
     .assigned_thread (2'b01        )
     );   
 
 int_cntrl int_cntrl_tr2(
-    .CLK             (CLK          ),
-    .RESET           (RESET        ),
-    .PC              (PC           ),
-    .opcode_q2       (opcode_q2    ),
-    .thread          (newthreadq   ),
-    .thread_q2       (thread_q2    ),
-    .srcA_q2         (srcA_q2      ),
-    .dest_q2         (dest_q2      ),
-    .NMI             (tr2_NMI      ),
-    .EXC             (tr2_EXC      ),
-    .EXC_IE          (tr2_EXC_IE   ),
-    .IRQ             (tr2_IRQ      ),
-    .IRQ_IE          (tr2_IRQ_IE   ),
-    .vector          (tr2_vector   ),
-    .ld_vector       (tr2_ld_vector),
-    .NMI_ack         (tr2_NMI_ack  ),
-    .EXC_ack         (tr2_EXC_ack  ),
-    .IRQ_ack         (tr2_IRQ_ack  ),
+    .CLK                  (CLK          ),
+    .RESET                (RESET        ),
+    .PC                   (PC           ),
+    .opcode_q2            (opcode_q2    ),
+    .thread               (newthreadq   ),
+    .thread_q2            (thread_q2    ),
+    .srcA_q2              (srcA_q2      ),
+    .dest_q2              (dest_q2      ),
+    .NMI                  (tr2_NMI      ),
+    .inexact_exc          (tr2_inexact   & tr2_alt_nxact_handl),
+    .underflow_exc        (tr2_underflow & tr2_alt_unfl_handl ),
+    .overflow_exc         (tr2_overflow  & tr2_alt_ovfl_handl ),
+    .divby0_exc           (tr2_divby0    & tr2_alt_div0_handl ),
+    .invalid_exc          (tr2_invalid   & tr2_alt_inv_handl  ),
+    .IRQ                  (tr2_IRQ      ),
+    .IRQ_IE               (tr2_IRQ_IE   ),
+    .vector               (tr2_vector   ),
+    .ld_vector            (tr2_ld_vector),
+    .NMI_ack              (tr2_NMI_ack  ),
+    .EXC_ack              (tr2_EXC_ack  ),
+    .IRQ_ack              (tr2_IRQ_ack  ),
+    .EXC_in_service       (tr2_EXC_in_service      ),
+    .invalid_in_service   (tr2_invalid_in_service  ),
+    .divby0_in_service    (tr2_divby0_in_service   ),
+    .overflow_in_service  (tr2_overflow_in_service ),
+    .underflow_in_service (tr2_underflow_in_service),
+    .inexact_in_service   (tr2_inexact_in_service  ),
     .wrcycl          (wrcycl       ),
     .assigned_thread (2'b10        )
     );   
 
 int_cntrl int_cntrl_tr3(
-    .CLK             (CLK          ),
-    .RESET           (RESET        ),
-    .PC              (PC           ),
-    .opcode_q2       (opcode_q2    ),
-    .thread          (newthreadq   ),
-    .thread_q2       (thread_q2    ),
-    .srcA_q2         (srcA_q2      ),
-    .dest_q2         (dest_q2      ),
-    .NMI             (tr3_NMI      ),
-    .EXC             (tr3_EXC      ),
-    .EXC_IE          (tr3_EXC_IE   ),
-    .IRQ             (tr3_IRQ      ),
-    .IRQ_IE          (tr3_IRQ_IE   ),
-    .vector          (tr3_vector   ),
-    .ld_vector       (tr3_ld_vector),
-    .NMI_ack         (tr3_NMI_ack  ),
-    .EXC_ack         (tr3_EXC_ack  ),
-    .IRQ_ack         (tr3_IRQ_ack  ),
+    .CLK                  (CLK          ),
+    .RESET                (RESET        ),
+    .PC                   (PC           ),
+    .opcode_q2            (opcode_q2    ),
+    .thread               (newthreadq   ),
+    .thread_q2            (thread_q2    ),
+    .srcA_q2              (srcA_q2      ),
+    .dest_q2              (dest_q2      ),
+    .NMI                  (tr3_NMI      ),
+    .inexact_exc          (tr3_inexact   & tr3_alt_nxact_handl),
+    .underflow_exc        (tr3_underflow & tr3_alt_unfl_handl ),
+    .overflow_exc         (tr3_overflow  & tr3_alt_ovfl_handl ),
+    .divby0_exc           (tr3_divby0    & tr3_alt_div0_handl ),
+    .invalid_exc          (tr3_invalid   & tr3_alt_inv_handl  ),
+    .IRQ                  (tr3_IRQ      ),
+    .IRQ_IE               (tr3_IRQ_IE   ),
+    .vector               (tr3_vector   ),
+    .ld_vector            (tr3_ld_vector),
+    .NMI_ack              (tr3_NMI_ack  ),
+    .EXC_ack              (tr3_EXC_ack  ),
+    .IRQ_ack              (tr3_IRQ_ack  ),
+    .EXC_in_service       (tr3_EXC_in_service      ),
+    .invalid_in_service   (tr3_invalid_in_service  ),
+    .divby0_in_service    (tr3_divby0_in_service   ),
+    .overflow_in_service  (tr3_overflow_in_service ),
+    .underflow_in_service (tr3_underflow_in_service),
+    .inexact_in_service   (tr3_inexact_in_service  ),
     .wrcycl          (wrcycl       ),
     .assigned_thread (2'b11        )
-    );   
+    );  
+    
+exc_capture exc_capt3(     // quasi-trace buffer
+    .CLK            (CLK        ),
+    .RESET          (tr3_done   ),
+    .srcA_q1        (srcA_q1    ),
+    .srcB_q1        (srcB_q1    ),
+    .addrsMode_q1   (constn_q1  ),
+    .dest_q2        (dest_q2    ),
+    .pc_q1          (pc_q1      ),
+    .rdSrcAdata     (rdSrcAdata ),
+    .rdSrcBdata     (rdSrcBdata ),
+    .exc_codeA      (exc_codeA  ),
+    .exc_codeB      (exc_codeB  ),
+    .rdenA          (rdsrcA & (srcA[13:2]==11'b0_0000_0110_00)),
+    .rdenB          (rdsrcB & (srcB[13:2]==11'b0_0000_0110_00)),
+    .thread_q1      (thread_q1           ),
+    .round_mode_q1  (round_mode_q1       ),
+    .ready_in       (fp_ready_q1         ),
+    .alt_nxact_handl(tr3_alt_nxact_handl ),
+    .alt_unfl_handl (tr3_alt_unfl_handl  ),
+    .alt_ovfl_handl (tr3_alt_ovfl_handl  ),
+    .alt_div0_handl (tr3_alt_div0_handl  ),
+    .alt_inv_handl  (tr3_alt_inv_handl   ),
+    .invalid        (tr3_invalid_del     ),
+    .divby0         (tr3_divby0_del      ),
+    .overflow       (tr3_overflow_del    ),
+    .underflow      (tr3_underflow_del   ),
+    .inexact        (tr3_inexact_del     ),
+    .capt_dataA     (tr3_capt_dataA      ),
+    .capt_dataB     (tr3_capt_dataB      ),
+    .thread_sel     (2'b00               )
+    );                                      
+                                        
+exc_capture exc_capt2(     // quasi-trace buffer
+    .CLK            (CLK        ),
+    .RESET          (tr2_done   ),
+    .srcA_q1        (srcA_q1    ),
+    .srcB_q1        (srcB_q1    ),
+    .addrsMode_q1   (constn_q1  ),
+    .dest_q2        (dest_q2    ),
+    .pc_q1          (pc_q1      ),
+    .rdSrcAdata     (rdSrcAdata ),
+    .rdSrcBdata     (rdSrcBdata ),
+    .exc_codeA      (exc_codeA  ),
+    .exc_codeB      (exc_codeB  ),
+    .rdenA          (rdsrcA & (srcA[13:2]==11'b0_0000_0110_00)),
+    .rdenB          (rdsrcB & (srcB[13:2]==11'b0_0000_0110_00)),
+    .thread_q1      (thread_q1           ),
+    .round_mode_q1  (round_mode_q1       ),
+    .ready_in       (fp_ready_q1         ),
+    .alt_nxact_handl(tr2_alt_nxact_handl ),
+    .alt_unfl_handl (tr2_alt_unfl_handl  ),
+    .alt_ovfl_handl (tr2_alt_ovfl_handl  ),
+    .alt_div0_handl (tr2_alt_div0_handl  ),
+    .alt_inv_handl  (tr2_alt_inv_handl   ),
+    .invalid        (tr2_invalid_del     ),
+    .divby0         (tr2_divby0_del      ),
+    .overflow       (tr2_overflow_del    ),
+    .underflow      (tr2_underflow_del   ),
+    .inexact        (tr2_inexact_del     ),
+    .capt_dataA     (tr2_capt_dataA      ),
+    .capt_dataB     (tr2_capt_dataB      ),
+    .thread_sel     (2'b00               )
+    );                                      
 
+exc_capture exc_capt1(     // quasi-trace buffer
+    .CLK            (CLK        ),
+    .RESET          (tr1_done   ),
+    .srcA_q1        (srcA_q1    ),
+    .srcB_q1        (srcB_q1    ),
+    .addrsMode_q1   (constn_q1  ),
+    .dest_q2        (dest_q2    ),
+    .pc_q1          (pc_q1      ),
+    .rdSrcAdata     (rdSrcAdata ),
+    .rdSrcBdata     (rdSrcBdata ),
+    .exc_codeA      (exc_codeA  ),
+    .exc_codeB      (exc_codeB  ),
+    .rdenA          (rdsrcA & (srcA[13:2]==11'b0_0000_0110_00)),
+    .rdenB          (rdsrcB & (srcB[13:2]==11'b0_0000_0110_00)),
+    .thread_q1      (thread_q1           ),
+    .round_mode_q1  (round_mode_q1       ),
+    .ready_in       (fp_ready_q1         ),
+    .alt_nxact_handl(tr1_alt_nxact_handl ),
+    .alt_unfl_handl (tr1_alt_unfl_handl  ),
+    .alt_ovfl_handl (tr1_alt_ovfl_handl  ),
+    .alt_div0_handl (tr1_alt_div0_handl  ),
+    .alt_inv_handl  (tr1_alt_inv_handl   ),
+    .invalid        (tr1_invalid_del     ),
+    .divby0         (tr1_divby0_del      ),
+    .overflow       (tr1_overflow_del    ),
+    .underflow      (tr1_underflow_del   ),
+    .inexact        (tr1_inexact_del     ),
+    .capt_dataA     (tr1_capt_dataA      ),
+    .capt_dataB     (tr1_capt_dataB      ),
+    .thread_sel     (2'b00               )
+    );                                      
+
+exc_capture exc_capt0(     // quasi-trace buffer
+    .CLK            (CLK        ),
+    .RESET          (tr1_done   ),
+    .srcA_q1        (srcA_q1    ),
+    .srcB_q1        (srcB_q1    ),
+    .addrsMode_q1   (constn_q1  ),
+    .dest_q2        (dest_q2    ),
+    .pc_q1          (pc_q1      ),
+    .rdSrcAdata     (rdSrcAdata ),
+    .rdSrcBdata     (rdSrcBdata ),
+    .exc_codeA      (exc_codeA  ),
+    .exc_codeB      (exc_codeB  ),
+    .rdenA          (rdsrcA & (srcA[13:2]==11'b0_0000_0110_00)),
+    .rdenB          (rdsrcB & (srcB[13:2]==11'b0_0000_0110_00)),
+    .thread_q1      (thread_q1           ),
+    .round_mode_q1  (round_mode_q1       ),
+    .ready_in       (fp_ready_q1         ),
+    .alt_nxact_handl(tr0_alt_nxact_handl ),
+    .alt_unfl_handl (tr0_alt_unfl_handl  ),
+    .alt_ovfl_handl (tr0_alt_ovfl_handl  ),
+    .alt_div0_handl (tr0_alt_div0_handl  ),
+    .alt_inv_handl  (tr0_alt_inv_handl   ),
+    .invalid        (tr0_invalid_del     ),
+    .divby0         (tr0_divby0_del      ),
+    .overflow       (tr0_overflow_del    ),
+    .underflow      (tr0_underflow_del   ),
+    .inexact        (tr0_inexact_del     ),
+    .capt_dataA     (tr0_capt_dataA      ),
+    .capt_dataB     (tr0_capt_dataB      ),
+    .thread_sel     (2'b00               )
+    );                                      
     
 sched_stack sched_stack(
     .CLK       (CLK       ),
@@ -1177,8 +1641,9 @@ always @(*) begin
     end   
 */     
     else begin
-        newthread = thread; 
-        LD_newthread = 1'b0;
+//        newthread = thread; 
+         newthread = 2'b00; 
+       LD_newthread = 1'b0;
     end       
 end               
 
@@ -1203,19 +1668,20 @@ always @(*) begin
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr0_STATUSq2 : tr0_STATUS;
                              SCHED_ADDRS : rdSrcAdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : scheduler;      //global
                           SCHEDCMP_ADDRS : rdSrcAdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : sched_cmp;
-                            OUTBOX_ADDRS : rdSrcAdata = ((dest_q2 == OUTBOX_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : OUTBOX;                               
+                              CREG_ADDRS : rdSrcAdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : tr0_C_reg;                               
                             LPCNT1_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {16'h0000, tr0_LPCNT1_nz, 3'b000, tr0_LPCNT1};
                             LPCNT0_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {16'h0000, tr0_LPCNT0_nz, 3'b000, tr0_LPCNT0};
                              TIMER_ADDRS : rdSrcAdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {12'h000, tr0_timer};                               
-/*                                
-                                14'h0066,
-                                14'h0065,
-                                14'h0064,
-                                14'h0063,
-                                14'h0062,
-                                14'h0061,
-                                14'h0060,
-*/                                
+                               QOS_ADDRS : rdSrcAdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};                               
+                               DOT_ADDRS : rdSrcAdata = private_F128_rddataA;
+                               
+                                14'h0064,  //reserved for RPT counter
+                                
+                             CAPT3_ADDRS,
+                             CAPT2_ADDRS,
+                             CAPT1_ADDRS,
+                             CAPT0_ADDRS : rdSrcAdata = tr0_capt_dataA;
+                                
                                 14'h005x,
                                 14'h004x : rdSrcAdata = global_32_rddataA;
                                 14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                         
@@ -1242,19 +1708,20 @@ always @(*) begin
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr1_STATUSq2 : tr1_STATUS;
                              SCHED_ADDRS : rdSrcAdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : scheduler;      //global
                           SCHEDCMP_ADDRS : rdSrcAdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : sched_cmp;
-                            OUTBOX_ADDRS : rdSrcAdata = ((dest_q2 == OUTBOX_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : OUTBOX;                                
+                              CREG_ADDRS : rdSrcAdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : tr1_C_reg;                               
                             LPCNT1_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {16'h0000, tr1_LPCNT1_nz, 3'b000, tr1_LPCNT1};
                             LPCNT0_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {16'h0000, tr1_LPCNT0_nz, 3'b000, tr1_LPCNT0};
                              TIMER_ADDRS : rdSrcAdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {12'h000, tr1_timer};                               
-/*
-                                14'h0066,
-                                14'h0065,
-                                14'h0064,
-                                14'h0063,
-                                14'h0062,
-                                14'h0061,
-                                14'h0060,
-*/                                
+                               QOS_ADDRS : rdSrcAdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};
+                               DOT_ADDRS : rdSrcAdata = private_F128_rddataA;
+
+//                                14'h0064,  //reserved for RPT counter
+                                
+                             CAPT3_ADDRS,
+                             CAPT2_ADDRS,
+                             CAPT1_ADDRS,
+                             CAPT0_ADDRS : rdSrcAdata = tr1_capt_dataA;
+                             
                                14'h005x,
                                14'h004x : rdSrcAdata = global_32_rddataA;
                                14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                   
@@ -1281,19 +1748,20 @@ always @(*) begin
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr2_STATUSq2 : tr2_STATUS;
                              SCHED_ADDRS : rdSrcAdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : scheduler;      //global
                           SCHEDCMP_ADDRS : rdSrcAdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : sched_cmp;
-                            OUTBOX_ADDRS : rdSrcAdata = ((dest_q2 == OUTBOX_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : OUTBOX;                                
+                              CREG_ADDRS : rdSrcAdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : tr2_C_reg;                               
                             LPCNT1_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {16'h0000, tr2_LPCNT1_nz, 3'b000, tr2_LPCNT1};
                             LPCNT0_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {16'h0000, tr2_LPCNT0_nz, 3'b000, tr2_LPCNT0};
                              TIMER_ADDRS : rdSrcAdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {12'h000, tr2_timer};                               
-/*                                
-                                14'h0066,
-                                14'h0065,
-                                14'h0064,
-                                14'h0063,
-                                14'h0062,
-                                14'h0061,
-                                14'h0060,
-*/                                
+                               QOS_ADDRS : rdSrcAdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};
+                               DOT_ADDRS : rdSrcAdata = private_F128_rddataA;
+
+//                                14'h0064,  //reserved for RPT counter
+                                
+                             CAPT3_ADDRS,
+                             CAPT2_ADDRS,
+                             CAPT1_ADDRS,
+                             CAPT0_ADDRS : rdSrcAdata = tr2_capt_dataA;
+                                
                                14'h005x,
                                14'h004x : rdSrcAdata = global_32_rddataA;
                                14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                                                             
@@ -1320,19 +1788,20 @@ always @(*) begin
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr3_STATUSq2 : tr3_STATUS;
                              SCHED_ADDRS : rdSrcAdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : scheduler;      //global
                           SCHEDCMP_ADDRS : rdSrcAdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : sched_cmp;
-                            OUTBOX_ADDRS : rdSrcAdata = ((dest_q2 == OUTBOX_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : OUTBOX;                                
+                              CREG_ADDRS : rdSrcAdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : tr3_C_reg;                               
                             LPCNT1_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {16'h0000, tr3_LPCNT1_nz, 3'b000, tr3_LPCNT1};
                             LPCNT0_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {16'h0000, tr3_LPCNT0_nz, 3'b000, tr3_LPCNT0};
                              TIMER_ADDRS : rdSrcAdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {12'h000, tr3_timer};                               
-/*                                
-                                14'h0066,
-                                14'h0065,
-                                14'h0064,
-                                14'h0063,
-                                14'h0062,
-                                14'h0061,
-                                14'h0060,
-*/                                
+                               QOS_ADDRS : rdSrcAdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};
+                               DOT_ADDRS : rdSrcAdata = private_F128_rddataA;
+
+//                                14'h0064,  //reserved for RPT counter
+                                
+                             CAPT3_ADDRS,
+                             CAPT2_ADDRS,
+                             CAPT1_ADDRS,
+                             CAPT0_ADDRS : rdSrcAdata = tr3_capt_dataA;
+                                
                                14'h005x,
                                14'h004x : rdSrcAdata = global_32_rddataA;
                                14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                                                              
@@ -1362,19 +1831,20 @@ always @(*) begin
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr0_STATUSq2 : tr0_STATUS;
                              SCHED_ADDRS : rdSrcBdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : scheduler;
                           SCHEDCMP_ADDRS : rdSrcBdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : sched_cmp;
-                            OUTBOX_ADDRS : rdSrcBdata = ((dest_q2 == OUTBOX_ADDRS) & wrcycl) ? resultout : OUTBOX;                                
+                              CREG_ADDRS : rdSrcBdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : tr0_C_reg;                               
                             LPCNT1_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {16'h0000, tr0_LPCNT1_nz, 3'b000, tr0_LPCNT1};
                             LPCNT0_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {16'h0000, tr0_LPCNT0_nz, 3'b000, tr0_LPCNT0};
                              TIMER_ADDRS : rdSrcBdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {12'h000, tr0_timer};                               
-/*
-                                14'h0066,
-                                14'h0065,
-                                14'h0064,
-                                14'h0063,
-                                14'h0062,
-                                14'h0061,
-                                14'h0060,
-*/                                
+                               QOS_ADDRS : rdSrcBdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};
+                               DOT_ADDRS : rdSrcBdata = private_F128_rddataB;
+                               
+//                                14'h0064,  //reserved for RPT counter
+                                
+                             CAPT3_ADDRS,
+                             CAPT2_ADDRS,
+                             CAPT1_ADDRS,
+                             CAPT0_ADDRS : rdSrcBdata = tr0_capt_dataB;
+                                
                                14'h005x,
                                14'h004x : rdSrcBdata = global_32_rddataB;
                                14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;                                                                                      
@@ -1400,19 +1870,20 @@ always @(*) begin
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr1_STATUSq2 : tr1_STATUS;
                              SCHED_ADDRS : rdSrcBdata = ((dest_q2 == SCHED_ADDRS) & wrcycl) ? resultout : scheduler;
                           SCHEDCMP_ADDRS : rdSrcBdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl) ? resultout : sched_cmp;
-                            OUTBOX_ADDRS : rdSrcBdata = ((dest_q2 == OUTBOX_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : OUTBOX;                                
+                              CREG_ADDRS : rdSrcBdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : tr1_C_reg;                               
                             LPCNT1_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {16'h0000, tr1_LPCNT1_nz, 3'b000, tr1_LPCNT1};
                             LPCNT0_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {16'h0000, tr1_LPCNT0_nz, 3'b000, tr1_LPCNT0};
                              TIMER_ADDRS : rdSrcBdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {12'h000, tr1_timer};                               
-/*
-                                14'h0066,
-                                14'h0065,
-                                14'h0064,
-                                14'h0063,
-                                14'h0062,
-                                14'h0061,
-                                14'h0060,
-*/                                
+                               QOS_ADDRS : rdSrcBdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};
+                               DOT_ADDRS : rdSrcBdata = private_F128_rddataB;
+                               
+                                14'h0064,  //reserved for RPT counter
+                                
+                             CAPT3_ADDRS,
+                             CAPT2_ADDRS,
+                             CAPT1_ADDRS,
+                             CAPT0_ADDRS : rdSrcBdata = tr1_capt_dataB;
+                                
                                14'h005x,
                                14'h004x : rdSrcBdata = global_32_rddataB;
                                14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
@@ -1438,19 +1909,20 @@ always @(*) begin
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr2_STATUSq2 : tr2_STATUS;
                              SCHED_ADDRS : rdSrcBdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : scheduler;
                           SCHEDCMP_ADDRS : rdSrcBdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : sched_cmp;
-                            OUTBOX_ADDRS : rdSrcBdata = ((dest_q2 == OUTBOX_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : OUTBOX;                                
+                              CREG_ADDRS : rdSrcBdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : tr2_C_reg;                               
                             LPCNT1_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {16'h0000, tr2_LPCNT1_nz, 3'b000, tr2_LPCNT1};
                             LPCNT0_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {16'h0000, tr2_LPCNT0_nz, 3'b000, tr2_LPCNT0};
                              TIMER_ADDRS : rdSrcBdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {12'h000, tr2_timer};                               
-/*
-                                14'h0066,
-                                14'h0065,
-                                14'h0064,
-                                14'h0063,
-                                14'h0062,
-                                14'h0061,
-                                14'h0060,
-*/                                
+                               QOS_ADDRS : rdSrcBdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};
+                               DOT_ADDRS : rdSrcBdata = private_F128_rddataB;
+                               
+                                14'h0064,  //reserved for RPT counter
+                                
+                             CAPT3_ADDRS,
+                             CAPT2_ADDRS,
+                             CAPT1_ADDRS,
+                             CAPT0_ADDRS : rdSrcBdata = tr2_capt_dataB;
+                                
                                14'h005x,
                                14'h004x : rdSrcBdata = global_32_rddataB;
                                14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
@@ -1476,19 +1948,20 @@ always @(*) begin
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr3_STATUSq2 : tr3_STATUS;
                              SCHED_ADDRS : rdSrcBdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : scheduler;
                           SCHEDCMP_ADDRS : rdSrcBdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : sched_cmp;
-                            OUTBOX_ADDRS : rdSrcBdata = ((dest_q2 == OUTBOX_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : OUTBOX;                                
+                              CREG_ADDRS : rdSrcBdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : tr3_C_reg;                               
                             LPCNT1_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {16'h0000, tr3_LPCNT1_nz, 3'b000, tr3_LPCNT1};
                             LPCNT0_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {16'h0000, tr3_LPCNT0_nz, 3'b000, tr3_LPCNT0};
                              TIMER_ADDRS : rdSrcBdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {12'h000, tr3_timer};                               
-/*
-                                14'h0066,
-                                14'h0065,
-                                14'h0064,
-                                14'h0063,
-                                14'h0062,
-                                14'h0061,
-                                14'h0060,
-*/                                
+                               QOS_ADDRS : rdSrcBdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};
+                               DOT_ADDRS : rdSrcBdata = private_F128_rddataB;
+                               
+//                                14'h0064,  //reserved for RPT counter
+                                
+                             CAPT3_ADDRS,
+                             CAPT2_ADDRS,
+                             CAPT1_ADDRS,
+                             CAPT0_ADDRS : rdSrcBdata = tr3_capt_dataB;
+                                
                                14'h005x,
                                14'h004x : rdSrcBdata = global_32_rddataB;
                                14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
@@ -1497,52 +1970,6 @@ always @(*) begin
                         end
             endcase
 end    
-
-always @(*) begin
-    if (~|STATE[1:0])  { NaN_q2, INF_q2, DML_q2, NML_q2, SZ_q2, FPN_q2} = {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
-    else if ((opcode_q2==MOV_) && ~|srcA_q2[12:8] && srcA_q2[7] && fp_ready_q2) begin //update FP flags only if originating from direct or indirect read of FP operator result memory buf
-        NaN_q2 = (fp_flags==2'b11);                           //Not a Number
-        INF_q2 = (fp_flags==2'b10);                           //infinity
-        DML_q2 = ~|wrsrcAdata[30:23] & |wrsrcAdata[22:0];     //denormal
-        NML_q2 = (fp_flags==2'b01);                           //normal
-        SZ_q2  = (fp_flags==2'b00);                           //signed zero mormal
-        FPN_q2 = wrsrcAdata[31] & (fp_flags==2'b01);          //negative normal
-    end
-    else case(thread_q2)
-        2'b00 : begin
-                   NaN_q2 = tr0_NaN;
-                   INF_q2 = tr0_INF;
-                   DML_q2 = tr0_DML;
-                   NML_q2 = tr0_NML;
-                   SZ_q2  = tr0_SZ;
-                   FPN_q2 = tr0_FPN;
-                end            
-        2'b01 : begin
-                   NaN_q2 = tr1_NaN;
-                   INF_q2 = tr1_INF;
-                   DML_q2 = tr1_DML;
-                   NML_q2 = tr1_NML;
-                   SZ_q2  = tr1_SZ;
-                   FPN_q2 = tr1_FPN;
-                end            
-        2'b10 : begin
-                   NaN_q2 = tr2_NaN;
-                   INF_q2 = tr2_INF;
-                   DML_q2 = tr2_DML;
-                   NML_q2 = tr2_NML;
-                   SZ_q2  = tr2_SZ;
-                   FPN_q2 = tr2_FPN;
-                end            
-        2'b11 : begin
-                   NaN_q2 = tr3_NaN;
-                   INF_q2 = tr3_INF;
-                   DML_q2 = tr3_DML;
-                   NML_q2 = tr3_NML;
-                   SZ_q2  = tr3_SZ;
-                   FPN_q2 = tr3_FPN;
-                end            
-    endcase              
-end
     
 always @(*)  begin     
     if (~|STATE[1:0]) begin 
@@ -1883,28 +2310,28 @@ always @(*)  begin
             SHFT_ : case (shiftype)
                         LEFT_  : case (thread_q2)
                                      2'b00 : begin
-                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata << shiftamount1;
                                                  Z_q2 = tr0_Z;
                                                  N_q2 = tr0_N;
                                                  C_q2 = tr0_C;
                                                  V_q2 = tr0_V;
                                              end
                                      2'b01 : begin
-                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata << shiftamount1;
                                                  Z_q2 = tr1_Z;
                                                  N_q2 = tr1_N;
                                                  C_q2 = tr1_C;
                                                  V_q2 = tr1_V;
                                              end
                                      2'b10 : begin
-                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata << shiftamount1;
                                                  Z_q2 = tr2_Z;
                                                  N_q2 = tr2_N;
                                                  C_q2 = tr2_C;
                                                  V_q2 = tr2_V;
                                              end
                                      2'b11 : begin
-                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata << shiftamount1;
                                                  Z_q2 = tr3_Z;
                                                  N_q2 = tr3_N;
                                                  C_q2 = tr3_C;
@@ -1914,25 +2341,25 @@ always @(*)  begin
 
                         LSL_   : case (thread_q2)
                                      2'b00 : begin
-                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
+                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount1;
                                                  Z_q2 = tr0_Z;
                                                  N_q2 = tr0_N;
                                                  V_q2 = tr0_V;
                                              end
                                      2'b01 : begin
-                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
+                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount1;
                                                  Z_q2 = tr1_Z;
                                                  N_q2 = tr1_N;
                                                  V_q2 = tr1_V;
                                              end
                                      2'b10 : begin
-                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
+                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount1;
                                                  Z_q2 = tr2_Z;
                                                  N_q2 = tr2_N;
                                                  V_q2 = tr2_V;
                                              end
                                      2'b11 : begin
-                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount + 1'b1;
+                                                 {C_q2, resultout} = {wrsrcAdata, 1'b0} << shiftamount1;
                                                  Z_q2 = tr3_Z;
                                                  N_q2 = tr3_N;
                                                  V_q2 = tr3_V;
@@ -1941,28 +2368,28 @@ always @(*)  begin
 
                         ASL_   : case (thread_q2)
                                      2'b00 : begin
-                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata << shiftamount1;
                                                  Z_q2 = tr0_Z;
                                                  N_q2 = tr0_N;
                                                  C_q2 = tr0_C;
                                                  V_q2 = tr0_V;
                                              end
                                      2'b01 : begin
-                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata << shiftamount1;
                                                  Z_q2 = tr1_Z;
                                                  N_q2 = tr1_N;
                                                  C_q2 = tr1_C;
                                                  V_q2 = tr1_V;
                                              end
                                      2'b10 : begin
-                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata << shiftamount1;
                                                  Z_q2 = tr2_Z;
                                                  N_q2 = tr2_N;
                                                  C_q2 = tr2_C;
                                                  V_q2 = tr2_V;
                                              end
                                      2'b11 : begin
-                                                 resultout = wrsrcAdata << shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata << shiftamount1;
                                                  Z_q2 = tr3_Z;
                                                  N_q2 = tr3_N;
                                                  C_q2 = tr3_C;
@@ -2003,28 +2430,28 @@ always @(*)  begin
                                                                                                                                      
                         RIGHT_ : case (thread_q2)
                                      2'b00 : begin
-                                                 resultout = wrsrcAdata >> shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata >> shiftamount1;
                                                  Z_q2 = tr0_Z;
                                                  N_q2 = tr0_N;
                                                  C_q2 = tr0_C;
                                                  V_q2 = tr0_V;
                                              end
                                      2'b01 : begin
-                                                 resultout = wrsrcAdata >> shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata >> shiftamount1;
                                                  Z_q2 = tr1_Z;
                                                  N_q2 = tr1_N;
                                                  C_q2 = tr1_C;
                                                  V_q2 = tr1_V;
                                              end
                                      2'b10 : begin
-                                                 resultout = wrsrcAdata >> shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata >> shiftamount1;
                                                  Z_q2 = tr2_Z;
                                                  N_q2 = tr2_N;
                                                  C_q2 = tr2_C;
                                                  V_q2 = tr2_V;
                                              end
                                      2'b11 : begin
-                                                 resultout = wrsrcAdata >> shiftamount + 1'b1;
+                                                 resultout = wrsrcAdata >> shiftamount1;
                                                  Z_q2 = tr3_Z;
                                                  N_q2 = tr3_N;
                                                  C_q2 = tr3_C;
@@ -2034,25 +2461,25 @@ always @(*)  begin
 
                         LSR_   : case (thread_q2)
                                      2'b00 : begin
-                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
+                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount1;
                                                  Z_q2 = tr0_Z;
                                                  N_q2 = tr0_N;
                                                  V_q2 = tr0_V;
                                              end
                                      2'b01 : begin
-                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
+                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount1;
                                                  Z_q2 = tr1_Z;
                                                  N_q2 = tr1_N;
                                                  V_q2 = tr1_V;
                                              end
                                      2'b10 : begin
-                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
+                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount1;
                                                  Z_q2 = tr2_Z;
                                                  N_q2 = tr2_N;
                                                  V_q2 = tr2_V;
                                              end
                                      2'b11 : begin
-                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount + 1'b1;
+                                                 {resultout, C_q2} = {1'b0, wrsrcAdata} >> shiftamount1;
                                                  Z_q2 = tr3_Z;
                                                  N_q2 = tr3_N;
                                                  V_q2 = tr3_V;
@@ -2061,28 +2488,28 @@ always @(*)  begin
 
                         ASR_   : case (thread_q2)
                                      2'b00 : begin
-                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
+                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount1;
                                                  Z_q2 = tr0_Z;
                                                  N_q2 = tr0_N;
                                                  C_q2 = tr0_C;
                                                  V_q2 = tr0_V;
                                              end
                                      2'b01 : begin
-                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
+                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount1;
                                                  Z_q2 = tr1_Z;
                                                  N_q2 = tr1_N;
                                                  C_q2 = tr1_C;
                                                  V_q2 = tr1_V;
                                              end
                                      2'b10 : begin
-                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
+                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount1;
                                                  Z_q2 = tr2_Z;
                                                  N_q2 = tr2_N;
                                                  C_q2 = tr2_C;
                                                  V_q2 = tr2_V;
                                              end
                                      2'b11 : begin
-                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount + 1'b1;
+                                                 {shiftbucket, resultout[31:0]} = {sbits, wrsrcAdata[31:1]} >> shiftamount1;
                                                  Z_q2 = tr3_Z;
                                                  N_q2 = tr3_N;
                                                  C_q2 = tr3_C;
@@ -2233,7 +2660,68 @@ always @(posedge CLK or posedge RESET) begin
        else if ((opcode_q2==BTB_) && (srcB_q2==LPCNT1_ADDRS) && (thread_q2==2'b11) && |tr3_LPCNT1 && ~pipe_flush) tr3_LPCNT1 <= tr3_LPCNT1_dec;
     end   
 end            
-      
+
+// FP Quality Of Service meters tr3
+always @(posedge CLK or posedge tr3_done) begin
+    if (tr3_done) begin
+        {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS} <= 32'h0000_0000;
+    end
+    else begin
+        if ((dest_q2==QOS_ADDRS) && (thread_q2==2'b11) && wrcycl) {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS} <= resultout;
+        else begin
+            if (tr3_invalid && ~&tr3_invalid_QOS)     tr3_invalid_QOS   <= tr3_invalid_QOS + 1'b1;
+            if (tr3_divby0 && ~&tr3_divby0_QOS)       tr3_divby0_QOS    <= tr3_divby0_QOS + 1'b1;
+            if (tr3_overflow && ~&tr3_overflow_QOS)   tr3_overflow_QOS  <= tr3_overflow_QOS + 1'b1;
+            if (tr3_underflow && ~&tr3_underflow_QOS) tr3_underflow_QOS <= tr3_underflow_QOS + 1'b1;
+        end
+    end
+end    
+// FP Quality Of Service meters tr2
+always @(posedge CLK or posedge tr2_done) begin
+    if (tr2_done) begin
+        {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS} <= 32'h0000_0000;
+    end
+    else begin
+        if ((dest_q2==QOS_ADDRS) && (thread_q2==2'b11) && wrcycl) {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS} <= resultout;
+        else begin
+            if (tr2_invalid && ~&tr2_invalid_QOS)     tr2_invalid_QOS   <= tr2_invalid_QOS + 1'b1;
+            if (tr2_divby0 && ~&tr2_divby0_QOS)       tr2_divby0_QOS    <= tr2_divby0_QOS + 1'b1;
+            if (tr2_overflow && ~&tr2_overflow_QOS)   tr2_overflow_QOS  <= tr2_overflow_QOS + 1'b1;
+            if (tr2_underflow && ~&tr2_underflow_QOS) tr2_underflow_QOS <= tr2_underflow_QOS + 1'b1;
+        end
+    end
+end    
+// FP Quality Of Service meters tr1
+always @(posedge CLK or posedge tr1_done) begin
+    if (tr1_done) begin
+        {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS} <= 32'h0000_0000;
+    end
+    else begin
+        if ((dest_q2==QOS_ADDRS) && (thread_q2==2'b11) && wrcycl) {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS} <= resultout;
+        else begin
+            if (tr1_invalid && ~&tr1_invalid_QOS)     tr1_invalid_QOS   <= tr1_invalid_QOS + 1'b1;
+            if (tr1_divby0 && ~&tr1_divby0_QOS)       tr1_divby0_QOS    <= tr1_divby0_QOS + 1'b1;
+            if (tr1_overflow && ~&tr1_overflow_QOS)   tr1_overflow_QOS  <= tr1_overflow_QOS + 1'b1;
+            if (tr1_underflow && ~&tr1_underflow_QOS) tr1_underflow_QOS <= tr1_underflow_QOS + 1'b1;
+        end
+    end
+end    
+// FP Quality Of Service meters tr0
+always @(posedge CLK or posedge tr0_done) begin
+    if (tr0_done) begin
+        {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS} <= 32'h0000_0000;
+    end
+    else begin
+        if ((dest_q2==QOS_ADDRS) && (thread_q2==2'b11) && wrcycl) {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS} <= resultout;
+        else begin
+            if (tr0_invalid && ~&tr0_invalid_QOS)     tr0_invalid_QOS   <= tr0_invalid_QOS + 1'b1;
+            if (tr0_divby0 && ~&tr0_divby0_QOS)       tr0_divby0_QOS    <= tr0_divby0_QOS + 1'b1;
+            if (tr0_overflow && ~&tr0_overflow_QOS)   tr0_overflow_QOS  <= tr0_overflow_QOS + 1'b1;
+            if (tr0_underflow && ~&tr0_underflow_QOS) tr0_underflow_QOS <= tr0_underflow_QOS + 1'b1;
+        end
+    end
+end    
+   
 always @(posedge CLK or posedge RESET) begin                                                                     
     if (RESET) begin                                                                                             
         PC <= 12'h100;                                                                                                         
@@ -2247,6 +2735,8 @@ always @(posedge CLK or posedge RESET) begin
         OPdest_q1 <= 8'h00;
         OPsrcA_q1 <= 8'h00;
         OPsrcB_q1 <= 8'h00;
+        
+        round_mode_q1 <= 2'b00;
 
         // state2 read
         thread_q2 <= 2'b00;
@@ -2297,10 +2787,10 @@ always @(posedge CLK or posedge RESET) begin
         tr1_timercmpr <= 20'h00000; 
         tr0_timercmpr <= 20'h00000; 
         
-        tr3_Z <= 1'b1;
-        tr2_Z <= 1'b1;
-        tr1_Z <= 1'b1;
-        tr0_Z <= 1'b1;
+        tr3_Z <= 1'b0;
+        tr2_Z <= 1'b0;
+        tr1_Z <= 1'b0;
+        tr0_Z <= 1'b0;
 
         tr3_C <= 1'b0;
         tr2_C <= 1'b0;
@@ -2317,53 +2807,101 @@ always @(posedge CLK or posedge RESET) begin
         tr1_V <= 1'b0;
         tr0_V <= 1'b0;
         
-        tr0_IRQ_IE <= 1'b0;
-        tr0_EXC_IE <= 1'b0;
-        tr0_NaN <= 1'b0;
-        tr0_INF <= 1'b0;
-        tr0_DML <= 1'b0;
-        tr0_NML <= 1'b0;
-        tr0_SZ  <= 1'b0; 
-        tr0_FPN <= 1'b0;
-                
-        tr1_IRQ_IE <= 1'b0;
-        tr1_EXC_IE <= 1'b0;
-        tr1_NaN <= 1'b0;
-        tr1_INF <= 1'b0;
-        tr1_DML <= 1'b0;
-        tr1_NML <= 1'b0;
-        tr1_SZ  <= 1'b0; 
-        tr1_FPN <= 1'b0;
-
-        tr2_IRQ_IE <= 1'b0;
-        tr2_EXC_IE <= 1'b0;
-        tr2_NaN <= 1'b0;
-        tr2_INF <= 1'b0;
-        tr2_DML <= 1'b0;
-        tr2_NML <= 1'b0;
-        tr2_SZ  <= 1'b0; 
-        tr2_FPN <= 1'b0;
-
         tr3_IRQ_IE <= 1'b0;
-        tr3_EXC_IE <= 1'b0;
-        tr3_NaN <= 1'b0;
-        tr3_INF <= 1'b0;
-        tr3_DML <= 1'b0;
-        tr3_NML <= 1'b0;
-        tr3_SZ  <= 1'b0; 
-        tr3_FPN <= 1'b0;
+        tr2_IRQ_IE <= 1'b0;
+        tr1_IRQ_IE <= 1'b0;
+        tr0_IRQ_IE <= 1'b0;
         
-        tr0_done   <= 1'b1;
-        tr1_done   <= 1'b1;
-        tr2_done   <= 1'b1;
         tr3_done   <= 1'b1;
+        tr2_done   <= 1'b1;
+        tr1_done   <= 1'b1;
+        tr0_done   <= 1'b1;                                               
         
-        tr0_locked <= 1'b0;
-//        tr0_locked <= 1'b1;
-        tr1_locked <= 1'b0;
-        tr2_locked <= 1'b0;
-        tr3_locked <= 1'b0;
+        tr3_locked <= 1'b0;                                               
+        tr2_locked <= 1'b0;                                               
+        tr1_locked <= 1'b0;                                               
+        tr0_locked <= 1'b0;                                               
+                                                                          
+        tr3_invalid_flag <= 1'b0;
+        tr2_invalid_flag <= 1'b0;
+        tr1_invalid_flag <= 1'b0;
+        tr0_invalid_flag <= 1'b0;
+        
+        tr3_divby0_flag <= 1'b0;
+        tr2_divby0_flag <= 1'b0;
+        tr1_divby0_flag <= 1'b0;
+        tr0_divby0_flag <= 1'b0;
+        
+        tr3_overflow_flag <= 1'b0;
+        tr2_overflow_flag <= 1'b0;
+        tr1_overflow_flag <= 1'b0;
+        tr0_overflow_flag <= 1'b0;
+        
+        tr3_underflow_flag <= 1'b0;
+        tr2_underflow_flag <= 1'b0;
+        tr1_underflow_flag <= 1'b0;
+        tr0_underflow_flag <= 1'b0;
 
+        tr3_inexact_flag <= 1'b0;
+        tr2_inexact_flag <= 1'b0;
+        tr1_inexact_flag <= 1'b0;
+        tr0_inexact_flag <= 1'b0;
+        
+        tr3_alt_inv_handl <= 1'b0;
+        tr2_alt_inv_handl <= 1'b0;
+        tr1_alt_inv_handl <= 1'b0;
+        tr0_alt_inv_handl <= 1'b0;
+        
+        tr3_alt_div0_handl <= 1'b0;
+        tr2_alt_div0_handl <= 1'b0;
+        tr1_alt_div0_handl <= 1'b0;
+        tr0_alt_div0_handl <= 1'b0;
+        
+        tr3_alt_ovfl_handl <= 1'b0;
+        tr2_alt_ovfl_handl <= 1'b0;
+        tr1_alt_ovfl_handl <= 1'b0;
+        tr0_alt_ovfl_handl <= 1'b0;
+        
+        tr3_alt_unfl_handl <= 1'b0;
+        tr2_alt_unfl_handl <= 1'b0;
+        tr1_alt_unfl_handl <= 1'b0;
+        tr0_alt_unfl_handl <= 1'b0;
+
+        tr3_alt_nxact_handl <= 1'b0;
+        tr2_alt_nxact_handl <= 1'b0;
+        tr1_alt_nxact_handl <= 1'b0;
+        tr0_alt_nxact_handl <= 1'b0;
+        
+        tr3_alt_del_nxact <= 1'b0;
+        tr2_alt_del_nxact <= 1'b0;
+        tr1_alt_del_nxact <= 1'b0;
+        tr0_alt_del_nxact <= 1'b0;
+        
+        tr3_alt_del_unfl <= 1'b0;
+        tr2_alt_del_unfl <= 1'b0;
+        tr1_alt_del_unfl <= 1'b0;
+        tr0_alt_del_unfl <= 1'b0;
+        
+        tr3_alt_del_ovfl <= 1'b0;
+        tr2_alt_del_ovfl <= 1'b0;
+        tr1_alt_del_ovfl <= 1'b0;
+        tr0_alt_del_ovfl <= 1'b0;
+        
+        tr3_alt_del_div0 <= 1'b0;
+        tr2_alt_del_div0 <= 1'b0;
+        tr1_alt_del_div0 <= 1'b0;
+        tr0_alt_del_div0 <= 1'b0;
+        
+        tr3_alt_del_inv <= 1'b0; 
+        tr2_alt_del_inv <= 1'b0; 
+        tr1_alt_del_inv <= 1'b0; 
+        tr0_alt_del_inv <= 1'b0; 
+
+        tr0_C_reg <= 32'h00000000;
+        tr1_C_reg <= 32'h00000000;
+        tr2_C_reg <= 32'h00000000;
+        tr3_C_reg <= 32'h00000000;
+    
         STATE <= 3'b100;
         
         wrsrcAdata <= 32'h00000000;
@@ -2375,7 +2913,6 @@ always @(posedge CLK or posedge RESET) begin
         sched_cmp <= 32'h04040404;     //interleave threads 0-3
 
         sched_state <= 4'b0001;
-        OUTBOX <= 32'h00000000;
         pipe_flush_tr0 <= 2'b00;
         pipe_flush_tr1 <= 2'b00;
         pipe_flush_tr2 <= 2'b00;
@@ -2506,27 +3043,93 @@ always @(posedge CLK or posedge RESET) begin
           
       if (~LOCKED && ~RPT_not_z)  sched_state[3:0] <= {sched_state[2:0], 1'b1};      // disable if RPT or LOCKED is active
       
-    ////////////////////////////////////////////////////////
+    ////////////////////////// FP STATUS FLAGS //////////////////////////////
+
+         if (tr3_invalid && ~tr3_alt_inv_handl) tr3_invalid_flag <= 1'b1;                                                      
+         else if (wrcycl && (thread_q2==2'b11) && (dest_q2==ST_ADDRS)) tr3_invalid_flag <= resultout[6];                       
+                                                                                                                               
+         if (tr2_invalid && ~tr2_alt_inv_handl) tr2_invalid_flag <= 1'b1;                                                      
+         else if (wrcycl && (thread_q2==2'b10) && (dest_q2==ST_ADDRS)) tr2_invalid_flag <= resultout[6];                               
+                                                                                                                                         
+         if (tr1_invalid && ~tr1_alt_inv_handl) tr1_invalid_flag <= 1'b1;                                                                
+         else if (wrcycl && (thread_q2==2'b01) && (dest_q2==ST_ADDRS)) tr1_invalid_flag <= resultout[6];                                 
+                                                                                                                                         
+         if (tr0_invalid && ~tr0_alt_inv_handl) tr0_invalid_flag <= 1'b1;                                                                
+         else if (wrcycl && (thread_q2==2'b00) && (dest_q2==ST_ADDRS)) tr0_invalid_flag <= resultout[6];                                 
+                                                                                                                                         
+                                                                                                                                         
+         if (tr3_divby0 && ~tr3_alt_div0_handl) tr3_divby0_flag <= 1'b1;                                                                 
+         else if (wrcycl && (thread_q2==2'b11) && (dest_q2==ST_ADDRS)) tr3_divby0_flag <= resultout[7];                                  
+                                                                                                                                          
+         if (tr2_divby0 && ~tr2_alt_div0_handl) tr2_divby0_flag <= 1'b1;                                                                  
+         else if (wrcycl && (thread_q2==2'b10) && (dest_q2==ST_ADDRS)) tr2_divby0_flag <= resultout[7];
+         
+         if (tr1_divby0 && ~tr1_alt_div0_handl) tr1_divby0_flag <= 1'b1;
+         else if (wrcycl && (thread_q2==2'b01) && (dest_q2==ST_ADDRS)) tr1_divby0_flag <= resultout[7];
+         
+         if (tr0_divby0 && ~tr0_alt_div0_handl) tr0_divby0_flag <= 1'b1;
+         else if ( wrcycl && (thread_q2==2'b00) && (dest_q2==ST_ADDRS)) tr0_divby0_flag <= resultout[7];
+         
+
+         if (tr3_overflow && ~tr3_alt_ovfl_handl) tr3_overflow_flag <= 1'b1;
+         else if (wrcycl && (thread_q2==2'b11) && (dest_q2==ST_ADDRS)) tr3_overflow_flag <= resultout[8];
+         
+         if (tr2_overflow && ~tr2_alt_ovfl_handl) tr2_overflow_flag <= 1'b1;
+         else if (wrcycl && (thread_q2==2'b10) && (dest_q2==ST_ADDRS)) tr2_overflow_flag <= resultout[8];
+         
+         if (tr1_overflow && ~tr1_alt_ovfl_handl) tr1_overflow_flag <= 1'b1;
+         else if (wrcycl && (thread_q2==2'b01) && (dest_q2==ST_ADDRS)) tr1_overflow_flag <= resultout[8];
+         
+         if (tr0_overflow && ~tr0_alt_ovfl_handl) tr0_overflow_flag <= 1'b1;
+         else if (wrcycl && (thread_q2==2'b00) && (dest_q2==ST_ADDRS)) tr0_overflow_flag <= resultout[8];
+         
+         
+         if (tr3_underflow && ~tr3_alt_unfl_handl) tr3_underflow_flag <= 1'b1;
+         else if (wrcycl && (thread_q2==2'b11) && (dest_q2==ST_ADDRS)) tr3_underflow_flag <= resultout[9];
+         
+         if (tr2_underflow && ~tr2_alt_unfl_handl) tr2_underflow_flag <= 1'b1;
+         else if (wrcycl && (thread_q2==2'b10) && (dest_q2==ST_ADDRS)) tr2_underflow_flag <= resultout[9];                               
+                                                                                                                                         
+         if (tr1_underflow && ~tr1_alt_unfl_handl) tr1_underflow_flag <= 1'b1;                                                           
+         else if (wrcycl && (thread_q2==2'b01) && (dest_q2==ST_ADDRS)) tr1_underflow_flag <= resultout[9];                               
+                                                                                                                                         
+         if (tr0_underflow && ~tr0_alt_unfl_handl) tr0_underflow_flag <= 1'b1;
+         else if (wrcycl && (thread_q2==2'b00) && (dest_q2==ST_ADDRS)) tr0_underflow_flag <= resultout[9];
+         
+                                                                                                                          
+         if (wrcycl && (thread_q2==2'b11) && (dest_q2==ST_ADDRS)) tr3_inexact_flag <= resultout[10];                     
+                                                                                                                         
+         if (wrcycl && (thread_q2==2'b10) && (dest_q2==ST_ADDRS)) tr2_inexact_flag <= resultout[10];                     
+                                                                                                                         
+         if (wrcycl && (thread_q2==2'b01) && (dest_q2==ST_ADDRS)) tr1_inexact_flag <= resultout[10];
+         
+         if (wrcycl && (thread_q2==2'b00) && (dest_q2==ST_ADDRS)) tr0_inexact_flag <= resultout[10];
+ 
 
          if ((dest_q2==ST_ADDRS) && wrcycl) begin
-             casex (thread_q2)  
-                             
-                 2'b00 : {tr0_IRQ_IE, tr0_EXC_IE, tr0_NaN, tr0_INF, tr0_DML, tr0_NML, tr0_SZ, tr0_FPN, tr0_done, tr0_locked, tr0_V, tr0_N, tr0_C, tr0_Z} <= resultout[14:0]; 
-                 2'b01 : {tr1_IRQ_IE, tr1_EXC_IE, tr1_NaN, tr1_INF, tr1_DML, tr1_NML, tr1_SZ, tr1_FPN, tr1_done, tr1_locked, tr1_V, tr1_N, tr1_C, tr1_Z} <= resultout[14:0]; 
-                 2'b10 : {tr2_IRQ_IE, tr2_EXC_IE, tr2_NaN, tr2_INF, tr2_DML, tr2_NML, tr2_SZ, tr2_FPN, tr2_done, tr2_locked, tr2_V, tr2_N, tr2_C, tr2_Z} <= resultout[14:0]; 
-                 2'b11 : {tr3_IRQ_IE, tr3_EXC_IE, tr3_NaN, tr3_INF, tr3_DML, tr3_NML, tr3_SZ, tr3_FPN, tr3_done, tr3_locked, tr3_V, tr3_N, tr3_C, tr3_Z} <= resultout[14:0]; 
-             endcase
+            case (thread_q2)  
+                2'b00 : {tr0_IRQ_IE, tr0_alt_del_nxact, tr0_alt_del_unfl, tr0_alt_del_ovfl, tr0_alt_del_div0, tr0_alt_del_inv, tr0_alt_nxact_handl, tr0_alt_unfl_handl, tr0_alt_ovfl_handl, tr0_alt_div0_handl, tr0_alt_inv_handl, tr0_done, tr0_locked, tr0_V, tr0_N, tr0_C, tr0_Z} <= {resultout[21:11], resultout[5:0]}; 
+                2'b01 : {tr1_IRQ_IE, tr1_alt_del_nxact, tr1_alt_del_unfl, tr1_alt_del_ovfl, tr1_alt_del_div0, tr1_alt_del_inv, tr1_alt_nxact_handl, tr1_alt_unfl_handl, tr1_alt_ovfl_handl, tr1_alt_div0_handl, tr1_alt_inv_handl, tr1_done, tr1_locked, tr1_V, tr1_N, tr1_C, tr1_Z} <= {resultout[21:11], resultout[5:0]}; 
+                2'b10 : {tr2_IRQ_IE, tr2_alt_del_nxact, tr2_alt_del_unfl, tr2_alt_del_ovfl, tr2_alt_del_div0, tr2_alt_del_inv, tr2_alt_nxact_handl, tr2_alt_unfl_handl, tr2_alt_ovfl_handl, tr2_alt_div0_handl, tr2_alt_inv_handl, tr2_done, tr2_locked, tr2_V, tr2_N, tr2_C, tr2_Z} <= {resultout[21:11], resultout[5:0]}; 
+                2'b11 : {tr3_IRQ_IE, tr3_alt_del_nxact, tr3_alt_del_unfl, tr3_alt_del_ovfl, tr3_alt_del_div0, tr3_alt_del_inv, tr3_alt_nxact_handl, tr3_alt_unfl_handl, tr3_alt_ovfl_handl, tr3_alt_div0_handl, tr3_alt_inv_handl, tr3_done, tr3_locked, tr3_V, tr3_N, tr3_C, tr3_Z} <= {resultout[21:11], resultout[5:0]}; 
+            endcase
          end
          else if (wrcycl)
-            casex (thread_q2)
-                2'b00 : {tr0_NaN, tr0_INF, tr0_DML, tr0_NML, tr0_SZ, tr0_FPN, tr0_V, tr0_N, tr0_C, tr0_Z} <= {NaN_q2, INF_q2, DML_q2, NML_q2, SZ_q2, FPN_q2, V_q2, N_q2, C_q2, Z_q2};
-                2'b01 : {tr1_NaN, tr1_INF, tr1_DML, tr1_NML, tr1_SZ, tr1_FPN, tr1_V, tr1_N, tr1_C, tr1_Z} <= {NaN_q2, INF_q2, DML_q2, NML_q2, SZ_q2, FPN_q2, V_q2, N_q2, C_q2, Z_q2};
-                2'b10 : {tr2_NaN, tr2_INF, tr2_DML, tr2_NML, tr2_SZ, tr2_FPN, tr2_V, tr2_N, tr2_C, tr2_Z} <= {NaN_q2, INF_q2, DML_q2, NML_q2, SZ_q2, FPN_q2, V_q2, N_q2, C_q2, Z_q2};
-                2'b11 : {tr3_NaN, tr3_INF, tr3_DML, tr3_NML, tr3_SZ, tr3_FPN, tr3_V, tr3_N, tr3_C, tr3_Z} <= {NaN_q2, INF_q2, DML_q2, NML_q2, SZ_q2, FPN_q2, V_q2, N_q2, C_q2, Z_q2};
+            case (thread_q2)
+                2'b00 : {tr0_V, tr0_N, tr0_C, tr0_Z} <= {V_q2, N_q2, C_q2, Z_q2};
+                2'b01 : {tr1_V, tr1_N, tr1_C, tr1_Z} <= {V_q2, N_q2, C_q2, Z_q2};
+                2'b10 : {tr2_V, tr2_N, tr2_C, tr2_Z} <= {V_q2, N_q2, C_q2, Z_q2};
+                2'b11 : {tr3_V, tr3_N, tr3_C, tr3_Z} <= {V_q2, N_q2, C_q2, Z_q2};
             endcase
-            
-        if ((dest_q2==OUTBOX_ADDRS) && wrcycl) OUTBOX <= resultout;
-        
+           
+        if ((dest_q2==CREG_ADDRS) && wrcycl)
+            case(thread_q2)
+                2'b00 : tr0_C_reg <= resultout;
+                2'b01 : tr1_C_reg <= resultout;
+                2'b10 : tr2_C_reg <= resultout;
+                2'b11 : tr3_C_reg <= resultout;
+            endcase    
+         
         if ((dest_q2==TIMER_ADDRS) && wrcycl) 
             case(thread_q2)
                 2'b00 : begin
@@ -2556,6 +3159,7 @@ always @(posedge CLK or posedge RESET) begin
         STATE <= {1'b1, STATE[2:1]};    //rotate right 1 into msb  (shift right)
      
         if (LD_newthread) newthreadq <= newthread;
+        round_mode_q1 <= round_mode;
         thread_q1   <= newthreadq ; 
         pc_q1       <= PC         ; 
         constn_q1   <= constn     ;                 

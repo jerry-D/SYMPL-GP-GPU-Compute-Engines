@@ -1,12 +1,11 @@
  `timescale 1ns/100ps
-// wrapper for itof
-// For use in SYMPL FP32X-AXI4 multi-thread multi-processing core only
+// wrapper for filtered IEEE754_To_FP
+// For use in SYMPL FP32X-AXI4 multi-thread RISC core only
 // Author:  Jerry D. Harthcock
-// Version:  2.02  Sept 17, 2015
-// August 15, 2015
-// Copyright (C) 2014-2015.  All rights reserved without prejudice.
+// Version:  1.01  September 23, 2015
+// September 3, 2015
+// Copyright (C) 2015.  All rights reserved without prejudice.
 //
-// latency for ITOF is 2 clocks
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
@@ -47,149 +46,46 @@
 // Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
 //                                                                                                               //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-module func_itof (
-    RESET,
-    CLK,
-    opcode_q1,
-    wren,
-    wraddrs,
-    wrdata,
-    rdenA,
-    rdaddrsA,
-    rddataA,
-    rdenB,
-    rdaddrsB,
-    rddataB,
-    ready);
-
-input RESET, CLK, wren, rdenA, rdenB;
-input [3:0] opcode_q1;
-input [4:0] wraddrs, rdaddrsA, rdaddrsB;
-input [31:0] wrdata;
-output [35:0] rddataA, rddataB;
-output ready;
-
-parameter BTB_ = 4'b0100;
-
-//reg [5:0] delay0, delay1;
-reg [5:0] delay0, delay1;
-reg [31:0] semaphor;  // one for each memory location
-reg readyA;
-reg readyB;
-reg [4:0] rdaddrsA_q1;
-reg [4:0] rdaddrsB_q1;
-reg rdenA_q1;
-reg rdenB_q1;
-reg nA_sel;
-
-reg [31:0] nAq;
-
-wire ready;
-
-wire [31:0] nA;
-wire [35:0] rddataA, rddataB; 
-wire [33:0] nRA_FP, nRB_FP;
-wire wrenq;
-wire [4:0] wraddrsq;
-
-wire [33:0] nR;
-
-assign ready = readyA & readyB;
-assign wrenq = delay1[5];
-assign wraddrsq = delay1[4:0]; 
-assign nA = wrdata;
-
-FXP_To_FP itof_0(
-    .clk(CLK),
-    .I (nAq),
-    .O (nR));
    
-FP_To_IEEE754 fptoieeeA(
-    .X (nRA_FP),
-    .R (rddataA[31:0]));
-       
- FP_To_IEEE754 fptoieeeB(
-    .X (nRB_FP),
-    .R (rddataB[31:0])); 
- 
-assign rddataA[35:32] = 4'b0000;  
-assign rddataB[35:32] = 4'b0000;                     
+   
+module IEEE754_To_FP9_filtered(
+      X,
+      wren,
+      R,
+      input_is_infinite ,
+      input_is_finite   ,
+      input_is_NaN      ,
+      input_is_zero     ,
+      input_is_subnormal
+      );
 
-/*
-    assign nR = 36'h0_0000_0000; 
-    assign rddataA = nRA_FP;
-    assign rddataB = nRB_FP;                             
-*/
+input [31:0] X;
+input wren;
+output [34:0] R;
+output input_is_infinite; 
+output input_is_finite;   
+output input_is_NaN;      
+output input_is_zero;     
+output input_is_subnormal;
 
-RAM_tp #(.ADDRS_WIDTH(5), .DATA_WIDTH(34))
-    ram32_itof(
-    .CLK        (CLK      ),
-    .wren       (wrenq    ),
-    .wraddrs    (wraddrsq ),
-    .wrdata     ({ nR}),
-    .rdenA      (rdenA    ),
-    .rdaddrsA   (rdaddrsA ),
-    .rddataA    (nRA_FP   ),
-    .rdenB      (rdenB    ),
-    .rdaddrsB   (rdaddrsB ),
-    .rddataB    (nRB_FP   ));
+wire [31:0] X;
+wire [34:0] R;
 
-always @(posedge CLK or posedge RESET) begin
-    if (RESET) begin
-        nAq <= 32'h0000_0000;
-    end
-    else begin
-        if (wren) nAq <= nA;
-        else nAq <= 32'h0000_0000;
-    end    
-end         
+wire input_is_infinite; 
+wire input_is_finite; 
+wire input_is_NaN;      
+wire input_is_zero;     
+wire input_is_subnormal;
 
-always @(posedge CLK or posedge RESET) begin
-    if (RESET) begin
-        semaphor <= 32'h0000_0000;
-        rdenA_q1 <= 1'b0;
-        rdenB_q1 <= 1'b0;
-        rdaddrsA_q1 <= 5'h00;
-        rdaddrsB_q1 <= 5'h00;
-    end    
-    else begin
-        rdenA_q1 <= rdenA;
-        rdenB_q1 <= rdenB;
-        rdaddrsA_q1 <= rdaddrsA;
-        
-        if (rdenA_q1 && rdenB_q1 && (rdaddrsA_q1==rdaddrsB_q1) && ~(opcode_q1==BTB_) && semaphor[rdaddrsA_q1]) semaphor[rdaddrsA_q1] <= 1'b0;
-        else begin
-            if (rdenA_q1 && ~(opcode_q1==BTB_) && semaphor[rdaddrsA_q1]) semaphor[rdaddrsA_q1] <= 1'b0;
-            if (wrenq && ~(rdenA_q1 & (wraddrsq == rdaddrsA_q1))) semaphor[wraddrsq] <= 1'b1;
-            if (rdenB_q1 && ~(opcode_q1==BTB_) && semaphor[rdaddrsB_q1]) semaphor[rdaddrsB_q1] <= 1'b0;
-            if (wrenq && ~(rdenB_q1 & (wraddrsq == rdaddrsB_q1))) semaphor[wraddrsq] <= 1'b1;
-        end
-    end
-end            
+assign input_is_infinite = wren & &X[30:23] & ~|X[22:0];
+assign input_is_zero = wren & ~|X[30:0];
+assign input_is_finite = wren & ~input_is_infinite & ~input_is_zero;
+assign input_is_NaN = wren & &X[30:23] & |X[21:0];
+assign input_is_subnormal = wren & ~|X[30:23];
 
-always@(posedge CLK or posedge RESET) begin
-    if (RESET) begin
-        delay0  <= 6'h00;
-        delay1  <= 6'h00;
-    end    
-    else begin
-        delay0  <= {wren, wraddrs};
-        delay1  <= delay0;    
-    end 
-end        
-
-always @(posedge CLK or posedge RESET) begin
-    if (RESET) begin
-        readyA <= 1'b0;
-        readyB <= 1'b0;
-    end  
-    else begin
-        if (rdenA) readyA <= (wrenq & (rdaddrsA == wraddrsq)) ? 1'b1 : semaphor[rdaddrsA];
-        else readyA <= rdenB;         
-        if (rdenB) readyB <= (wrenq & (rdaddrsB == wraddrsq)) ? 1'b1 : semaphor[rdaddrsB];
-        else readyB <=rdenA;
-    end   
-end
+IEEE754_To_FP9 ieee_to_fp(
+   .X (X),
+   .R (R)
+   );
 
 endmodule

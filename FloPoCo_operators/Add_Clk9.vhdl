@@ -1,19 +1,20 @@
--- ./flopoco -name=Add_Clk -frequency=200 -useHardMult=no FPAdd 8 23
---
+-- vagrant@vagrant-ubuntu-trusty-32:~/flopoco-3.0.beta5$ ./flopoco -name=Add_Clk -frequency=200 -useHardMult=no FPAdd 9 23
+-- Updating entity name to: Add_Clk
+-- 
 -- Final report:
--- |---Entity FPAdd_8_23_uid2_RightShifter
+-- |---Entity FPAdd_9_23_uid2_RightShifter
 -- |      Not pipelined
 -- |---Entity IntAdder_27_f200_uid7
 -- |      Not pipelined
 -- |---Entity LZCShifter_28_to_28_counting_32_uid14
 -- |      Pipeline depth = 2
--- |---Entity IntAdder_34_f200_uid17
+-- |---Entity IntAdder_35_f200_uid17
 -- |      Not pipelined
 -- Entity Add_Clk
 --    Pipeline depth = 3
---
+-- Output file: flopoco.vhdl
 --------------------------------------------------------------------------------
---                        FPAdd_8_23_uid2_RightShifter
+--                        FPAdd_9_23_uid2_RightShifter
 --                      (RightShifter_24_by_max_26_uid4)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
@@ -29,14 +30,14 @@ library std;
 use std.textio.all;
 library work;
 
-entity FPAdd_8_23_uid2_RightShifter is
+entity FPAdd_9_23_uid2_RightShifter is
    port ( clk, rst : in std_logic;
           X : in  std_logic_vector(23 downto 0);
           S : in  std_logic_vector(4 downto 0);
           R : out  std_logic_vector(49 downto 0)   );
 end entity;
 
-architecture arch of FPAdd_8_23_uid2_RightShifter is
+architecture arch of FPAdd_9_23_uid2_RightShifter is
 signal level0 :  std_logic_vector(23 downto 0);
 signal ps :  std_logic_vector(4 downto 0);
 signal level1 :  std_logic_vector(24 downto 0);
@@ -170,8 +171,8 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                           IntAdder_34_f200_uid17
---                    (IntAdderAlternative_34_f200_uid21)
+--                           IntAdder_35_f200_uid17
+--                    (IntAdderAlternative_35_f200_uid21)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Pasca, Florent de Dinechin (2008-2010)
@@ -186,15 +187,15 @@ library std;
 use std.textio.all;
 library work;
 
-entity IntAdder_34_f200_uid17 is
+entity IntAdder_35_f200_uid17 is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(33 downto 0);
-          Y : in  std_logic_vector(33 downto 0);
+          X : in  std_logic_vector(34 downto 0);
+          Y : in  std_logic_vector(34 downto 0);
           Cin : in  std_logic;
-          R : out  std_logic_vector(33 downto 0)   );
+          R : out  std_logic_vector(34 downto 0)   );
 end entity;
 
-architecture arch of IntAdder_34_f200_uid17 is
+architecture arch of IntAdder_35_f200_uid17 is
 begin
    process(clk)
       begin
@@ -206,8 +207,8 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                                Add_Clk
---                             (FPAdd_8_23_uid2)
+--                                  Add_Clk
+--                             (FPAdd_9_23_uid2)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Pasca, Florent de Dinechin (2010)
@@ -224,13 +225,18 @@ library work;
 
 entity Add_Clk is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(8+23+2 downto 0);
-          Y : in  std_logic_vector(8+23+2 downto 0);
-          R : out  std_logic_vector(8+23+2 downto 0)   );
+          X : in  std_logic_vector(9+23+2 downto 0);
+          Y : in  std_logic_vector(9+23+2 downto 0);
+          R : out  std_logic_vector(9+23+2 downto 0);
+--- mod by JDH Sept 11, 2015 -------          
+      signR_d2 : buffer std_logic;
+           rnd : buffer std_logic;
+       roundit : in std_logic     );
+------------------------------------
 end entity;
 
 architecture arch of Add_Clk is
-   component FPAdd_8_23_uid2_RightShifter is
+   component FPAdd_9_23_uid2_RightShifter is
       port ( clk, rst : in std_logic;
              X : in  std_logic_vector(23 downto 0);
              S : in  std_logic_vector(4 downto 0);
@@ -245,12 +251,12 @@ architecture arch of Add_Clk is
              R : out  std_logic_vector(26 downto 0)   );
    end component;
 
-   component IntAdder_34_f200_uid17 is
+   component IntAdder_35_f200_uid17 is
       port ( clk, rst : in std_logic;
-             X : in  std_logic_vector(33 downto 0);
-             Y : in  std_logic_vector(33 downto 0);
+             X : in  std_logic_vector(34 downto 0);
+             Y : in  std_logic_vector(34 downto 0);
              Cin : in  std_logic;
-             R : out  std_logic_vector(33 downto 0)   );
+             R : out  std_logic_vector(34 downto 0)   );
    end component;
 
    component LZCShifter_28_to_28_counting_32_uid14 is
@@ -260,14 +266,14 @@ architecture arch of Add_Clk is
              O : out  std_logic_vector(27 downto 0)   );
    end component;
 
-signal excExpFracX :  std_logic_vector(32 downto 0);
-signal excExpFracY :  std_logic_vector(32 downto 0);
-signal eXmeY :  std_logic_vector(8 downto 0);
-signal eYmeX :  std_logic_vector(8 downto 0);
+signal excExpFracX :  std_logic_vector(33 downto 0);
+signal excExpFracY :  std_logic_vector(33 downto 0);
+signal eXmeY :  std_logic_vector(9 downto 0);
+signal eYmeX :  std_logic_vector(9 downto 0);
 signal swap :  std_logic;
-signal newX, newX_d1 :  std_logic_vector(33 downto 0);
-signal newY :  std_logic_vector(33 downto 0);
-signal expX, expX_d1 :  std_logic_vector(7 downto 0);
+signal newX, newX_d1 :  std_logic_vector(34 downto 0);
+signal newY :  std_logic_vector(34 downto 0);
+signal expX, expX_d1 :  std_logic_vector(8 downto 0);
 signal excX :  std_logic_vector(1 downto 0);
 signal excY :  std_logic_vector(1 downto 0);
 signal signX :  std_logic;
@@ -277,8 +283,9 @@ signal sXsYExnXY :  std_logic_vector(5 downto 0);
 signal sdExnXY :  std_logic_vector(3 downto 0);
 signal fracY :  std_logic_vector(23 downto 0);
 signal excRt, excRt_d1, excRt_d2, excRt_d3 :  std_logic_vector(1 downto 0);
-signal signR, signR_d1, signR_d2, signR_d3 :  std_logic;
-signal expDiff :  std_logic_vector(8 downto 0);
+--signal signR, signR_d1, signR_d2, signR_d3 :  std_logic;
+signal signR, signR_d1, signR_d3 :  std_logic;
+signal expDiff :  std_logic_vector(9 downto 0);
 signal shiftedOut :  std_logic;
 signal shiftVal :  std_logic_vector(4 downto 0);
 signal shiftedFracY, shiftedFracY_d1 :  std_logic_vector(49 downto 0);
@@ -290,26 +297,26 @@ signal fracXfar :  std_logic_vector(26 downto 0);
 signal cInAddFar :  std_logic;
 signal fracAddResult :  std_logic_vector(26 downto 0);
 signal fracGRS :  std_logic_vector(27 downto 0);
-signal extendedExpInc, extendedExpInc_d1, extendedExpInc_d2 :  std_logic_vector(9 downto 0);
+signal extendedExpInc, extendedExpInc_d1, extendedExpInc_d2 :  std_logic_vector(10 downto 0);
 signal nZerosNew :  std_logic_vector(4 downto 0);
 signal shiftedFrac :  std_logic_vector(27 downto 0);
-signal updatedExp :  std_logic_vector(9 downto 0);
+signal updatedExp :  std_logic_vector(10 downto 0);
 signal eqdiffsign :  std_logic;
-signal expFrac :  std_logic_vector(33 downto 0);
+signal expFrac :  std_logic_vector(34 downto 0);
 signal stk :  std_logic;
-signal rnd :  std_logic;
+--signal rnd :  std_logic;    -- mod by JDH Sept 21, 2015
 signal grd :  std_logic;
 signal lsb :  std_logic;
 signal addToRoundBit :  std_logic;
-signal RoundedExpFrac :  std_logic_vector(33 downto 0);
+signal RoundedExpFrac :  std_logic_vector(34 downto 0);
 signal upExc :  std_logic_vector(1 downto 0);
 signal fracR :  std_logic_vector(22 downto 0);
-signal expR :  std_logic_vector(7 downto 0);
+signal expR :  std_logic_vector(8 downto 0);
 signal exExpExc :  std_logic_vector(3 downto 0);
 signal excRt2 :  std_logic_vector(1 downto 0);
 signal excR :  std_logic_vector(1 downto 0);
 signal signR2 :  std_logic;
-signal computedR :  std_logic_vector(33 downto 0);
+signal computedR :  std_logic_vector(34 downto 0);
 begin
    process(clk)
       begin
@@ -331,18 +338,18 @@ begin
          end if;
       end process;
 -- Exponent difference and swap  --
-   excExpFracX <= X(33 downto 32) & X(30 downto 0);
-   excExpFracY <= Y(33 downto 32) & Y(30 downto 0);
-   eXmeY <= ("0" & X(30 downto 23)) - ("0" & Y(30 downto 23));
-   eYmeX <= ("0" & Y(30 downto 23)) - ("0" & X(30 downto 23));
+   excExpFracX <= X(34 downto 33) & X(31 downto 0);
+   excExpFracY <= Y(34 downto 33) & Y(31 downto 0);
+   eXmeY <= ("0" & X(31 downto 23)) - ("0" & Y(31 downto 23));
+   eYmeX <= ("0" & Y(31 downto 23)) - ("0" & X(31 downto 23));
    swap <= '0' when excExpFracX >= excExpFracY else '1';
    newX <= X when swap = '0' else Y;
    newY <= Y when swap = '0' else X;
-   expX<= newX(30 downto 23);
-   excX<= newX(33 downto 32);
-   excY<= newY(33 downto 32);
-   signX<= newX(31);
-   signY<= newY(31);
+   expX<= newX(31 downto 23);
+   excX<= newX(34 downto 33);
+   excY<= newY(34 downto 33);
+   signX<= newX(32);
+   signY<= newY(32);
    EffSub <= signX xor signY;
    sXsYExnXY <= signX & signY & excX & excY;
    sdExnXY <= excX & excY;
@@ -357,7 +364,7 @@ begin
    expDiff <= eXmeY when swap = '0' else eYmeX;
    shiftedOut <= '1' when (expDiff >= 25) else '0';
    shiftVal <= expDiff(4 downto 0) when shiftedOut='0' else CONV_STD_LOGIC_VECTOR(26,5) ;
-   RightShifterComponent: FPAdd_8_23_uid2_RightShifter  -- pipelineDepth=0 maxInDelay=3.26288e-09
+   RightShifterComponent: FPAdd_9_23_uid2_RightShifter  -- pipelineDepth=0 maxInDelay=3.28588e-09
       port map ( clk  => clk,
                  rst  => rst,
                  R => shiftedFracY,
@@ -388,7 +395,7 @@ begin
                  I => fracGRS,
                  O => shiftedFrac);
    ----------------Synchro barrier, entering cycle 3----------------
-   updatedExp <= extendedExpInc_d2 - ("00000" & nZerosNew);
+   updatedExp <= extendedExpInc_d2 - ("000000" & nZerosNew);
    eqdiffsign <= '1' when nZerosNew="11111" else '0';
    expFrac<= updatedExp & shiftedFrac(26 downto 3);
    ---------------- cycle 3----------------
@@ -396,18 +403,19 @@ begin
    rnd<= shiftedFrac(2);
    grd<= shiftedFrac(3);
    lsb<= shiftedFrac(4);
-   addToRoundBit<= '0' when (lsb='0' and grd='1' and rnd='0' and stk='0')  else'1';
-   roundingAdder: IntAdder_34_f200_uid17  -- pipelineDepth=0 maxInDelay=1.34272e-09
+--   addToRoundBit<= '0' when (lsb='0' and grd='1' and rnd='0' and stk='0')  else'1';
+   addToRoundBit<= '0' when (lsb='0' and grd='1' and roundit='0' and stk='0')  else'1';  -- mod by JDH Sept 21, 2015
+   roundingAdder: IntAdder_35_f200_uid17  -- pipelineDepth=0 maxInDelay=1.36572e-09
       port map ( clk  => clk,
                  rst  => rst,
                  Cin => addToRoundBit,
                  R => RoundedExpFrac,
                  X => expFrac,
-                 Y => "0000000000000000000000000000000000");
+                 Y => "00000000000000000000000000000000000");
    ---------------- cycle 3----------------
-   upExc <= RoundedExpFrac(33 downto 32);
+   upExc <= RoundedExpFrac(34 downto 33);
    fracR <= RoundedExpFrac(23 downto 1);
-   expR <= RoundedExpFrac(31 downto 24);
+   expR <= RoundedExpFrac(32 downto 24);
    exExpExc <= upExc & excRt_d3;
    with (exExpExc) select
    excRt2<= "00" when "0000"|"0100"|"1000"|"1100"|"1001"|"1101",

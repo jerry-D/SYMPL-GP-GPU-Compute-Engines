@@ -1,13 +1,18 @@
---  ./flopoco -name=Sqrt_Clk -frequency=200 -useHardMult=no FPSqrt 8 23
---
+-- vagrant@vagrant-ubuntu-trusty-32:~/flopoco-3.0.beta5$ ./flopoco -name=Sqrt_Clk -frequency=190 -useHardMult=no FPSqrt 9 23
+-- Updating entity name to: Sqrt_Clk
+-- 
+-- Final report:
+-- Entity Sqrt_Clk
+--    Pipeline depth = 10
+-- Output file: flopoco.vhdl
 --------------------------------------------------------------------------------
---                               Sqrt_Clk
---                               (FPSqrt_8_23)
+--                                  Sqrt_Clk
+--                               (FPSqrt_9_23)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors:
 --------------------------------------------------------------------------------
--- Pipeline depth: 11 cycles
+-- Pipeline depth: 10 cycles
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -19,15 +24,19 @@ library work;
 
 entity Sqrt_Clk is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(8+23+2 downto 0);
-          R : out  std_logic_vector(8+23+2 downto 0)   );
+          X : in  std_logic_vector(9+23+2 downto 0);
+          R : out  std_logic_vector(9+23+2 downto 0);
+---- mod by JDH Sept 21, 2015 ------          
+          round : buffer std_logic;
+          roundit : in std_logic   );
+------------------------------------          
 end entity;
 
 architecture arch of Sqrt_Clk is
 signal fracX :  std_logic_vector(22 downto 0);
-signal eRn0 :  std_logic_vector(7 downto 0);
-signal xsX, xsX_d1, xsX_d2, xsX_d3, xsX_d4, xsX_d5, xsX_d6, xsX_d7, xsX_d8, xsX_d9, xsX_d10, xsX_d11 :  std_logic_vector(2 downto 0);
-signal eRn1, eRn1_d1, eRn1_d2, eRn1_d3, eRn1_d4, eRn1_d5, eRn1_d6, eRn1_d7, eRn1_d8, eRn1_d9, eRn1_d10, eRn1_d11 :  std_logic_vector(7 downto 0);
+signal eRn0 :  std_logic_vector(8 downto 0);
+signal xsX, xsX_d1, xsX_d2, xsX_d3, xsX_d4, xsX_d5, xsX_d6, xsX_d7, xsX_d8, xsX_d9, xsX_d10 :  std_logic_vector(2 downto 0);
+signal eRn1, eRn1_d1, eRn1_d2, eRn1_d3, eRn1_d4, eRn1_d5, eRn1_d6, eRn1_d7, eRn1_d8, eRn1_d9, eRn1_d10 :  std_logic_vector(8 downto 0);
 signal w26 :  std_logic_vector(26 downto 0);
 signal d25 :  std_logic;
 signal x25 :  std_logic_vector(27 downto 0);
@@ -111,22 +120,22 @@ signal x14 :  std_logic_vector(27 downto 0);
 signal ds14 :  std_logic_vector(14 downto 0);
 signal xh14 :  std_logic_vector(14 downto 0);
 signal wh14 :  std_logic_vector(14 downto 0);
-signal w14, w14_d1 :  std_logic_vector(26 downto 0);
-signal s14, s14_d1 :  std_logic_vector(11 downto 0);
+signal w14 :  std_logic_vector(26 downto 0);
+signal s14 :  std_logic_vector(11 downto 0);
 signal d13 :  std_logic;
 signal x13 :  std_logic_vector(27 downto 0);
 signal ds13 :  std_logic_vector(15 downto 0);
 signal xh13 :  std_logic_vector(15 downto 0);
 signal wh13 :  std_logic_vector(15 downto 0);
-signal w13 :  std_logic_vector(26 downto 0);
-signal s13 :  std_logic_vector(12 downto 0);
+signal w13, w13_d1 :  std_logic_vector(26 downto 0);
+signal s13, s13_d1 :  std_logic_vector(12 downto 0);
 signal d12 :  std_logic;
 signal x12 :  std_logic_vector(27 downto 0);
 signal ds12 :  std_logic_vector(16 downto 0);
 signal xh12 :  std_logic_vector(16 downto 0);
 signal wh12 :  std_logic_vector(16 downto 0);
-signal w12, w12_d1 :  std_logic_vector(26 downto 0);
-signal s12, s12_d1 :  std_logic_vector(13 downto 0);
+signal w12 :  std_logic_vector(26 downto 0);
+signal s12 :  std_logic_vector(13 downto 0);
 signal d11 :  std_logic;
 signal x11 :  std_logic_vector(27 downto 0);
 signal ds11 :  std_logic_vector(17 downto 0);
@@ -207,9 +216,10 @@ signal s1 :  std_logic_vector(24 downto 0);
 signal d0 :  std_logic;
 signal fR :  std_logic_vector(26 downto 0);
 signal fRn1, fRn1_d1 :  std_logic_vector(24 downto 0);
-signal round, round_d1 :  std_logic;
+--signal round, round_d1 :  std_logic;
+signal round_d1 :  std_logic;
 signal fRn2 :  std_logic_vector(22 downto 0);
-signal Rn2 :  std_logic_vector(30 downto 0);
+signal Rn2 :  std_logic_vector(31 downto 0);
 signal xsR :  std_logic_vector(2 downto 0);
 begin
    process(clk)
@@ -225,7 +235,6 @@ begin
             xsX_d8 <=  xsX_d7;
             xsX_d9 <=  xsX_d8;
             xsX_d10 <=  xsX_d9;
-            xsX_d11 <=  xsX_d10;
             eRn1_d1 <=  eRn1;
             eRn1_d2 <=  eRn1_d1;
             eRn1_d3 <=  eRn1_d2;
@@ -236,17 +245,14 @@ begin
             eRn1_d8 <=  eRn1_d7;
             eRn1_d9 <=  eRn1_d8;
             eRn1_d10 <=  eRn1_d9;
-            eRn1_d11 <=  eRn1_d10;
             w22_d1 <=  w22;
             s22_d1 <=  s22;
             w19_d1 <=  w19;
             s19_d1 <=  s19;
             w16_d1 <=  w16;
             s16_d1 <=  s16;
-            w14_d1 <=  w14;
-            s14_d1 <=  s14;
-            w12_d1 <=  w12;
-            s12_d1 <=  s12;
+            w13_d1 <=  w13;
+            s13_d1 <=  s13;
             w10_d1 <=  w10;
             s10_d1 <=  s10;
             w8_d1 <=  w8;
@@ -262,9 +268,9 @@ begin
          end if;
       end process;
    fracX <= X(22 downto 0); -- fraction
-   eRn0 <= "0" & X(30 downto 24); -- exponent
-   xsX <= X(33 downto 31); -- exception and sign
-   eRn1 <= eRn0 + ("00" & (5 downto 0 => '1')) + X(23);
+   eRn0 <= "0" & X(31 downto 24); -- exponent
+   xsX <= X(34 downto 32); -- exception and sign
+   eRn1 <= eRn0 + ("00" & (6 downto 0 => '1')) + X(23);
    w26 <= "111" & fracX & "0" when X(23) = '0' else
           "1101" & fracX;
    -- Step 25
@@ -390,38 +396,37 @@ begin
             xh14 + ds14 when others;
    w14 <= wh14(13 downto 0) & x14(12 downto 0);
    s14 <= s15 & not d14;
-   ----------------Synchro barrier, entering cycle 4----------------
    -- Step 13
-   d13 <= w14_d1(26);
-   x13 <= w14_d1 & "0";
-   ds13 <=  "0" & s14_d1 &  (not d13) & d13 & "1";
+   d13 <= w14(26);
+   x13 <= w14 & "0";
+   ds13 <=  "0" & s14 &  (not d13) & d13 & "1";
    xh13 <= x13(27 downto 12);
    with d13 select
       wh13 <= xh13 - ds13 when '0',
             xh13 + ds13 when others;
    w13 <= wh13(14 downto 0) & x13(11 downto 0);
-   s13 <= s14_d1 & not d13;
+   s13 <= s14 & not d13;
+   ----------------Synchro barrier, entering cycle 4----------------
    -- Step 12
-   d12 <= w13(26);
-   x12 <= w13 & "0";
-   ds12 <=  "0" & s13 &  (not d12) & d12 & "1";
+   d12 <= w13_d1(26);
+   x12 <= w13_d1 & "0";
+   ds12 <=  "0" & s13_d1 &  (not d12) & d12 & "1";
    xh12 <= x12(27 downto 11);
    with d12 select
       wh12 <= xh12 - ds12 when '0',
             xh12 + ds12 when others;
    w12 <= wh12(15 downto 0) & x12(10 downto 0);
-   s12 <= s13 & not d12;
-   ----------------Synchro barrier, entering cycle 5----------------
+   s12 <= s13_d1 & not d12;
    -- Step 11
-   d11 <= w12_d1(26);
-   x11 <= w12_d1 & "0";
-   ds11 <=  "0" & s12_d1 &  (not d11) & d11 & "1";
+   d11 <= w12(26);
+   x11 <= w12 & "0";
+   ds11 <=  "0" & s12 &  (not d11) & d11 & "1";
    xh11 <= x11(27 downto 10);
    with d11 select
       wh11 <= xh11 - ds11 when '0',
             xh11 + ds11 when others;
    w11 <= wh11(16 downto 0) & x11(9 downto 0);
-   s11 <= s12_d1 & not d11;
+   s11 <= s12 & not d11;
    -- Step 10
    d10 <= w11(26);
    x10 <= w11 & "0";
@@ -432,7 +437,7 @@ begin
             xh10 + ds10 when others;
    w10 <= wh10(17 downto 0) & x10(8 downto 0);
    s10 <= s11 & not d10;
-   ----------------Synchro barrier, entering cycle 6----------------
+   ----------------Synchro barrier, entering cycle 5----------------
    -- Step 9
    d9 <= w10_d1(26);
    x9 <= w10_d1 & "0";
@@ -453,7 +458,7 @@ begin
             xh8 + ds8 when others;
    w8 <= wh8(19 downto 0) & x8(6 downto 0);
    s8 <= s9 & not d8;
-   ----------------Synchro barrier, entering cycle 7----------------
+   ----------------Synchro barrier, entering cycle 6----------------
    -- Step 7
    d7 <= w8_d1(26);
    x7 <= w8_d1 & "0";
@@ -474,7 +479,7 @@ begin
             xh6 + ds6 when others;
    w6 <= wh6(21 downto 0) & x6(4 downto 0);
    s6 <= s7 & not d6;
-   ----------------Synchro barrier, entering cycle 8----------------
+   ----------------Synchro barrier, entering cycle 7----------------
    -- Step 5
    d5 <= w6_d1(26);
    x5 <= w6_d1 & "0";
@@ -495,7 +500,7 @@ begin
             xh4 + ds4 when others;
    w4 <= wh4(23 downto 0) & x4(2 downto 0);
    s4 <= s5 & not d4;
-   ----------------Synchro barrier, entering cycle 9----------------
+   ----------------Synchro barrier, entering cycle 8----------------
    -- Step 3
    d3 <= w4_d1(26);
    x3 <= w4_d1 & "0";
@@ -516,7 +521,7 @@ begin
             xh2 + ds2 when others;
    w2 <= wh2(25 downto 0) & x2(0 downto 0);
    s2 <= s3 & not d2;
-   ----------------Synchro barrier, entering cycle 10----------------
+   ----------------Synchro barrier, entering cycle 9----------------
    -- Step 1
    d1 <= w2_d1(26);
    x1 <= w2_d1 & "0";
@@ -534,11 +539,13 @@ begin
       fRn1 <= fR(25 downto 2) & (fR(1) or fR(0)) when '1',
               fR(24 downto 0)                    when others;
    round <= fRn1(1) and (fRn1(2) or fRn1(0)) ; -- round  and (lsb or sticky) : that's RN, tie to even
-   ----------------Synchro barrier, entering cycle 11----------------
-   fRn2 <= fRn1_d1(24 downto 2) + ((22 downto 1 => '0') & round_d1); -- rounding sqrt never changes exponents
-   Rn2 <= eRn1_d11 & fRn2;
+   ----------------Synchro barrier, entering cycle 10----------------
+--   fRn2 <= fRn1_d1(24 downto 2) + ((22 downto 1 => '0') & round_d1); -- rounding sqrt never changes exponents
+----- mod by JDH Sept 21, 2015 -----
+   fRn2 <= fRn1_d1(24 downto 2) + ((22 downto 1 => '0') & roundit); -- rounding sqrt never changes exponents
+   Rn2 <= eRn1_d10 & fRn2;
    -- sign and exception processing
-   with xsX_d11 select
+   with xsX_d10 select
       xsR <= "010"  when "010",  -- normal case
              "100"  when "100",  -- +infty
              "000"  when "000",  -- +0
@@ -546,3 +553,4 @@ begin
              "110"  when others; -- return NaN
    R <= xsR & Rn2;
 end architecture;
+

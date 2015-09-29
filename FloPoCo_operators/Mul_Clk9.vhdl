@@ -1,4 +1,5 @@
--- ./flopoco -name=Mul_Clk -frequency=200 -useHardMult=no FPMult 8 23 23
+-- vagrant@vagrant-ubuntu-trusty-32:~/flopoco-3.0.beta5$ ./flopoco -name=Mul_Clk -frequency=200 -useHardMult=no FPMult 9 23 23
+-- Updating entity name to: Mul_Clk
 -- 
 -- Final report:
 -- Entity SmallMultTableP3x3r6XuYu
@@ -19,12 +20,11 @@
 -- |   |      Not pipelined
 -- |---Entity IntMultiplier_UsingDSP_24_24_48_unsigned_uid4
 -- |      Pipeline depth = 1
--- |---Entity IntAdder_33_f200_uid109
+-- |---Entity IntAdder_34_f200_uid109
 -- |      Not pipelined
 -- Entity Mul_Clk
 --    Pipeline depth = 1
---    
-   
+-- Output file: flopoco.vhdl
 --------------------------------------------------------------------------------
 --                          SmallMultTableP3x3r6XuYu
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
@@ -2255,8 +2255,8 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                          IntAdder_33_f200_uid109
---                    (IntAdderAlternative_33_f200_uid113)
+--                          IntAdder_34_f200_uid109
+--                    (IntAdderAlternative_34_f200_uid113)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Pasca, Florent de Dinechin (2008-2010)
@@ -2271,15 +2271,15 @@ library std;
 use std.textio.all;
 library work;
 
-entity IntAdder_33_f200_uid109 is
+entity IntAdder_34_f200_uid109 is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(32 downto 0);
-          Y : in  std_logic_vector(32 downto 0);
+          X : in  std_logic_vector(33 downto 0);
+          Y : in  std_logic_vector(33 downto 0);
           Cin : in  std_logic;
-          R : out  std_logic_vector(32 downto 0)   );
+          R : out  std_logic_vector(33 downto 0)   );
 end entity;
 
-architecture arch of IntAdder_33_f200_uid109 is
+architecture arch of IntAdder_34_f200_uid109 is
 begin
    process(clk)
       begin
@@ -2291,8 +2291,8 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                                Mul_Clk
---                        (FPMult_8_23_8_23_8_23_uid2)
+--                                  Mul_Clk
+--                        (FPMult_9_23_9_23_9_23_uid2)
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Pasca, Florent de Dinechin 2008-2011
@@ -2309,18 +2309,21 @@ library work;
 
 entity Mul_Clk is
    port ( clk, rst : in std_logic;
-          X : in  std_logic_vector(8+23+2 downto 0);
-          Y : in  std_logic_vector(8+23+2 downto 0);
-          R : out  std_logic_vector(8+23+2 downto 0)   );
+          X : in  std_logic_vector(9+23+2 downto 0);
+          Y : in  std_logic_vector(9+23+2 downto 0);
+          R : out  std_logic_vector(9+23+2 downto 0);
+      round : buffer std_logic;          -- mod by JDH Sept 21, 2015
+       sign : buffer std_logic;
+    roundit : in std_logic  );
 end entity;
 
 architecture arch of Mul_Clk is
-   component IntAdder_33_f200_uid109 is
+   component IntAdder_34_f200_uid109 is
       port ( clk, rst : in std_logic;
-             X : in  std_logic_vector(32 downto 0);
-             Y : in  std_logic_vector(32 downto 0);
+             X : in  std_logic_vector(33 downto 0);
+             Y : in  std_logic_vector(33 downto 0);
              Cin : in  std_logic;
-             R : out  std_logic_vector(32 downto 0)   );
+             R : out  std_logic_vector(33 downto 0)   );
    end component;
 
    component IntMultiplier_UsingDSP_24_24_48_unsigned_uid4 is
@@ -2330,25 +2333,26 @@ architecture arch of Mul_Clk is
              R : out  std_logic_vector(47 downto 0)   );
    end component;
 
-signal sign, sign_d1 :  std_logic;
-signal expX :  std_logic_vector(7 downto 0);
-signal expY :  std_logic_vector(7 downto 0);
-signal expSumPreSub :  std_logic_vector(9 downto 0);
-signal bias :  std_logic_vector(9 downto 0);
-signal expSum, expSum_d1 :  std_logic_vector(9 downto 0);
+--signal sign, sign_d1 :  std_logic;            
+signal sign_d1 :  std_logic;                 -- mod by JDH Sept 21, 2015
+signal expX :  std_logic_vector(8 downto 0);
+signal expY :  std_logic_vector(8 downto 0);
+signal expSumPreSub :  std_logic_vector(10 downto 0);
+signal bias :  std_logic_vector(10 downto 0);
+signal expSum, expSum_d1 :  std_logic_vector(10 downto 0);
 signal sigX :  std_logic_vector(23 downto 0);
 signal sigY :  std_logic_vector(23 downto 0);
 signal sigProd :  std_logic_vector(47 downto 0);
 signal excSel :  std_logic_vector(3 downto 0);
 signal exc, exc_d1 :  std_logic_vector(1 downto 0);
 signal norm :  std_logic;
-signal expPostNorm :  std_logic_vector(9 downto 0);
+signal expPostNorm :  std_logic_vector(10 downto 0);
 signal sigProdExt :  std_logic_vector(47 downto 0);
-signal expSig :  std_logic_vector(32 downto 0);
+signal expSig :  std_logic_vector(33 downto 0);
 signal sticky :  std_logic;
 signal guard :  std_logic;
-signal round :  std_logic;
-signal expSigPostRound :  std_logic_vector(32 downto 0);
+--signal round :  std_logic;
+signal expSigPostRound :  std_logic_vector(33 downto 0);
 signal excPostNorm :  std_logic_vector(1 downto 0);
 signal finalExc :  std_logic_vector(1 downto 0);
 begin
@@ -2360,11 +2364,11 @@ begin
             exc_d1 <=  exc;
          end if;
       end process;
-   sign <= X(31) xor Y(31);
-   expX <= X(30 downto 23);
-   expY <= Y(30 downto 23);
+   sign <= X(32) xor Y(32);
+   expX <= X(31 downto 23);
+   expY <= Y(31 downto 23);
    expSumPreSub <= ("00" & expX) + ("00" & expY);
-   bias <= CONV_STD_LOGIC_VECTOR(127,10);
+   bias <= CONV_STD_LOGIC_VECTOR(255,11);
    expSum <= expSumPreSub - bias;
    ----------------Synchro barrier, entering cycle 0----------------
    sigX <= "1" & X(22 downto 0);
@@ -2377,7 +2381,7 @@ begin
                  Y => sigY);
    ----------------Synchro barrier, entering cycle 1----------------
    ----------------Synchro barrier, entering cycle 0----------------
-   excSel <= X(33 downto 32) & Y(33 downto 32);
+   excSel <= X(34 downto 33) & Y(34 downto 33);
    with excSel select
    exc <= "00" when  "0000" | "0001" | "0100",
           "01" when "0101",
@@ -2386,7 +2390,7 @@ begin
    ----------------Synchro barrier, entering cycle 1----------------
    norm <= sigProd(47);
    -- exponent update
-   expPostNorm <= expSum_d1 + ("000000000" & norm);
+   expPostNorm <= expSum_d1 + ("0000000000" & norm);
    ----------------Synchro barrier, entering cycle 1----------------
    -- significand normalization shift
    sigProdExt <= sigProd(46 downto 0) & "0" when norm='1' else
@@ -2395,14 +2399,15 @@ begin
    sticky <= sigProdExt(24);
    guard <= '0' when sigProdExt(23 downto 0)="000000000000000000000000" else '1';
    round <= sticky and ( (guard and not(sigProdExt(25))) or (sigProdExt(25) ))  ;
-   RoundingAdder: IntAdder_33_f200_uid109  -- pipelineDepth=0 maxInDelay=2.80116e-09
+   RoundingAdder: IntAdder_34_f200_uid109  -- pipelineDepth=0 maxInDelay=2.82416e-09
       port map ( clk  => clk,
                  rst  => rst,
-                 Cin => round,
+--                 Cin => round,
+                 Cin => roundit,   -- mod by JDH Sept 21, 2015
                  R => expSigPostRound   ,
                  X => expSig,
-                 Y => "000000000000000000000000000000000");
-   with expSigPostRound(32 downto 31) select
+                 Y => "0000000000000000000000000000000000");
+   with expSigPostRound(33 downto 32) select
    excPostNorm <=  "01"  when  "00",
                                "10"             when "01",
                                "00"             when "11"|"10",
@@ -2410,5 +2415,5 @@ begin
    with exc_d1 select
    finalExc <= exc_d1 when  "11"|"10"|"00",
                        excPostNorm when others;
-   R <= finalExc & sign_d1 & expSigPostRound(30 downto 0);
+   R <= finalExc & sign_d1 & expSigPostRound(31 downto 0);
 end architecture;

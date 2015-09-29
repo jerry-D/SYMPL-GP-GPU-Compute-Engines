@@ -1,12 +1,12 @@
- `timescale 1ns/100ps
-// wrapper for FP DIV
+`timescale 1ns/100ps
+// Dot Product operator
 // For use in SYMPL FP32X-AXI4 multi-thread RISC only
 // Author:  Jerry D. Harthcock
-// Version:  2.05 Sept 28, 2015
-// August 15, 2015
-// Copyright (C) 2014-2015.  All rights reserved without prejudice.
+// Version:  1.03 September 27, 2015
+// September 9, 2015
+// Copyright (C) 2015.  All rights reserved without prejudice.
 //
-// latency for FDIV is 11 clocks
+// latency for DOT is 9 clocks
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
@@ -47,95 +47,96 @@
 // Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
 //                                                                                                               //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-module func_div (
-    RESET,
+module func_dot (
     CLK,
+    RESET,
+    thread_q1,
+    thread_q2,
     pc_q2_del,
     qNaN_del,
     opcode_q1,
     wren,
-    wraddrs,
     wrdataA,
     wrdataB,
     rdenA,
-    rdaddrsA,
-    rddataA,
     rdenB,
-    rdaddrsB,
-    rddataB,
+    threadA,
+    threadB,
+    tr0_result,
+    tr1_result,
+    tr2_result,
+    tr3_result,
     ready,
     
     round_mode,
 
-    tr3_invalid,  
-    tr3_div_by_0,
-    tr3_overflow, 
-    tr3_underflow,
-    tr3_inexact,  
-
-    tr2_invalid,  
-    tr2_div_by_0,
-    tr2_overflow, 
-    tr2_underflow,
-    tr2_inexact,  
-
-    tr1_invalid,  
-    tr1_div_by_0,
-    tr1_overflow, 
-    tr1_underflow,
-    tr1_inexact,  
-
     tr0_invalid,  
-    tr0_div_by_0,
+    tr1_invalid,  
+    tr2_invalid,  
+    tr3_invalid,  
     tr0_overflow, 
+    tr1_overflow, 
+    tr2_overflow, 
+    tr3_overflow, 
     tr0_underflow,
+    tr1_underflow,
+    tr2_underflow,
+    tr3_underflow,
+    tr1_inexact,  
+    tr2_inexact,  
+    tr3_inexact,  
     tr0_inexact  
     );
-
-input RESET, CLK, wren, rdenA, rdenB;
+    
+input CLK;
+input RESET;
+input [1:0] thread_q2;
+input [1:0] thread_q1;
+input rdenA;
+input rdenB;
+input [1:0] threadA;
+input [1:0] threadB;
 input [11:0] pc_q2_del;
 input [22:0] qNaN_del;
 input [3:0] opcode_q1;
-input [5:0] wraddrs, rdaddrsA, rdaddrsB;
-input [31:0] wrdataA, wrdataB;
-
+input wren;
+input [31:0] wrdataA;
+input [31:0] wrdataB;
+output [35:0] tr0_result;
+output [35:0] tr1_result;
+output [35:0] tr2_result;
+output [35:0] tr3_result;
+output ready;
+    
 input [1:0] round_mode;
 
-output [35:0] rddataA, rddataB;
-output ready;
-
-output tr3_invalid; 
-output tr3_div_by_0; 
-output tr3_overflow; 
-output tr3_underflow;
-output tr3_inexact;  
-
-output tr2_invalid;  
-output tr2_div_by_0;
-output tr2_overflow; 
-output tr2_underflow;
-output tr2_inexact;  
-
-output tr1_invalid;  
-output tr1_div_by_0;
-output tr1_overflow; 
-output tr1_underflow;
-output tr1_inexact;  
-
 output tr0_invalid;  
-output tr0_div_by_0;
+output tr1_invalid;  
+output tr2_invalid;  
+output tr3_invalid;  
 output tr0_overflow; 
+output tr1_overflow; 
+output tr2_overflow; 
+output tr3_overflow; 
 output tr0_underflow;
-output tr0_inexact;    
+output tr1_underflow;
+output tr2_underflow;
+output tr3_underflow;
+output tr0_inexact;  
+output tr1_inexact;  
+output tr2_inexact;  
+output tr3_inexact;  
 
 parameter BTB_ = 4'b0100;
 
+parameter DOT_ADDRS = 14'h0065;
+
 // invalid operation codes
 parameter sig_NaN      = 3'b000;  // singnaling NaN is an operand
-parameter mult_oob     = 3'b001;  // multiply operands out of bounds, multiplication(0, INF) or multiplication(INF, 0)
+parameter mult_oob     = 3'b001;  // multiply operands out of bounds, multiplication(0, INF) or multiplication(?INF, 0)
 parameter fsd_mult_oob = 3'b010;  // fused multiply operands out of bounds
 parameter add_oob      = 3'b011;  // add or subract or fusedmultadd operands out of bounds
-parameter div_oob      = 3'b100;  // division operands out of bounds, division(0, 0) or division(INF, INF) 
+parameter div_oob      = 3'b100;  // division operands out of bounds, division(0, 0) or division(?INF, INF) 
 parameter rem_oob      = 3'b101;  // remainder operands out of bounds, remainder(x, y), when y is zero or x is infinite (and neither is NaN)
 parameter sqrt_oob     = 3'b110;  // square-root operand out of bounds, operand is less than zero
 parameter quantize     = 3'b111;  // conversion result does not fit in dest, or a converted finite yields (or would yield) infinite result
@@ -146,34 +147,66 @@ parameter _div_by_0_   = 3'b001; // divide by zero
 parameter _overflow_   = 3'b010; // operation resulted in overflow (inexact is implied)
 parameter _underflow_  = 3'b011; // operation resulted in underflow (inexact is implied)
 parameter _inexact_    = 3'b100; // inexact result due to rounding
-                       
+
 reg [31:0] nA, nB;
-reg [8:0] delay0, delay1, delay2, delay3, delay4, delay5, delay6, delay7, delay8, delay9, delay10;
-reg [63:0] semaphor;  // one for each memory location   4 threads x 16 results each
-//
+
+reg [3:0] delay0, delay1, delay2, delay3, delay4, delay5, delay6, delay7, delay8;
+reg [3:0] semaphor;  // one for each memory location   4 threads x 1 result each
+
+reg [35:0] tr0_result;
+reg [35:0] tr1_result;
+reg [35:0] tr2_result;
+reg [35:0] tr3_result;
+
 reg readyA;
 reg readyB;
-reg [5:0] rdaddrsA_q1;
-reg [5:0] rdaddrsB_q1;
 reg rdenA_q1;
 reg rdenB_q1;
+reg [1:0] threadA_q1;
+reg [1:0] threadB_q1;
 
 reg [34:0] nA_FPq;
 reg [34:0] nB_FPq;
 
-reg [2:0] backend_exception;
 
+reg [2:0] backend_exception;
 reg rounded;
 
 wire ready;
 
-wire [35:0] rddataA, rddataB; 
-wire [34:0] nA_FP, nB_FP;
+wire [33:0] nA_FP, nB_FP;
 wire [34:0] nR_FP;
 wire [31:0] nR;
+
+wire tr0_ClearC;
+wire tr1_ClearC;
+wire tr2_ClearC;
+wire tr3_ClearC;
+
 wire wrenq;
-wire [5:0] wraddrsq;
-wire [1:0] thread_q2;
+wire thread_q2_del;
+
+wire invalid;
+wire overflow;
+wire underflow;
+wire inexact;
+
+wire tr0_invalid;  
+wire tr1_invalid;  
+wire tr2_invalid;  
+wire tr3_invalid;  
+wire tr0_overflow; 
+wire tr1_overflow; 
+wire tr2_overflow; 
+wire tr3_overflow; 
+wire tr0_underflow;
+wire tr1_underflow;
+wire tr2_underflow;
+wire tr3_underflow;
+wire tr0_inexact;  
+wire tr1_inexact;  
+wire tr2_inexact;  
+wire tr3_inexact;  
 
 wire A_is_infinite; 
 wire A_is_finite;   
@@ -190,93 +223,78 @@ wire B_is_subnormal;
 wire [21:0] NaN_payload;
 wire [33:0] qNaN;
 
-wire invalid;
-wire div_by_0;
-wire overflow;
-wire underflow;
-wire inexact;
-
-wire tr3_invalid;
-wire tr3_div_by_0;
-wire tr3_overflow;
-wire tr3_underflow;
-wire tr3_inexact;
-
-wire tr2_invalid;
-wire tr2_div_by_0;
-wire tr2_overflow;
-wire tr2_underflow;
-wire tr2_inexact;
-
-wire tr1_invalid;
-wire tr1_div_by_0;
-wire tr1_overflow;
-wire tr1_underflow;
-wire tr1_inexact;
-
-wire tr0_invalid;
-wire tr0_div_by_0;
-wire tr0_overflow;
-wire tr0_underflow;
-wire tr0_inexact;
-
 wire invalid_del;
-wire div_by_0_del;
 wire [3:0] raw_excptns;
-wire [1:0] thread_del;
 
-wire roundit;
+wire write_pending;
+
+wire Invalid_Add_Op;
+wire supress_Ovfl_sig;
+wire Round_del;
 wire result_subnormal;
 
 assign result_subnormal = (nR_FP[31:24]==8'h00) & |nR_FP[22:0];
 
-assign thread_q2 = wraddrs[5:4];
+assign tr0_ClearC = (readyA | readyB) & (thread_q1==2'b00); 
+assign tr1_ClearC = (readyA | readyB) & (thread_q1==2'b01); 
+assign tr2_ClearC = (readyA | readyB) & (thread_q1==2'b10); 
+assign tr3_ClearC = (readyA | readyB) & (thread_q1==2'b11); 
 
-// all "invalid" exceptions occur on the front-end 
-// (ie, during operand-write cycle into the operator input register)
-assign invalid = ((A_is_NaN  & ~nA[22])    |   
-                  (B_is_NaN  & ~nB[22])    |
-                 ((A_is_zero & B_is_zero)  |
-                  (A_is_infinite & B_is_infinite))) &
-                   wren ;
+assign write_pending = |{wren, delay0[2], delay1[2], delay2[2], delay3[2], delay4[2]};  
 
+// all "invalid" exceptions (except Invalid_Add_Op for Dot and FMA, which occur one clock after the write) occur on the front-end 
+// (ie, during operand-write cycle into the operator input register)   
+assign invalid =  (A_is_NaN  & ~nA[22])         |
+                  (B_is_NaN  & ~nB[22])         |
+                  (A_is_zero & B_is_infinite)   |
+                  (B_is_zero & A_is_infinite);
+
+assign overflow = nR_FP[34] & ~nR_FP[33] & ~supress_Ovfl_sig & ~invalid_del;
+assign underflow = (rounded | Round_del) & result_subnormal & ~invalid_del;
+assign inexact = (rounded | Round_del) & ~invalid_del;
+
+assign tr0_invalid = ((thread_q2==2'b00)             &
+                       wren                          &
+                       invalid )                     |
+                      (Invalid_Add_Op & (delay0[1:0]==2'b00));
+
+assign tr1_invalid = ((thread_q2==2'b01)             &
+                       wren                          &
+                       invalid )                     |
+                      (Invalid_Add_Op & (delay0[1:0]==2'b01));
+
+assign tr2_invalid = ((thread_q2==2'b10)             &
+                       wren                          &
+                       invalid )                     |
+                      (Invalid_Add_Op & (delay0[1:0]==2'b10));
+
+assign tr3_invalid = ((thread_q2==2'b11)             &
+                       wren                          &
+                       invalid )                     |
+                      (Invalid_Add_Op & (delay0[1:0]==2'b11));
+ 
 // all other exceptions occur on the back-end 
-// (ie, result-read cycle when results are read out of result buffer where 
+// (ie, immediately after computation or during operand-read cycle when results are read out of result buffer where 
 // the back-end exceptions are encoded and stored)
-assign div_by_0 = ~invalid & B_is_zero;                  
 
-assign overflow = nR_FP[34] & ~nR_FP[33] & ~invalid_del;
-assign underflow = rounded & result_subnormal & ~invalid_del; 
-assign inexact = rounded & ~invalid_del;
+assign tr0_overflow = (thread_q2_del==2'b00) & overflow;
+assign tr1_overflow = (thread_q2_del==2'b01) & overflow;
+assign tr2_overflow = (thread_q2_del==2'b10) & overflow;
+assign tr3_overflow = (thread_q2_del==2'b11) & overflow;
 
-assign tr3_invalid   = invalid & (thread_q2==2'b11);
-assign tr3_div_by_0  = div_by_0_del & (thread_del==2'b11);
-assign tr3_overflow  = overflow & (thread_del==2'b11);
-assign tr3_underflow = underflow & (thread_del==2'b11);
-assign tr3_inexact   = inexact & (thread_del==2'b11);
+assign tr0_underflow = (thread_q2_del==2'b00) & underflow; 
+assign tr1_underflow = (thread_q2_del==2'b01) & underflow; 
+assign tr2_underflow = (thread_q2_del==2'b10) & underflow; 
+assign tr3_underflow = (thread_q2_del==2'b11) & underflow; 
 
-assign tr2_invalid   = invalid & (thread_q2==2'b10);
-assign tr2_div_by_0  = div_by_0_del & (thread_del==2'b10);
-assign tr2_overflow  = overflow & (thread_del==2'b10);
-assign tr2_underflow = underflow & (thread_del==2'b10);
-assign tr2_inexact   = inexact & (thread_del==2'b10);
+assign tr0_inexact = (thread_q2_del==2'b00) & inexact;
+assign tr1_inexact = (thread_q2_del==2'b01) & inexact;
+assign tr2_inexact = (thread_q2_del==2'b10) & inexact;
+assign tr3_inexact = (thread_q2_del==2'b11) & inexact;
 
-assign tr1_invalid   = invalid & (thread_q2==2'b01);
-assign tr1_div_by_0  = div_by_0_del & (thread_del==2'b01);
-assign tr1_overflow  = overflow & (thread_del==2'b01);
-assign tr1_underflow = underflow & (thread_del==2'b01);
-assign tr1_inexact   = inexact & (thread_del==2'b01);
+assign raw_excptns = {inexact, underflow, overflow, 1'b0}; //raw exceptions are not yet encloded
 
-assign tr0_invalid   = invalid & (thread_q2==2'b00);
-assign tr0_div_by_0  = div_by_0_del & (thread_del==2'b00);
-assign tr0_overflow  = overflow & (thread_del==2'b00);
-assign tr0_underflow = underflow & (thread_del==2'b00);
-assign tr0_inexact   = inexact & (thread_del==2'b00);
-
-assign raw_excptns = {inexact, underflow, overflow, div_by_0_del}; //raw exceptions are not yet encloded
-
-assign NaN_payload = {wraddrsq[5:0], div_oob, 1'b0, pc_q2_del};  // the 1'b0 is reserved for future elongated 13-bit PC vs current 12-bit PC
-                                                             // the two msb's of wraddrsq is thread number that initiated the invalid operation
+assign NaN_payload = {thread_q2_del, 4'b0000, (Invalid_Add_Op ? add_oob : mult_oob), 1'b0, pc_q2_del};  // the 1'b0 is reserved for future elongated 13-bit PC vs current 12-bit PC
 
 //                vv--encoded exception is null for "invalid" because these two bits are for back-end use only                                                             
 assign qNaN = {2'b00, 1'b0, 8'hFF, 1'b1, NaN_payload[21:0]}; // quiet NaN with payload
@@ -284,11 +302,9 @@ assign qNaN = {2'b00, 1'b0, 8'hFF, 1'b1, NaN_payload[21:0]}; // quiet NaN with p
 
 assign ready = readyA & readyB;
 
-assign div_by_0_del = delay10[8];
-assign invalid_del = delay10[7];
-assign wrenq = delay10[6];
-assign wraddrsq = delay10[5:0];             
-assign thread_del = delay10[5:4];
+assign invalid_del = delay8[3];
+assign wrenq = delay8[2];
+assign thread_q2_del = delay8[1:0];
 
     IEEE754_To_FP9_filtered ieeetofpA(
       .X (nA),
@@ -312,23 +328,36 @@ assign thread_del = delay10[5:4];
       .input_is_subnormal(B_is_subnormal)
       );
 
-    Div_Clk div_clk0(
+Dot_Clk dot(
+      .CLK            (CLK           ),
+      .RESET          (RESET         ),
       .X (nA_FPq),
       .Y (nB_FPq),
       .R (nR_FP),
-      .clk (CLK),
-      .sR_d9  (sign   ),
-      .round  (round  ),
-      .roundit(roundit)
-      );
+      
+      .tr0_ClearC     (tr0_ClearC    ),
+      .tr1_ClearC     (tr1_ClearC    ),
+      .tr2_ClearC     (tr2_ClearC    ),
+      .tr3_ClearC     (tr3_ClearC    ),
+      .tr0_acc_enable (delay6[2] & (delay6[1:0]==2'b00)),
+      .tr1_acc_enable (delay6[2] & (delay6[1:0]==2'b01)),
+      .tr2_acc_enable (delay6[2] & (delay6[1:0]==2'b10)),
+      .tr3_acc_enable (delay6[2] & (delay6[1:0]==2'b11)),
+      .Invalid_Add_Op (Invalid_Add_Op),
+      .round          (round         ),       
+      .sign           (sign          ),
+      .roundit        (roundit       ),
+      .supress_Ovfl_sig (supress_Ovfl_sig),
+      .Round_del      (Round_del     )
+    );
 
     round_sel rnd_sel(
       .round_mode (round_mode),
       .round      (round     ),
       .roundit    (roundit   ),
       .sign       (sign      )
-    );        
-      
+    );  
+
     FP9_To_IEEE754 fptoieeeA(
       .X (nR_FP),
       .R (nR)
@@ -357,23 +386,18 @@ always @(*) begin
     endcase
 end    
 
-//RAM64x34tp ram64(
-RAM_tp #(.ADDRS_WIDTH(6), .DATA_WIDTH(36))
-    ram64_divclk(
-    .CLK        (CLK     ),
-    .wren       (wrenq   ),
-    .wraddrs    (wraddrsq),
-//                                                  v--if invalid, insert quiet NaN with payload                                                                  v--else write result with IEEE exception code, if any
-    .wrdata     (invalid_del ? {invalid_del, 1'b0, qNaN} : (qNaN_del[22] ? {2'b00, 2'b00, 1'b0, 8'hFF, 1'b1, qNaN_del[21:0]} : {1'b0, backend_exception[2:0], nRq[31:1], (div_by_0_del ? 1'b0 : nRq[0])})),
-//                                                                                                              ^--else if input was quiet NaN, then propogate and insert original payload            
-    .rdenA      (rdenA   ),
-    .rdaddrsA   (rdaddrsA),
-    .rddataA    (rddataA ),
-    .rdenB      (rdenB   ),
-    .rdaddrsB   (rdaddrsB),
-    .rddataB    (rddataB )
-    );
-    
+always @(posedge CLK or posedge RESET) begin
+    if (RESET) result <= 36'h0_0000_0000;
+
+    else if (wrenq)
+        case (thread_q2_del) //                                        v--if invalid, insert quiet NaN with payload                                              v--else write result with IEEE exception code, if any
+            2'b00 : tr0_result <= (invalid_del ? {invalid_del, 1'b0, qNaN} : (qNaN_del[22] ? {2'b00, 2'b00, 1'b0, 8'hFF, 1'b1, qNaN_del[21:0]} : {1'b0, backend_exception[2:0], nRq}));
+            2'b01 : tr1_result <= (invalid_del ? {invalid_del, 1'b0, qNaN} : (qNaN_del[22] ? {2'b00, 2'b00, 1'b0, 8'hFF, 1'b1, qNaN_del[21:0]} : {1'b0, backend_exception[2:0], nRq}));
+            2'b10 : tr2_result <= (invalid_del ? {invalid_del, 1'b0, qNaN} : (qNaN_del[22] ? {2'b00, 2'b00, 1'b0, 8'hFF, 1'b1, qNaN_del[21:0]} : {1'b0, backend_exception[2:0], nRq}));
+            2'b11 : tr3_result <= (invalid_del ? {invalid_del, 1'b0, qNaN} : (qNaN_del[22] ? {2'b00, 2'b00, 1'b0, 8'hFF, 1'b1, qNaN_del[21:0]} : {1'b0, backend_exception[2:0], nRq}));
+        endcase //                                                                                                                  ^--else if input was quiet NaN, then propogate and insert original payload            
+end
+
 // this is where raw exceptins are encoded    
 always @(*) begin
     if (~invalid_del)
@@ -394,14 +418,14 @@ always @(*) begin
     end
     else begin
         nA = 32'h0000_0000;    
-        nB = 32'h3F80_0000; 
+        nB = 32'h0000_0000; 
     end
 end           
 
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
         nA_FPq <= 35'h0_0000_0000;
-        nB_FPq <= 35'h1_7F80_0000;
+        nB_FPq <= 35'h0_0000_0000;
         rounded <= 1'b0;
     end
     else begin    
@@ -413,48 +437,40 @@ end
 
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
-        semaphor <= 64'h0000_0000_0000_0000;
-        rdenA_q1 <= 1'b0;
-        rdenB_q1 <= 1'b0;
-        rdaddrsA_q1 <= 6'h00;
-        rdaddrsB_q1 <= 6'h00;
+        semaphor <= 4'b0000;
+        threadA_q1 <= 2'b00;
+        threadB_q1 <= 2'b00;
     end    
     else begin
         rdenA_q1 <= rdenA;
         rdenB_q1 <= rdenB;
-        rdaddrsA_q1 <= rdaddrsA;
-        rdaddrsB_q1 <= rdaddrsB;
+        threadA_q1 <= threadA;
+        threadB_q1 <= threadB;
         
-        if (rdenA_q1 && rdenB_q1 && (rdaddrsA_q1==rdaddrsB_q1) && ~(opcode_q1==BTB_) && semaphor[rdaddrsA_q1]) semaphor[rdaddrsA_q1] <= 1'b0;
+        if (rdenA_q1 && rdenB_q1 && (threadA_q1==threadB_q1) && ~(opcode_q1==BTB_) && semaphor[threadA_q1]) semaphor[threadA_q1] <= 1'b0;
         else begin
-            if (rdenA_q1 && ~(opcode_q1==BTB_) && semaphor[rdaddrsA_q1]) semaphor[rdaddrsA_q1] <= 1'b0;
-            if (wrenq && ~(rdenA_q1 & (wraddrsq == rdaddrsA_q1))) semaphor[wraddrsq] <= 1'b1;
-            if (rdenB_q1 && ~(opcode_q1==BTB_) && semaphor[rdaddrsB_q1]) semaphor[rdaddrsB_q1] <= 1'b0;
-            if (wrenq && ~(rdenB_q1 & (wraddrsq == rdaddrsB_q1))) semaphor[wraddrsq] <= 1'b1;
+            if (rdenA_q1 && ~(opcode_q1==BTB_) && semaphor[threadA_q1]) semaphor[threadA_q1] <= 1'b0;
+            if (wrenq && ~(rdenA_q1 & (thread_q2_del == threadA_q1))) semaphor[thread_q2_del] <= 1'b1;
+            if (rdenB_q1 && ~(opcode_q1==BTB_) && semaphor[threadB_q1]) semaphor[threadB_q1] <= 1'b0;
+            if (wrenq && ~(rdenB_q1 & (thread_q2_del == threadB_q1))) semaphor[thread_q2_del] <= 1'b1;
         end
     end
 end            
 
 always@(posedge CLK or posedge RESET) begin
     if (RESET) begin
-        delay0  <= 9'h000;
-        delay1  <= 9'h000;
-        delay2  <= 9'h000;
-        delay3  <= 9'h000;
-        delay4  <= 9'h000;
-        delay5  <= 9'h000;
-        delay6  <= 9'h000;
-        delay7  <= 9'h000;
-        delay8  <= 9'h000;
-        delay9  <= 9'h000;
-        delay10 <= 9'h000;
-//        delay11 <= 9'h000;
-//        delay12 <= 9'h000;
-//        delay13 <= 9'h000;
-//        delay14 <= 9'h000;
+        delay0  <= 4'h0;
+        delay1  <= 4'h0;
+        delay2  <= 4'h0;
+        delay3  <= 4'h0;
+        delay4  <= 4'h0;
+        delay5  <= 4'h0;
+        delay6  <= 4'h0;
+        delay7  <= 4'h0;
+        delay8  <= 4'h0;
     end    
     else begin
-        delay0  <= {div_by_0, invalid, wren, wraddrs};
+        delay0  <= {invalid, wren, thread_q2};
         delay1  <= delay0;    
         delay2  <= delay1;    
         delay3  <= delay2;
@@ -463,26 +479,18 @@ always@(posedge CLK or posedge RESET) begin
         delay6  <= delay5; 
         delay7  <= delay6; 
         delay8  <= delay7; 
-        delay9  <= delay8; 
-        delay10 <= delay9; 
-//        delay11 <= delay10;
-//        delay12 <= delay11;
-//        delay13 <= delay12;
-//        delay14 <= delay13;
     end 
 end        
-//
+
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
         readyA <= 1'b0;
         readyB <= 1'b0;
     end  
     else begin
-        if (rdenA) readyA <= (wrenq & (rdaddrsA == wraddrsq)) ? 1'b1 : semaphor[rdaddrsA];
+        if (rdenA) readyA <= (wrenq & (threadA==thread_q2_del)) ? 1'b1 : semaphor[threadA];
         else readyA <= rdenB;         
-        if (rdenB) readyB <= (wrenq & (rdaddrsB == wraddrsq)) ? 1'b1 : semaphor[rdaddrsB];
+        if (rdenB) readyB <= (wrenq & (threadB==thread_q2_del)) ? 1'b1 : semaphor[threadB];
         else readyB <=rdenA;
     end   
 end
-
-endmodule

@@ -11,7 +11,7 @@ This SYMPL FP32X-AXI4 design supercedes and replaces the original SYMPL FP3250 q
 
 For more information on the FP32X-AXI4, including architectural overview, instruction-set, register descriptions, block diagrams, and example test case, read the SYMPL FP32X-AXI4 user's guide, which can be downloaded at this link:
 
-https://github.com/jerry-D/SYMPL-FP324-AXI4/blob/master/SYMPL_FP32X_AXI4.pdf
+https://github.com/jerry-D/SYMPL-FP324-AXI4/blob/master/SYMPL_FP32X_AXI4_rev2.pdf
 
 Presently the only cross-assembler available for generating object code is CROSS-32, universal cross-assembler, which can be purchased at a reasonable price at the following link:  
 

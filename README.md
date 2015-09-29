@@ -1,4 +1,6 @@
 # SYMPL-FP324-AXI4
+Update (Sept. 29, 2015):  The SYMPL FP32X-AXI4 n-Shader GP-GPU-Compute engine is now (or will soon be) IEEE754-2008 compliant, featuring new fused-multiply-add (FMA) and Dot (sum-of-products) operators, per-spec default exception handling, alternate immediate & delayed exception handling, default and directed rounding, delivery of (quiet) NaNs with diagnostic payload for invalid operations, etc.  The new design, when implemented in Kintex 7 (-3 speed grade) will clock in the range of 125 MHz.  If you'd like a beta copy of the RTL, email me.
+
 Update (Aug. 28, 2015):  The SYMPL FP32X-AXI4 n-Shader GP-GPU-Compute engine now features FloPoCo-generated floating-point operators.  The single-Shader design is now an AXI4 component that can be replicated "n" number of times in your custom design, with the maximum "n" determined by the number of available AXI4 slave channels available in your AXI4 interconnect and, of course, the amount of fabric available in your FPGA.  
 
 The FloPoCo website can be found here:

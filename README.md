@@ -2,7 +2,7 @@
 
 With SYMPL GP-GPU-Compute Engines, adding a single, dual or quad-shader GP-GPU-compute core to your RISC-V is no more difficult than it is to add a 64-k word, block SRAM to your design (see block diagrams below).  With the single-shader version (four interleaving threads), you can boost performance of your application by up to 125 MFLOPs @ 125Mhz.  With the dual-shader version (eight interleaving threads), you get up to 250 MFLOPs @125Mhz.  With the quad-shader (sixteen interleaving threads), you get up to 500 MFLOPs @125 Mhz, when implemented in Kintex 7 (-3 speed-grade) devices.
 
-Block diagrams for each can be viewed by clicking on the corresponding thumb image below:
+Block diagrams for each can be viewed by clicking on the corresponding link above the thumb image below:
 
 [Single-Shader Version](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU1.jpg)
 

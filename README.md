@@ -60,20 +60,7 @@ It should be noted that all three implementations of the SYMPL  GP-GPU run the e
 
 In this example, the SYMPL GP-GPU-Compute engine is instantiated in the file named, “vscale_dp_hasti_sram.v” and can be found in the “stimulus” folder of this SYMPL GP-GPU distribution package.   The quad-shader version is currently specified in the “vscale_dp_hasti_sram.v” module as the instantiated GP-GPU.  To change the GP-GPU from quad to dual or single shader, simply open said file up and remove the comments in front of the one that you want, shown as follows:
 
-//   FP3211 gp_gpu1 ( //single-shader version (4 threads)
-   FP323 gp_gpu1 (  //dual-shader version (8 threads)
-//   FP325 gp_gpu1 (  //quad-shader version (16 threads)
-                  .CLKA   (hclk        ),  //for RISC-V side of DP SRAM
-                  .CLKB   (hclk        ),  //for GPU clock and GPU side of DP SRAM (ie, clocks can run at different freq)
-                  .RESET  (~hresetn    ),
-                  .WREN   (dpool_wren  ),
-                  .WRADDRS(dpool_addrs),
-                  .WRDATA ((mem[p0_word_waddr] & ~p0_wmask) | (p0_wdata & p0_wmask)),
-                  .RDEN   (dpool_rden  ),
-                  .RDADDRS(dpool_addrs),
-                  .RDDATA (dpool_rddata),
-                  .DONE   (gpu_done    )  
-                  );
+![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/GP-GPU_inst.jpg)
 
 Finally, you should be aware that for a single shader GP-GPU, the simulation will require roughly 425 usec to complete and that the test bench does have a $finish.  Just before the $finish, the test bench will write the transformed “olive_trans.stl” file to the working directory.  You can view this file using any online .stl file viewer, OpenSCAD, or Blender.
 

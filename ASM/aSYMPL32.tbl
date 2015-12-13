@@ -1,5 +1,5 @@
-; Cross-32 instruction table for SYMPL FP32X-AXI4 for use with SYMPL FP32X-AXI4 multi-thread RISC core only.  
-; version 2.50   September 21, 2015 
+; Cross-32 instruction table for SYMPL GP-GPU Compute Engines.  
+; version 2.53   Dec 12, 2015 
 ; Author:  Jerry D. Harthcock
 ; Copyright (C) 2014-2015.  All rights reserved, without prejudice.
 ; A copy of Cross-32 can be purchased from
@@ -7,22 +7,19 @@
 ; A copy of the Cross-32 manual can be viewed online here:  http://www.cdadapter.com/download/cross32.pdf
 ; This version does not include support for soft-scheduling feature.  If you need that capability
 ; contact the author of this table at: SYMPL.gpu@gmail.com
+;
 ;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ;//                                                                                                               //
-;//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
+;//                   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine                           //
 ;//                              Evaluation and Product Development License                                       //
 ;//                                                                                                               //
 ;// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-;// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
-;// Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
-;// non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
-;// products and related development tools only.                                                                  //
-;//                                                                                                               //
-;// Also subject to the terms and conditions set forth herein, Jerry D. Harthcock, exlusive inventor and owner    //
-;// of US Patent No. 7,073,048, entitled "CASCADED MICROCOMPUTER ARRAY AND METHOD", issue date July 4, 2006       //
-;// ("the '048 patent"), hereby grants a world-wide, paid-up, non-exclusive license under the '048 patent to use  //
-;// this IP for the purposes of evaluation, education, and development of end products and related development    //
-;// tools only.                                                                                                   //
+;// the original author and exclusive copyright owner of the SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-  //
+;// Compute Engine Verilog RTL IP core family and instruction-set architecture ("this IP"), hereby grants to      //
+;// recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to use this IP for the        //
+;// non-commercial purposes of evaluation, education, and development of end products and related development     //
+;// tools only. For a license to use this IP in commercial products intended for sale, license, lease or any      //
+;// other form of barter, contact licensor at:  SYMPL.gpu@gmail.com                                               //
 ;//                                                                                                               //
 ;// Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
 ;// and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
@@ -30,9 +27,9 @@
 ;// netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
 ;// any copyright notices from any source file covered under this Evaluation and Product Development License.     //
 ;//                                                                                                               //
-;// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR     //
-;// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM   //
-;// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                //
+;// THIS IP IS PROVIDED "AS IS".  LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT        //
+;// INFRINGE THE RIGHTS OF OTHERS OR THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE //
+;// TO HOLD LICENSOR HARMLESS FROM ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                 //                               
 ;//                                                                                                               //
 ;// Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
 ;// or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
@@ -40,8 +37,7 @@
 ;// in this Evaluation and Product Development License.                                                           //
 ;//                                                                                                               //
 ;// This Evaluation and Product Development License does not include the right to sell products that incorporate  //
-;// this IP, any IP derived from this IP, or the '048 patent.  If you would like to obtain such a license, please //
-;// contact Licensor.                                                                                             //
+;// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor. //                                                                                            //
 ;//                                                                                                               //
 ;// Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
 ;//                                                                                                               //
@@ -51,9 +47,9 @@
 ;Register/Flag definition section
 ;---------------------------------
 1, "LEFT", "LSL", "ASL", "ROL", "RIGHT", "LSR", "ASR", "ROR"   ;type of SHFT
-2, "Z", "C", "N", "V", "LOCKED", "DONE", "INV", "DIVBY0", "OVFL", "UNFL", "NXACT", "ALTINV", "ALTDVBY0", "ALTOVFL", "ALTUNFL", "ALTNXACT", "DALTINV", "DALTDVBY0", "DALTOVFL", "DALTUNFL", "DALTNXACT", "IRQEN", "IRQ", "!!$$", "%^!", "*&^", "&%@", "%$*", "&$%", "ZorN", "NEVER", "ALWAYS"
+2, "Z", "C", "N", "V", "LOCKED","DONE","INV","DIVBY0","OVFL","UNFL","NXACT","ALTINV","ALTDVBY0","ALTOVFL","ALTUNFL","ALTNXACT","DALTINV","DALTDVBY0","DALTOVFL","DALTUNFL","DALTNXACT","IRQEN","IRQ","!$","%!","*^","&@","%$*","%@!","ZorN","NEVER","ALWAYS"
 6, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"
-7, "LPCNT0", "LPCNT1", "LPCNT2", "LPCNT3"
+7, "LPCNT0", "LPCNT1"
 ;           1111111111222222222233                       
 ; 01234567890123456789012345678901
 ; 00000000000000000000000000000000
@@ -75,7 +71,8 @@
 10,       8,       8,   {#-$}, $-127,  $+128  ;relative branch
 14,      28,       4,    @6,    0x0,   0xF    ;shift amount, 0x0 is code for one shift, 0xF is code for 16 shifts as per "@6" above
 15,      24,       4,    @1,    0x0,   0x7    ;type of shift as per "@1" above
-16,      8,        8,    @7,    0x0,   0x1    ;DBNZ as per "@7" above
+16,      31,       1,    @7,    0x0,   0x1    ;DBNZ as per "@7" above
+17,      21,      11,     #,   0x0000, 0xFFFF ;RPT immediate
 
 ;-------------------------
 ;addressing modes section
@@ -260,23 +257,25 @@
 247,*{4}++,@{2},{15},{14}^20080000:
 248,*{4}--,@{2},{15},{14}^200C0000:
 
-249,{2}^00000000:                       ;Repeat RPT (RPT is alias of MOV)
-250,*{5}++^00000800:
-251,*{5}--^00000C00:
 
-252,{10},{16}^00000F68:                 ;DBNZ (DBNZ is alias of BTBS)
+249,#{17}^30000000:                  ;Repeat RPT (RPT is alias of MOV)
+250,[{5}]^00000400:                  ;use contents of ARn as repeat value
+251,[{5}]++^00000800:                ;use contents of ARn as repeat value then post-increment ARn
+252,[{5}]^--00000C00:                ;use contents of ARn as repeat value then post-decrement ARn
+
+253,{10},{16}^00000F68:                 ;DBNZ (DBNZ is alias of BTBS)
 
 
 * ;Mnemonic Definition section, which includes just a few of the many possible aliases.  Second nyble (4-bits) from the far left is the opcode
                                
-MOV    |1-120  ^00000000:
+MOV    |1-120  ^00000000:        ;default "nearest" rounding mode
 AND    |21-119 ^01000000:                       
 OR     |21-119 ^02000000:
 XOR    |21-119 ^03000000:
 BCND   |148    ^04000000:
-BTBC   |121-147^04002000:
+BTBC   |121-147^04004000:
 BTBS   |121-147^04000000:
-DBNZ   |252    ^04000000:
+DBNZ   |253    ^04000000:
 SHFT   |229-248^05000000:
 ADD    |21-119 ^06000000:                       
 ADDC   |21-119 ^07000000:                       
@@ -292,13 +291,14 @@ NOP    ^04001E6D:  ; BCND NEVER actually
 SBRK   ^04001F6D:  ; BCND ALWAYS (to self) actually
 RPT    |249-251^00640000:  ; MOV srcA to location 64 (repeat counter)
 
-;same as above, except switch from current thread to thread 1 (not available for RPT)
+;same as above, except switch from current thread to thread 1 )
+MOV.P  |1-120  ^40000000:       ;rounds to positive infinity when destination is a floating-point operator
 MOV.1  |1-120  ^40000000:
 AND.1  |21-119 ^41000000:                       
 OR.1   |21-119 ^42000000:
 XOR.1  |21-119 ^43000000:
 BCND.1 |148    ^44000000:
-BTBC.1 |121-147^44002000:
+BTBC.1 |121-147^44004000:
 BTBS.1 |121-147^44000000:
 DBNZ.1 |252    ^44000000:
 SHFT.1 |229-248^45000000:
@@ -315,13 +315,14 @@ COT.1  |1-20|100-102|120 ^4F000000:
 NOP.1  ^44001E6D:  ; BCND NEVER actually
 SBRK.1 ^44001F6D:  ; BCND ALWAYS (to self) actually
 
-;same as above, except switch from current thread to thread 2 (not available for RPT)
+;same as above, except switch from current thread to thread 2 
+MOV.N  |1-120  ^80000000:       ;rounds to negative infinity when destination is a floating-point operator
 MOV.2  |1-120  ^80000000:
 AND.2  |21-119 ^81000000:                       
 OR.2   |21-119 ^82000000:
 XOR.2  |21-119 ^83000000:
 BCND.2 |148    ^84000000:
-BTBC.2 |121-147^84002000:
+BTBC.2 |121-147^84004000:
 BTBS.2 |121-147^84000000:
 DBNZ.2 |252    ^84000000:
 SHFT.2 |229-248^85000000:
@@ -338,13 +339,14 @@ COT.2  |1-20|100-102|120 ^8F000000:
 NOP.2  ^84001E6D:  ; BCND NEVER actually
 SBRK.2 ^84001F6D:  ; BCND ALWAYS (to self) actually
 
-;same as above, except switch from current thread to thread 3 (not available for RPT)
+;same as above, except switch from current thread to thread 3 
+MOV.Z  |1-120  ^C0000000:       ;rounds to zero when destination is a floating-point operator
 MOV.3  |1-120  ^C0000000:
 AND.3  |21-119 ^C1000000:                       
 OR.3   |21-119 ^C2000000:
 XOR.3  |21-119 ^C3000000:
 BCND.3 |148    ^C4000000:
-BTBC.3 |121-147^C4002000:
+BTBC.3 |121-147^C4004000:
 BTBS.3 |121-147^C4000000:
 DBNZ.3 |252    ^C4000000:
 SHFT.3 |229-248^C5000000:

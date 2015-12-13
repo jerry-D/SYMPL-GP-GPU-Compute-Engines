@@ -63,7 +63,8 @@ begin
    roundOverflow <= '0';
    NaN <= expInfty and not fracZero;
    infinity <= (expInfty and fracZero) or (not NaN and (overflow or roundOverflow));
-   zero <= expZero or underflow;
+ --  zero <= expZero or underflow;  --by JDH Nov 10, 2015
+   zero <= expZero and fracZero;
    exnR <=
            "11" when NaN='1'
       else "10" when infinity='1'

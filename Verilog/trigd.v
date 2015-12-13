@@ -1,27 +1,23 @@
 `timescale 1ns/100ps 
 // trigd.v      32-bit floating-point, single-precision, trig tables for "degrees", resolution 1 degree out of 360
 // input is 10-bit signed integer, output is 32-bit float
-// For use in SYMPL FP32X-AXI4 multi-thread RISC core only
-// Version 1.11  August 27, 2015
+// For use in SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine
+// Version 1.13  Dec. 12, 2015
 // Author:  Jerry D. Harthcock
 // Copyright (C) 2014-2015.  All rights reserved without prejudice.
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
+//                   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine                           //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
-// Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
-// non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
-// products and related development tools only.                                                                  //
-//                                                                                                               //
-// Also subject to the terms and conditions set forth herein, Jerry D. Harthcock, exlusive inventor and owner    //
-// of US Patent No. 7,073,048, entitled "CASCADED MICROCOMPUTER ARRAY AND METHOD", issue date July 4, 2006       //
-// ("the '048 patent"), hereby grants a world-wide, paid-up, non-exclusive license under the '048 patent to use  //
-// this IP for the purposes of evaluation, education, and development of end products and related development    //
-// tools only.                                                                                                   //
+// the original author and exclusive copyright owner of the SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-  //
+// Compute Engine Verilog RTL IP core family and instruction-set architecture ("this IP"), hereby grants to      //
+// recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to use this IP for the        //
+// non-commercial purposes of evaluation, education, and development of end products and related development     //
+// tools only. For a license to use this IP in commercial products intended for sale, license, lease or any      //
+// other form of barter, contact licensor at:  SYMPL.gpu@gmail.com                                               //
 //                                                                                                               //
 // Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
 // and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
@@ -29,9 +25,9 @@
 // netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
 // any copyright notices from any source file covered under this Evaluation and Product Development License.     //
 //                                                                                                               //
-// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR     //
-// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM   //
-// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                //
+// THIS IP IS PROVIDED "AS IS".  LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT        //
+// INFRINGE THE RIGHTS OF OTHERS OR THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE //
+// TO HOLD LICENSOR HARMLESS FROM ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                 //                               
 //                                                                                                               //
 // Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
 // or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
@@ -39,8 +35,7 @@
 // in this Evaluation and Product Development License.                                                           //
 //                                                                                                               //
 // This Evaluation and Product Development License does not include the right to sell products that incorporate  //
-// this IP, any IP derived from this IP, or the '048 patent.  If you would like to obtain such a license, please //
-// contact Licensor.                                                                                             //
+// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor. //                                                                                            //
 //                                                                                                               //
 // Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
 //                                                                                                               //
@@ -267,7 +262,7 @@ wire [9:0] cox;
 wire [9:0] comod180;
 wire [9:0] absltcox;
 
-// for sin and cos
+// for sin and tan
 assign absltx = x[9] ? (10'h000 - x) : x;           //get absolute value of input x
 assign mod180 = 10'd180 - absltx;                   //confine it to modulus 180
 assign sign = x[9] ^ mod180[9];                     //determine sign
@@ -277,7 +272,7 @@ assign deg = absltx[8:0];                           //truncate sign position
 assign cox =  x - 10'd090;                          //adjust for -90deg phase shift
 assign absltcox = cox[9] ? (10'h000 - cox) : cox;   //get absolute value of cox
 assign comod180 = 10'd180 - absltcox;               //confine it to modulus 180
-assign cosign = cox[9] ^ comod180[9];               //determine sign
+assign cosign = ~(cox[9] ^ comod180[9]);               //determine sign
 assign codeg = absltcox[8:0];                       //truncate sign position
 
 

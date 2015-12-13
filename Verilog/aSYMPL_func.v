@@ -1,23 +1,19 @@
  `timescale 1ns/100ps
-// aSYMPL Floating-Point Math Block for use with SYMPL FP32X multi-thread RISC cores only
-// Version 2.13 September 28, 2015.
+// aSYMPL Floating-Point Math Block for use with SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine
+// Version 2.14 Dec. 12, 2015.
 // Copyright (C) 2014-2015 by Jerry D. Harthcock.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
+//                   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine                           //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
-// Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
-// non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
-// products and related development tools only.                                                                  //
-//                                                                                                               //
-// Also subject to the terms and conditions set forth herein, Jerry D. Harthcock, exlusive inventor and owner    //
-// of US Patent No. 7,073,048, entitled "CASCADED MICROCOMPUTER ARRAY AND METHOD", issue date July 4, 2006       //
-// ("the '048 patent"), hereby grants a world-wide, paid-up, non-exclusive license under the '048 patent to use  //
-// this IP for the purposes of evaluation, education, and development of end products and related development    //
-// tools only.                                                                                                   //
+// the original author and exclusive copyright owner of the SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-  //
+// Compute Engine Verilog RTL IP core family and instruction-set architecture ("this IP"), hereby grants to      //
+// recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to use this IP for the        //
+// non-commercial purposes of evaluation, education, and development of end products and related development     //
+// tools only. For a license to use this IP in commercial products intended for sale, license, lease or any      //
+// other form of barter, contact licensor at:  SYMPL.gpu@gmail.com                                               //
 //                                                                                                               //
 // Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
 // and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
@@ -25,9 +21,9 @@
 // netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
 // any copyright notices from any source file covered under this Evaluation and Product Development License.     //
 //                                                                                                               //
-// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR     //
-// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM   //
-// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                //
+// THIS IP IS PROVIDED "AS IS".  LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT        //
+// INFRINGE THE RIGHTS OF OTHERS OR THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE //
+// TO HOLD LICENSOR HARMLESS FROM ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                 //                               
 //                                                                                                               //
 // Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
 // or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
@@ -35,8 +31,7 @@
 // in this Evaluation and Product Development License.                                                           //
 //                                                                                                               //
 // This Evaluation and Product Development License does not include the right to sell products that incorporate  //
-// this IP, any IP derived from this IP, or the '048 patent.  If you would like to obtain such a license, please //
-// contact Licensor.                                                                                             //
+// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor. //                                                                                            //
 //                                                                                                               //
 // Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
 //                                                                                                               //
@@ -54,16 +49,13 @@ module aSYMPL_func (
     OPsrcA_q1,
     OPsrcB_q1,
     wren,
-    wren_DOT,
     wraddrs,
     rdSrcAdata,
     rdSrcBdata,
     rdenA,
-    rdenA_DOT,
     rdaddrsA,
     rddataA,
     rdenB,
-    rdenB_DOT,
     rdaddrsB,
     rddataB,
     tr0_C_reg,
@@ -72,6 +64,12 @@ module aSYMPL_func (
     tr3_C_reg,
     exc_codeA,
     exc_codeB,
+    
+    tr3_CREG_wr,
+    tr2_CREG_wr,
+    tr1_CREG_wr,
+    tr0_CREG_wr,
+    
     ready,
     
     round_mode_q1,
@@ -102,7 +100,6 @@ module aSYMPL_func (
     );
 
 input RESET, CLK, wren, rdenA, rdenB;
-input wren_DOT, rdenA_DOT, rdenB_DOT;
 input [11:0] pc_q2;
 input [6:0] wraddrs;
 input [7:0] rdaddrsA, rdaddrsB;
@@ -119,6 +116,11 @@ input [1:0] round_mode_q1;
 output [31:0]rddataA, rddataB;
 output [3:0] exc_codeA;
 output [3:0] exc_codeB;
+
+input tr3_CREG_wr;
+input tr2_CREG_wr;
+input tr1_CREG_wr;
+input tr0_CREG_wr;
 
 output ready;
 
@@ -149,8 +151,6 @@ output tr0_inexact;
 parameter MOV_ = 4'b0000;
 parameter BTB_ = 4'b0100;
 
-parameter DOT_ADDRS = 14'h0065;
-
 reg [35:0] rddataA_out, rddataB_out;
 reg [7:0] srcA_q1, srcB_q1;
 reg rdenA_q1, rdenB_q1;
@@ -160,8 +160,6 @@ reg [31:0] fwrsrcBdata;
 
 reg readyA;
 reg readyB;
-
-reg ready_DOT;
 
 reg [1:0] round_mode_q2;
 
@@ -284,11 +282,6 @@ wire [35:0] rddataA_FP_exp;
 wire [35:0] rddataA_FP_itof;
 wire [35:0] rddataA_INT_ftoi;
 
-wire [35:0] tr3_result_dot;
-wire [35:0] tr2_result_dot;
-wire [35:0] tr1_result_dot;
-wire [35:0] tr0_result_dot;
-
 wire [35:0] tr3_rddataB_FP_dot;
 wire [35:0] tr2_rddataB_FP_dot;
 wire [35:0] tr1_rddataB_FP_dot;
@@ -361,11 +354,6 @@ wire tr3_overflow_exp;
 wire tr3_underflow_exp;
 wire tr3_inexact_exp;
 
-wire tr3_invalid_dot;  
-wire tr3_overflow_dot; 
-wire tr3_underflow_dot;
-wire tr3_inexact_dot;
-
 wire tr3_invalid_ftoi;
 wire tr3_overflow_ftoi;
 wire tr3_underflow_ftoi;
@@ -408,11 +396,6 @@ wire tr2_invalid_exp;
 wire tr2_overflow_exp;
 wire tr2_underflow_exp;
 wire tr2_inexact_exp;
-
-wire tr2_invalid_dot;  
-wire tr2_overflow_dot; 
-wire tr2_underflow_dot;
-wire tr2_inexact_dot; 
 
 wire tr2_invalid_ftoi;
 wire tr2_overflow_ftoi;
@@ -457,11 +440,6 @@ wire tr1_overflow_exp;
 wire tr1_underflow_exp;
 wire tr1_inexact_exp;
 
-wire tr1_invalid_dot;  
-wire tr1_overflow_dot; 
-wire tr1_underflow_dot;
-wire tr1_inexact_dot;  
-
 wire tr1_invalid_ftoi;
 wire tr1_overflow_ftoi;
 wire tr1_underflow_ftoi;
@@ -505,11 +483,6 @@ wire tr0_overflow_exp;
 wire tr0_underflow_exp;
 wire tr0_inexact_exp;
 
-wire tr0_invalid_dot;  
-wire tr0_overflow_dot; 
-wire tr0_underflow_dot;
-wire tr0_inexact_dot;
-
 wire tr0_invalid_ftoi;
 wire tr0_overflow_ftoi;
 wire tr0_underflow_ftoi;
@@ -523,7 +496,6 @@ assign tr3_invalid   = tr3_invalid_mul  |
                        tr3_invalid_fma  |
                        tr3_invalid_log  |
                        tr3_invalid_exp  |
-                       tr3_invalid_dot  |
                        tr3_invalid_ftoi ;
 
 assign tr3_div_by_0  = tr3_div_by_0_div  |
@@ -536,7 +508,6 @@ assign tr3_overflow  = tr3_overflow_mul  |
                        tr3_overflow_fma  |
                        tr3_overflow_log  |
                        tr3_overflow_exp  |
-                       tr3_overflow_dot  |
                        tr3_overflow_ftoi ;
 
 assign tr3_underflow = tr3_underflow_mul  |
@@ -546,7 +517,6 @@ assign tr3_underflow = tr3_underflow_mul  |
                        tr3_underflow_fma  |
                        tr3_underflow_log  |
                        tr3_underflow_exp  |
-                       tr3_underflow_dot  |
                        tr3_underflow_ftoi ;
 
 assign tr3_inexact   = tr3_inexact_mul  |
@@ -556,7 +526,6 @@ assign tr3_inexact   = tr3_inexact_mul  |
                        tr3_inexact_fma  |
                        tr3_inexact_log  |
                        tr3_inexact_exp  |
-                       tr3_inexact_dot  |
                        tr3_inexact_ftoi ;
 
 //thread 2 combined exception signals
@@ -567,7 +536,6 @@ assign tr2_invalid   = tr2_invalid_mul  |
                        tr2_invalid_fma  |
                        tr2_invalid_log  |
                        tr2_invalid_exp  |
-                       tr2_invalid_dot  |
                        tr2_invalid_ftoi ;
 
 assign tr2_div_by_0  = tr2_div_by_0_div  |
@@ -580,7 +548,6 @@ assign tr2_overflow  = tr2_overflow_mul  |
                        tr2_overflow_fma  |
                        tr2_overflow_log  |
                        tr2_overflow_exp  |
-                       tr2_overflow_dot  |
                        tr2_overflow_ftoi ;
 
 assign tr2_underflow = tr2_underflow_mul  |
@@ -590,7 +557,6 @@ assign tr2_underflow = tr2_underflow_mul  |
                        tr2_underflow_fma  |
                        tr2_underflow_log  |
                        tr2_underflow_exp  |
-                       tr2_underflow_dot  |
                        tr2_underflow_ftoi ;  
 
 assign tr2_inexact   = tr2_inexact_mul  |
@@ -600,7 +566,6 @@ assign tr2_inexact   = tr2_inexact_mul  |
                        tr2_inexact_fma  |
                        tr2_inexact_log  |
                        tr2_inexact_exp  |
-                       tr2_inexact_dot  |
                        tr2_inexact_ftoi ;
  
 //thread 1 combined exception signals
@@ -611,7 +576,6 @@ assign tr1_invalid   = tr1_invalid_mul  |
                        tr1_invalid_fma  |
                        tr1_invalid_log  |
                        tr1_invalid_exp  |
-                       tr1_invalid_dot  |
                        tr1_invalid_ftoi ;
 
 assign tr1_div_by_0  = tr1_div_by_0_div  |
@@ -624,7 +588,6 @@ assign tr1_overflow  = tr1_overflow_mul  |
                        tr1_overflow_fma  |
                        tr1_overflow_log  |
                        tr1_overflow_exp  |
-                       tr1_overflow_dot  |
                        tr1_overflow_ftoi ;
 
 assign tr1_underflow = tr1_underflow_mul  |
@@ -634,7 +597,6 @@ assign tr1_underflow = tr1_underflow_mul  |
                        tr1_underflow_fma  |
                        tr1_underflow_log  |
                        tr1_underflow_exp  |
-                       tr1_underflow_dot  |
                        tr1_underflow_ftoi ;
 
 assign tr1_inexact   = tr1_inexact_mul  |
@@ -644,7 +606,6 @@ assign tr1_inexact   = tr1_inexact_mul  |
                        tr1_inexact_fma  |
                        tr1_inexact_log  |
                        tr1_inexact_exp  |
-                       tr1_inexact_dot  |
                        tr1_inexact_ftoi ;
 
 //thread 0 combined exception signals
@@ -655,7 +616,6 @@ assign tr0_invalid   = tr0_invalid_mul  |
                        tr0_invalid_fma  |
                        tr0_invalid_log  |
                        tr0_invalid_exp  |
-                       tr0_invalid_dot  |
                        tr0_invalid_ftoi ;
 
 assign tr0_div_by_0  = tr0_div_by_0_div  |
@@ -668,7 +628,6 @@ assign tr0_overflow  = tr0_overflow_mul  |
                        tr0_overflow_fma  |
                        tr0_overflow_log  |
                        tr0_overflow_exp  |
-                       tr0_overflow_dot  |
                        tr0_overflow_ftoi ;
 
 assign tr0_underflow = tr0_underflow_mul  |
@@ -678,7 +637,6 @@ assign tr0_underflow = tr0_underflow_mul  |
                        tr0_underflow_fma  |
                        tr0_underflow_log  |
                        tr0_underflow_exp  |
-                       tr0_underflow_dot  |
                        tr0_underflow_ftoi ;
 
 assign tr0_inexact   = tr0_inexact_mul  |
@@ -688,7 +646,6 @@ assign tr0_inexact   = tr0_inexact_mul  |
                        tr0_inexact_fma  |
                        tr0_inexact_log  |
                        tr0_inexact_exp  |
-                       tr0_inexact_dot  |
                        tr0_inexact_ftoi ;
 
 
@@ -704,8 +661,7 @@ assign srcB_q1_sel = srcB_q1[7:0];
 assign rddataA = rddataA_out[31:0];
 assign rddataB = (opcode_q1==BTB_) ? semaphor_q1 : rddataB_out[31:0];
 
-assign semaphor_q1 = {22'h00_0000,
-                      ready_dot,
+assign semaphor_q1 = {23'h00_0000,
                       ready_fma,
                       ready_mul,
                       ready_add,
@@ -790,7 +746,7 @@ func_mul mul(
     .rdaddrsA ({thread, rdaddrsA[3:0]}),
     .rddataA  (rddataA_FP_mul),
     .rdenB    (rdenB_mul     ),
-    .rdaddrsB (rdaddrsB[5:0] ),
+    .rdaddrsB ({thread, rdaddrsB[3:0]}),
     .rddataB  (rddataB_FP_mul),
     .ready    (ready_mul     ),
     
@@ -954,13 +910,19 @@ func_fma fma(
     .wrdataA  (fwrsrcAdata   ),
     .wrdataB  (fwrsrcBdata   ),
     .rdenA    (rdenA_fma     ),
-    .rdaddrsA ({thread, rdaddrsA[3:0]}),
-    .rddataA  (rddataA_FP_fma),
-    .rdenB    (rdenB_fma     ),
-    .rdaddrsB (rdaddrsB[5:0] ),
+    .rdaddrsA ({thread, rdaddrsA[3:0]}),                        
+    .rddataA  (rddataA_FP_fma),                                 
+    .rdenB    (rdenB_fma     ),                                 
+    .rdaddrsB ({thread, rdaddrsB[3:0]}),                        
     .rddataB  (rddataB_FP_fma),
     .C_reg    (C_reg         ),
+
     .ready    (ready_fma     ),
+
+    .tr3_CREG_wr (tr3_CREG_wr),
+    .tr2_CREG_wr (tr2_CREG_wr),
+    .tr1_CREG_wr (tr1_CREG_wr),
+    .tr0_CREG_wr (tr0_CREG_wr),
     
     .round_mode(round_mode_q2_del_6 ),
     
@@ -1069,46 +1031,6 @@ func_exp exp(
     .tr0_inexact  (tr0_inexact_exp  )
     );
 
-func_dot dot(
-    .CLK          (CLK               ),
-    .RESET        (RESET             ),
-    .thread       (thread            ),
-    .thread_q1    (thread_q1         ),
-    .thread_q2    (thread_q2         ),
-    .pc_q2_del    ( pc_q2_del_8      ),
-    .qNaN_del     (propgat_NaN_del_8 ),
-    .opcode_q1    (opcode_q1         ),
-    .wren         (wren_DOT          ),
-    .wrdataA      (fwrsrcAdata       ),
-    .wrdataB      (fwrsrcBdata       ),
-    .rdenA        (rdenA_DOT         ),
-    .rdenB        (rdenB_DOT         ),
-    .tr0_result   (tr0_result_dot    ),
-    .tr1_result   (tr1_result_dot    ),
-    .tr2_result   (tr2_result_dot    ),
-    .tr3_result   (tr3_result_dot    ),
-    .ready        (ready_dot         ),
-                  
-    .round_mode(round_mode_q2_del_7  ),
-
-    .tr0_invalid  (tr0_invalid_dot   ),
-    .tr1_invalid  (tr1_invalid_dot   ),
-    .tr2_invalid  (tr2_invalid_dot   ),
-    .tr3_invalid  (tr3_invalid_dot   ),
-    .tr0_overflow (tr0_overflow_dot  ),
-    .tr1_overflow (tr1_overflow_dot  ),
-    .tr2_overflow (tr2_overflow_dot  ),
-    .tr3_overflow (tr3_overflow_dot  ),
-    .tr0_underflow(tr0_underflow_dot ),
-    .tr1_underflow(tr1_underflow_dot ),
-    .tr2_underflow(tr2_underflow_dot ),
-    .tr3_underflow(tr3_underflow_dot ),
-    .tr0_inexact  (tr0_inexact_dot   ),
-    .tr1_inexact  (tr1_inexact_dot   ),
-    .tr2_inexact  (tr2_inexact_dot   ),
-    .tr3_inexact  (tr3_inexact_dot   )
-    );
-    
 always@(*) begin
     if (wren_fma) 
         case(thread_q2)
@@ -1248,8 +1170,8 @@ always @(posedge CLK or posedge RESET) begin
         srcB_q1 <= 8'h00;
     end
     else begin
-        rdenA_q1 <= rdenA | rdenA_DOT;
-        rdenB_q1 <= rdenB | rdenB_DOT;
+        rdenA_q1 <= rdenA;
+        rdenB_q1 <= rdenB;
         srcA_q1 <= rdaddrsA[7:0];
         srcB_q1 <= rdaddrsB[7:0];
     end
@@ -1258,24 +1180,6 @@ end
 always @(*) 
     if (rdenA_q1)
         casex (srcA_q1_sel)
-            8'b01100101 : case(thread_q1)
-                            2'b00 : begin
-                                        rddataA_out = tr0_result_dot;
-                                        readyA = ready_dot;
-                                    end
-                            2'b01 : begin
-                                        rddataA_out = tr1_result_dot;
-                                        readyA = ready_dot;
-                                    end
-                            2'b10 : begin
-                                        rddataA_out = tr2_result_dot;
-                                        readyA = ready_dot;
-                                    end
-                            2'b11 : begin
-                                        rddataA_out = tr3_result_dot;
-                                        readyA = ready_dot;
-                                    end
-                          endcase
             8'b100xxxxx : begin
                             rddataA_out = rddataA_FP_add;
                             readyA = ready_add;
@@ -1325,24 +1229,6 @@ always @(*)
 always @(*) 
     if (rdenB_q1)
         casex (srcB_q1_sel)
-            8'b01100101 : case(thread_q1)
-                            2'b00 : begin
-                                        rddataB_out = tr0_result_dot;
-                                        readyB = ready_dot;
-                                    end
-                            2'b01 : begin
-                                        rddataB_out = tr1_result_dot;
-                                        readyB = ready_dot;
-                                    end
-                            2'b10 : begin
-                                        rddataB_out = tr2_result_dot;
-                                        readyB = ready_dot;
-                                    end
-                            2'b11 : begin
-                                        rddataB_out = tr3_result_dot;
-                                        readyB = ready_dot;
-                                    end
-                          endcase
             8'b100xxxxx : begin
                             rddataB_out = rddataB_FP_add;
                             readyB = ready_add;

@@ -1,26 +1,22 @@
 // core.v
 `timescale 1ns/100ps
-// SYMPL FP32X-AXI4 multi-thread RISC
+// Shader core SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine
 // Author:  Jerry D. Harthcock
-// Version:  3.03  Sept 23, 2015
+// Version:  3.06  Dec. 12, 2015
 // July 11, 2015
 // Copyright (C) 2014-2015.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
+//                   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine                           //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
-// Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
-// non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
-// products and related development tools only.                                                                  //
-//                                                                                                               //
-// Also subject to the terms and conditions set forth herein, Jerry D. Harthcock, exlusive inventor and owner    //
-// of US Patent No. 7,073,048, entitled "CASCADED MICROCOMPUTER ARRAY AND METHOD", issue date July 4, 2006       //
-// ("the '048 patent"), hereby grants a world-wide, paid-up, non-exclusive license under the '048 patent to use  //
-// this IP for the purposes of evaluation, education, and development of end products and related development    //
-// tools only.                                                                                                   //
+// the original author and exclusive copyright owner of the SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-  //
+// Compute Engine Verilog RTL IP core family and instruction-set architecture ("this IP"), hereby grants to      //
+// recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to use this IP for the        //
+// non-commercial purposes of evaluation, education, and development of end products and related development     //
+// tools only. For a license to use this IP in commercial products intended for sale, license, lease or any      //
+// other form of barter, contact licensor at:  SYMPL.gpu@gmail.com                                               //
 //                                                                                                               //
 // Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
 // and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
@@ -28,9 +24,9 @@
 // netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
 // any copyright notices from any source file covered under this Evaluation and Product Development License.     //
 //                                                                                                               //
-// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR     //
-// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM   //
-// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                //
+// THIS IP IS PROVIDED "AS IS".  LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT        //
+// INFRINGE THE RIGHTS OF OTHERS OR THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE //
+// TO HOLD LICENSOR HARMLESS FROM ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                 //                               
 //                                                                                                               //
 // Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
 // or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
@@ -38,8 +34,7 @@
 // in this Evaluation and Product Development License.                                                           //
 //                                                                                                               //
 // This Evaluation and Product Development License does not include the right to sell products that incorporate  //
-// this IP, any IP derived from this IP, or the '048 patent.  If you would like to obtain such a license, please //
-// contact Licensor.                                                                                             //
+// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor. //                                                                                            //
 //                                                                                                               //
 // Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
 //                                                                                                               //
@@ -56,8 +51,6 @@ module core (
          pre_PC,        
          prvt_2k_rddataA,  
          prvt_2k_rddataB,
-         RAM_4k_IRB_rddataA,
-         RAM_4k_IRB_rddataB,
          resultout,
          rdsrcA,
          rdsrcB,
@@ -72,7 +65,7 @@ module core (
          newthreadq,
          thread_q2,
                                  
-         SWBRKdet,
+//         SWBRKdet,
          
          tr3_IRQ,
          tr2_IRQ,
@@ -92,8 +85,6 @@ output  [13:0] dest_q2;
 output  [11:0] pre_PC;
 input   [31:0] prvt_2k_rddataA;  
 input   [31:0] prvt_2k_rddataB;
-input   [31:0] RAM_4k_IRB_rddataA;
-input   [31:0] RAM_4k_IRB_rddataB;
 output  [31:0] resultout;
 output         rdsrcA;
 output         rdsrcB;
@@ -108,7 +99,7 @@ output         tr0_done;
 output [1:0]   newthreadq;
 output [1:0]   thread_q2;
         
-output         SWBRKdet;
+//output         SWBRKdet;
 
 input          tr3_IRQ;
 input          tr2_IRQ;
@@ -134,7 +125,6 @@ parameter LPCNT1_ADDRS = 14'h0069;    //loop counter 1 address
 parameter LPCNT0_ADDRS = 14'h0068;    //loop counter 0 address
 parameter TIMER_ADDRS  = 14'h0067;
 parameter QOS_ADDRS    = 14'h0066;    // FP quality of service address
-parameter DOT_ADDRS    = 14'h0065;    // DOT FP operator
 parameter RPT_ADDRS    = 14'h0064;
 parameter CAPT3_ADDRS  = 14'h0063;    //delayed alternate exception handling captured rounding mode, thread and PC
 parameter CAPT2_ADDRS  = 14'h0062;    //delayed alternate exception handling captured srcB, srcA and corresponding FP exception code
@@ -432,7 +422,7 @@ wire [16:0] sbits;
 
 wire rdconstA;
 wire [1:0] round_mode; 
-wire SWBRKdet;
+//wire SWBRKdet;
 wire rdcycl;
 wire wrcycl;
 
@@ -445,14 +435,12 @@ wire [31:0] prvt_rddataB;
 wire [31:0] private_F128_rddataA; 
 wire [31:0] private_F128_rddataB; 
 
-wire [31:0] RAM_4k_IRB_rddataA;
 wire [31:0] prvt_2k_rddataA; 
 wire [31:0] global_1024_rddataA;
 wire [31:0] global_F512_rddataA;
 wire [31:0] global_I256_rddataA;
 wire [31:0] global_32_rddataA;
 
-wire [31:0] RAM_4k_IRB_rddataB;                               
 wire [31:0] prvt_2k_rddataB;                                
 wire [31:0] global_1024_rddataB;
 wire [31:0] global_F512_rddataB;
@@ -694,9 +682,18 @@ wire tr3_invalid_in_service;
 wire tr3_divby0_in_service;                                                                                                            
 wire tr3_overflow_in_service;                                                                                                          
 wire tr3_underflow_in_service;
-wire tr3_inexact_in_service;                                                                                                           
-                                                                                                                                       
-                                                                                                                                       
+wire tr3_inexact_in_service;
+
+wire tr3_CREG_wr;                                                                                                           
+wire tr2_CREG_wr;                                                                                                           
+wire tr1_CREG_wr;                                                                                                           
+wire tr0_CREG_wr;                                                                                                           
+        
+assign tr3_CREG_wr = wrcycl & (dest_q2==CREG_ADDRS) & (thread_q2==2'b11);                                                                                                           
+assign tr2_CREG_wr = wrcycl & (dest_q2==CREG_ADDRS) & (thread_q2==2'b10);                                                                                                           
+assign tr1_CREG_wr = wrcycl & (dest_q2==CREG_ADDRS) & (thread_q2==2'b01);                                                                                                           
+assign tr0_CREG_wr = wrcycl & (dest_q2==CREG_ADDRS) & (thread_q2==2'b00);                                                                                                           
+
 assign tr3_invalid   = tr3_invalid_imm;
 assign tr3_divby0    = tr3_alt_del_div0  ? tr3_divby0_del    : tr3_divby0_imm;
 assign tr3_overflow  = tr3_alt_del_ovfl  ? tr3_overflow_del  : tr3_overflow_imm;
@@ -772,9 +769,9 @@ assign srcB = srcBout;
 
 wire bitmatch;
 
-assign bitmatch = (|(bitsel & wrsrcBdata)) ^ OPsrcA_q2[5];
+assign bitmatch = (|(bitsel & wrsrcBdata)) ^ OPsrcA_q2[6];
    
-assign discont = (((opcode_q2 == BTB_) & bitmatch)    | 
+assign discont = (((opcode_q2==BTB_) & bitmatch)      | 
                  ((dest_q2[12:0]==PC_ADDRS) & wrcycl) | 
                  tr0_ld_vector                        |
                  tr1_ld_vector                        |
@@ -793,7 +790,7 @@ assign ACT_THREAD = LD_newthread ? newthread : newthreadq;
 assign rdprog = 1'b1; 
 assign rdsrcA = rdcycl & ~constn[1]; 
 assign rdsrcB = rdcycl & ~constn[0]; 
-
+                                
 assign bitsel = 1'b1<< OPsrcA_q2[4:0];
 assign OPdest = P_DATAi[23:16];    
 assign OPsrcA = P_DATAi[15:8];
@@ -801,8 +798,7 @@ assign OPsrcB = P_DATAi[7:0];
 
 assign round_mode = P_DATAi[31:30]; 
 assign rddisable = 1'b0;
-assign SWBRKdet = (P_DATAi[27:8]== 20'h4001F);  //relative branch to self ALWAYS == swbrk
-
+//assign SWBRKdet = (opcode_q2==BTB_) & (dest_q2==8'h00) & (OPsrcA==8'h1F) & (OPsrcB==8'h64) & ~discont;  //relative BTBS (to self) of REPEAT reg ALWAYS == swbrk
 assign rdcycl = ~rddisable;
 assign wrcycl = ~wrdisable & STATE[0] & ~pipe_flush;                                                        
 assign opcode =  P_DATAi[27:24];
@@ -1105,16 +1101,13 @@ aSYMPL_func fpmath(
    .OPsrcA_q1(OPsrcA_q1),
    .OPsrcB_q1(OPsrcB_q1),
    .wren     (wrcycl & ~|dest_q2[13:8] & dest_q2[7]),
-   .wren_DOT (wrcycl & (dest_q2==DOT_ADDRS)), 
    .wraddrs  (dest_q2[6:0]),
    .rdSrcAdata (rdSrcAdata ),
    .rdSrcBdata (rdSrcBdata ),
    .rdenA    (rdsrcA & ~|srcA[13:8] & srcA[7]),
-   .rdenA_DOT(rdsrcA & (srcA==DOT_ADDRS)),
    .rdaddrsA (srcA[7:0]),
    .rddataA  (private_F128_rddataA),
    .rdenB    (rdsrcB & ~|srcB[13:8] & srcB[7]),
-   .rdenB_DOT(rdsrcB & (srcB==DOT_ADDRS)),
    .rddataB  (private_F128_rddataB),
    .rdaddrsB (srcB[7:0]),
    .tr0_C_reg(tr0_C_reg ),
@@ -1122,7 +1115,12 @@ aSYMPL_func fpmath(
    .tr2_C_reg(tr2_C_reg ),
    .tr3_C_reg(tr3_C_reg ),
    .exc_codeA(exc_codeA ), 
-   .exc_codeB(exc_codeB ), 
+   .exc_codeB(exc_codeB ),
+   
+   .tr3_CREG_wr(tr3_CREG_wr), 
+   .tr2_CREG_wr(tr2_CREG_wr), 
+   .tr1_CREG_wr(tr1_CREG_wr), 
+   .tr0_CREG_wr(tr0_CREG_wr), 
    
    .ready    (fp_ready_q1),
    
@@ -1159,7 +1157,7 @@ aSYMPL_func fpmath(
     assign fp_ready_q1 = 1'b1;
 */
 
-/*
+
 func_atomic fatomic(
     .wrdata    (wrsrcAdata[9:0]),     
     .opcode_q2 (opcode_q2 ),
@@ -1168,16 +1166,17 @@ func_atomic fatomic(
     .tan_out   (tan_out   ),
     .cot_out   (cot_out   ),
     .rcp_out   (rcp_out   ));
-*/
 
+/*
     assign sin_out = 32'h0000_0000;
     assign cos_out = 32'h0000_0000;
     assign tan_out = 32'h0000_0000;
     assign cot_out = 32'h0000_0000;
     assign rcp_out = 32'h0000_0000;
+*/
 
-/*
-// if you need the full 1024 global RAM instead of the 256 instantiated below this module, remove comments and comment out the 256x32 module below this one               
+
+// this is global 1024 starting at 0x0400, shared by all threads
 RAM_tp #(.ADDRS_WIDTH(10), .DATA_WIDTH(32))
     global_1024 (  
     .CLK(CLK),
@@ -1190,22 +1189,7 @@ RAM_tp #(.ADDRS_WIDTH(10), .DATA_WIDTH(32))
     .rdenB(rdsrcB & (srcB[13:10]==4'b0001)),
     .rdaddrsB(srcB[9:0]),
     .rddataB(global_1024_rddataB));
-*/
-
-// 256x32 global RAM instead of 1024 instantiation above
-RAM_tp #(.ADDRS_WIDTH(8), .DATA_WIDTH(32))
-    global_1024 (  //using 256x32 RAM here instead of 1024x32, writes and reads wrap around in the 1024 address range
-    .CLK(CLK),
-    .wren(wrcycl & (dest_q2[13:10]==4'b0001)),
-    .wraddrs(dest_q2[7:0]),
-    .wrdata(resultout),
-    .rdenA(rdsrcA & (srcA[13:10]==4'b0001)),
-    .rdaddrsA(srcA[7:0]),
-    .rddataA(global_1024_rddataA),
-    .rdenB(rdsrcB & (srcB[13:10]==4'b0001)),
-    .rdaddrsB(srcB[7:0]),
-    .rddataB(global_1024_rddataB));
-    
+        
 RAM_tp #(.ADDRS_WIDTH(5), .DATA_WIDTH(32))
      global_32 (
      .CLK(CLK),
@@ -1260,8 +1244,9 @@ int_cntrl int_cntrl_tr0(
     .overflow_in_service  (tr0_overflow_in_service ),
     .underflow_in_service (tr0_underflow_in_service),
     .inexact_in_service   (tr0_inexact_in_service  ),
-    .wrcycl          (wrcycl       ),
-    .assigned_thread (2'b00        )
+    .wrcycl               (wrcycl       ),
+    .pipe_flush           (|pipe_flush_tr0),
+    .assigned_thread      (2'b00        )
     );   
 
 int_cntrl int_cntrl_tr1(
@@ -1292,8 +1277,9 @@ int_cntrl int_cntrl_tr1(
     .overflow_in_service  (tr1_overflow_in_service ),
     .underflow_in_service (tr1_underflow_in_service),
     .inexact_in_service   (tr1_inexact_in_service  ),
-    .wrcycl          (wrcycl       ),
-    .assigned_thread (2'b01        )
+    .wrcycl               (wrcycl       ),
+    .pipe_flush           (|pipe_flush_tr1),
+    .assigned_thread      (2'b01        )
     );   
 
 int_cntrl int_cntrl_tr2(
@@ -1324,8 +1310,9 @@ int_cntrl int_cntrl_tr2(
     .overflow_in_service  (tr2_overflow_in_service ),
     .underflow_in_service (tr2_underflow_in_service),
     .inexact_in_service   (tr2_inexact_in_service  ),
-    .wrcycl          (wrcycl       ),
-    .assigned_thread (2'b10        )
+    .wrcycl               (wrcycl       ),
+    .pipe_flush           (|pipe_flush_tr2),
+    .assigned_thread      (2'b10        )
     );   
 
 int_cntrl int_cntrl_tr3(
@@ -1356,9 +1343,11 @@ int_cntrl int_cntrl_tr3(
     .overflow_in_service  (tr3_overflow_in_service ),
     .underflow_in_service (tr3_underflow_in_service),
     .inexact_in_service   (tr3_inexact_in_service  ),
-    .wrcycl          (wrcycl       ),
-    .assigned_thread (2'b11        )
+    .wrcycl               (wrcycl       ),
+    .pipe_flush           (|pipe_flush_tr3),
+    .assigned_thread      (2'b11        )
     );  
+    
     
 exc_capture exc_capt3(     // quasi-trace buffer
     .CLK            (CLK        ),
@@ -1368,8 +1357,8 @@ exc_capture exc_capt3(     // quasi-trace buffer
     .addrsMode_q1   (constn_q1  ),
     .dest_q2        (dest_q2    ),
     .pc_q1          (pc_q1      ),
-    .rdSrcAdata     (rdSrcAdata ),
-    .rdSrcBdata     (rdSrcBdata ),
+    .rdSrcAdata     (private_F128_rddataA),
+    .rdSrcBdata     (private_F128_rddataB),
     .exc_codeA      (exc_codeA  ),
     .exc_codeB      (exc_codeB  ),
     .rdenA          (rdsrcA & (srcA[13:2]==11'b0_0000_0110_00)),
@@ -1400,8 +1389,8 @@ exc_capture exc_capt2(     // quasi-trace buffer
     .addrsMode_q1   (constn_q1  ),
     .dest_q2        (dest_q2    ),
     .pc_q1          (pc_q1      ),
-    .rdSrcAdata     (rdSrcAdata ),
-    .rdSrcBdata     (rdSrcBdata ),
+    .rdSrcAdata     (private_F128_rddataA),
+    .rdSrcBdata     (private_F128_rddataB),
     .exc_codeA      (exc_codeA  ),
     .exc_codeB      (exc_codeB  ),
     .rdenA          (rdsrcA & (srcA[13:2]==11'b0_0000_0110_00)),
@@ -1432,8 +1421,8 @@ exc_capture exc_capt1(     // quasi-trace buffer
     .addrsMode_q1   (constn_q1  ),
     .dest_q2        (dest_q2    ),
     .pc_q1          (pc_q1      ),
-    .rdSrcAdata     (rdSrcAdata ),
-    .rdSrcBdata     (rdSrcBdata ),
+    .rdSrcAdata     (private_F128_rddataA),
+    .rdSrcBdata     (private_F128_rddataB),
     .exc_codeA      (exc_codeA  ),
     .exc_codeB      (exc_codeB  ),
     .rdenA          (rdsrcA & (srcA[13:2]==11'b0_0000_0110_00)),
@@ -1464,8 +1453,8 @@ exc_capture exc_capt0(     // quasi-trace buffer
     .addrsMode_q1   (constn_q1  ),
     .dest_q2        (dest_q2    ),
     .pc_q1          (pc_q1      ),
-    .rdSrcAdata     (rdSrcAdata ),
-    .rdSrcBdata     (rdSrcBdata ),
+    .rdSrcAdata     (private_F128_rddataA),
+    .rdSrcBdata     (private_F128_rddataB),
     .exc_codeA      (exc_codeA  ),
     .exc_codeB      (exc_codeB  ),
     .rdenA          (rdsrcA & (srcA[13:2]==11'b0_0000_0110_00)),
@@ -1589,7 +1578,6 @@ always @(*) begin
 end
       
 always @(*) begin
-
     if (RESET) pre_PC = 12'h100;
     else if (LD_newthread)
        case (newthread) 
@@ -1645,35 +1633,52 @@ always @(*) begin
          newthread = 2'b00; 
        LD_newthread = 1'b0;
     end       
-end               
+end
+               
+wire collision_srcA_tr3;
+wire collision_srcB_tr3;
+wire collision_srcA_tr2;
+wire collision_srcB_tr2;
+wire collision_srcA_tr1;
+wire collision_srcB_tr1;
+wire collision_srcA_tr0;
+wire collision_srcB_tr0;
+
+assign collision_srcA_tr3 = (srcA_q1==dest_q2) & wrcycl & (thread_q2==2'b11);
+assign collision_srcB_tr3 = (srcB_q1==dest_q2) & wrcycl & (thread_q2==2'b11);
+assign collision_srcA_tr2 = (srcA_q1==dest_q2) & wrcycl & (thread_q2==2'b10);
+assign collision_srcB_tr2 = (srcB_q1==dest_q2) & wrcycl & (thread_q2==2'b10);
+assign collision_srcA_tr1 = (srcA_q1==dest_q2) & wrcycl & (thread_q2==2'b01);
+assign collision_srcB_tr1 = (srcB_q1==dest_q2) & wrcycl & (thread_q2==2'b01);
+assign collision_srcA_tr0 = (srcA_q1==dest_q2) & wrcycl & (thread_q2==2'b00);
+assign collision_srcB_tr0 = (srcB_q1==dest_q2) & wrcycl & (thread_q2==2'b00);
 
 always @(*) begin
             case (thread_q1)
                 2'b00 : begin     //thread 0
                             casex (srcA_q1)
-                                14'b1xxxxxxxxxxxxx : rdSrcAdata = RAM_4k_IRB_rddataA;    
+                                14'b1xxxxxxxxxxxxx : rdSrcAdata = (collision_srcA_tr0) ? resultout : prvt_2k_rddataA;    
                                 14'bx1xxxxxxxxxxxx : rdSrcAdata = ROM_4k_rddataA;        
-                                14'bxx1xxxxxxxxxxx : rdSrcAdata = prvt_2k_rddataA;       
-                                14'bxxx1xxxxxxxxxx : rdSrcAdata = global_1024_rddataA;   
+                                14'bxx1xxxxxxxxxxx : rdSrcAdata = (collision_srcA_tr0) ? resultout : prvt_2k_rddataA;       
+                                14'bxxx1xxxxxxxxxx : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_1024_rddataA;   
                                 14'bxxxx1xxxxxxxxx : rdSrcAdata = global_F512_rddataA;   
                                 14'bxxxxx1xxxxxxxx : rdSrcAdata = global_I256_rddataA;   
                                 14'bxxxxxx1xxxxxxx : rdSrcAdata = private_F128_rddataA;  
                                 
-                               AR3_ADDRS : rdSrcAdata = ((dest_q2 == AR3_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {19'h00000, tr0_AR3};                      
-                               AR2_ADDRS : rdSrcAdata = ((dest_q2 == AR2_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {19'h00000, tr0_AR2};                      
-                               AR1_ADDRS : rdSrcAdata = ((dest_q2 == AR1_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {19'h00000, tr0_AR1};
-                               AR0_ADDRS : rdSrcAdata = ((dest_q2 == AR0_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {19'h00000, tr0_AR0};
-                                PC_ADDRS : rdSrcAdata = ((dest_q2 == PC_ADDRS)  & wrcycl & (thread_q2==2'b00)) ? resultout : {20'h00000, tr0_PC};
-                                 PC_COPY : rdSrcAdata = ((dest_q2 == PC_COPY )  & wrcycl & (thread_q2==2'b00)) ? resultout : {20'h00000, tr0_PC_COPY};
+                               AR3_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : tr0_AR3;                      
+                               AR2_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : tr0_AR2;                      
+                               AR1_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : tr0_AR1;
+                               AR0_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : tr0_AR0;
+                                PC_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : {20'h00000, tr0_PC};
+                                 PC_COPY : rdSrcAdata = (collision_srcA_tr0) ? resultout : {20'h00000, tr0_PC_COPY};
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr0_STATUSq2 : tr0_STATUS;
-                             SCHED_ADDRS : rdSrcAdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcAdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcAdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : tr0_C_reg;                               
-                            LPCNT1_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {16'h0000, tr0_LPCNT1_nz, 3'b000, tr0_LPCNT1};
-                            LPCNT0_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {16'h0000, tr0_LPCNT0_nz, 3'b000, tr0_LPCNT0};
-                             TIMER_ADDRS : rdSrcAdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {12'h000, tr0_timer};                               
+                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : sched_cmp;
+                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : tr0_C_reg;                               
+                            LPCNT1_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : {16'h0000, tr0_LPCNT1_nz, 3'b000, tr0_LPCNT1};
+                            LPCNT0_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : {16'h0000, tr0_LPCNT0_nz, 3'b000, tr0_LPCNT0};
+                             TIMER_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : {12'h000, tr0_timer};                               
                                QOS_ADDRS : rdSrcAdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};                               
-                               DOT_ADDRS : rdSrcAdata = private_F128_rddataA;
                                
                                 14'h0064,  //reserved for RPT counter
                                 
@@ -1683,129 +1688,126 @@ always @(*) begin
                              CAPT0_ADDRS : rdSrcAdata = tr0_capt_dataA;
                                 
                                 14'h005x,
-                                14'h004x : rdSrcAdata = global_32_rddataA;
-                                14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                         
+                                14'h004x : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataA;
+                                14'b00000000xxxxxx : rdSrcAdata = (collision_srcA_tr0) ? resultout : prvt_rddataA;                                         
                                 default  : rdSrcAdata = 32'h0000_0000;  
                             endcase
                         end
                         
                 2'b01 : begin           //thread 1
                             casex (srcA_q1)
-                                14'b1xxxxxxxxxxxxx : rdSrcAdata = RAM_4k_IRB_rddataA;    
+                                14'b1xxxxxxxxxxxxx : rdSrcAdata = (collision_srcA_tr1) ? resultout : prvt_2k_rddataA;    
                                 14'bx1xxxxxxxxxxxx : rdSrcAdata = ROM_4k_rddataA;        
-                                14'bxx1xxxxxxxxxxx : rdSrcAdata = prvt_2k_rddataA;       
-                                14'bxxx1xxxxxxxxxx : rdSrcAdata = global_1024_rddataA;   
+                                14'bxx1xxxxxxxxxxx : rdSrcAdata = (collision_srcA_tr1) ? resultout : prvt_2k_rddataA;       
+                                14'bxxx1xxxxxxxxxx : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_1024_rddataA;   
                                 14'bxxxx1xxxxxxxxx : rdSrcAdata = global_F512_rddataA;   
                                 14'bxxxxx1xxxxxxxx : rdSrcAdata = global_I256_rddataA;   
                                 14'bxxxxxx1xxxxxxx : rdSrcAdata = private_F128_rddataA;  
                                 
-                               AR3_ADDRS : rdSrcAdata = ((dest_q2 == AR3_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {19'h00000, tr1_AR3};                      
-                               AR2_ADDRS : rdSrcAdata = ((dest_q2 == AR2_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {19'h00000, tr1_AR2};                      
-                               AR1_ADDRS : rdSrcAdata = ((dest_q2 == AR1_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {19'h00000, tr1_AR1};
-                               AR0_ADDRS : rdSrcAdata = ((dest_q2 == AR0_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {19'h00000, tr1_AR0};
-                                PC_ADDRS : rdSrcAdata = ((dest_q2 == PC_ADDRS)  & wrcycl & (thread_q2==2'b01)) ? resultout : {20'h00000, tr1_PC};
-                                 PC_COPY : rdSrcAdata = ((dest_q2 == PC_COPY )  & wrcycl & (thread_q2==2'b01)) ? resultout : {20'h00000, tr1_PC_COPY};
+                               AR3_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : tr1_AR3;                      
+                               AR2_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : tr1_AR2;                      
+                               AR1_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : tr1_AR1;
+                               AR0_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : tr1_AR0;
+                                PC_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : {20'h00000, tr1_PC};
+                                 PC_COPY : rdSrcAdata = (collision_srcA_tr1) ? resultout : {20'h00000, tr1_PC_COPY};
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr1_STATUSq2 : tr1_STATUS;
-                             SCHED_ADDRS : rdSrcAdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcAdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcAdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : tr1_C_reg;                               
-                            LPCNT1_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {16'h0000, tr1_LPCNT1_nz, 3'b000, tr1_LPCNT1};
-                            LPCNT0_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {16'h0000, tr1_LPCNT0_nz, 3'b000, tr1_LPCNT0};
-                             TIMER_ADDRS : rdSrcAdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {12'h000, tr1_timer};                               
-                               QOS_ADDRS : rdSrcAdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};
-                               DOT_ADDRS : rdSrcAdata = private_F128_rddataA;
-
-//                                14'h0064,  //reserved for RPT counter
+                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : sched_cmp;
+                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : tr1_C_reg;                               
+                            LPCNT1_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : {16'h0000, tr1_LPCNT1_nz, 3'b000, tr1_LPCNT1};
+                            LPCNT0_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : {16'h0000, tr1_LPCNT0_nz, 3'b000, tr1_LPCNT0};
+                             TIMER_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : {12'h000, tr1_timer};                               
+                               QOS_ADDRS : rdSrcAdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};                               
+                               
+                                14'h0064,  //reserved for RPT counter
                                 
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcAdata = tr1_capt_dataA;
-                             
-                               14'h005x,
-                               14'h004x : rdSrcAdata = global_32_rddataA;
-                               14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                   
-                                default : rdSrcAdata = 32'h0000_0000;  
+                                
+                                14'h005x,
+                                14'h004x : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataA;
+                                14'b00000000xxxxxx : rdSrcAdata = (collision_srcA_tr1) ? resultout : prvt_rddataA;                                         
+                                default  : rdSrcAdata = 32'h0000_0000;  
                             endcase
                         end
                         
                 2'b10 : begin     // thread 2
                             casex (srcA_q1)
-                                14'b1xxxxxxxxxxxxx : rdSrcAdata = RAM_4k_IRB_rddataA;    
+                                14'b1xxxxxxxxxxxxx : rdSrcAdata = (collision_srcA_tr2) ? resultout : prvt_2k_rddataA;    
                                 14'bx1xxxxxxxxxxxx : rdSrcAdata = ROM_4k_rddataA;        
-                                14'bxx1xxxxxxxxxxx : rdSrcAdata = prvt_2k_rddataA;       
-                                14'bxxx1xxxxxxxxxx : rdSrcAdata = global_1024_rddataA;   
+                                14'bxx1xxxxxxxxxxx : rdSrcAdata = (collision_srcA_tr2) ? resultout : prvt_2k_rddataA;       
+                                14'bxxx1xxxxxxxxxx : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_1024_rddataA;   
                                 14'bxxxx1xxxxxxxxx : rdSrcAdata = global_F512_rddataA;   
                                 14'bxxxxx1xxxxxxxx : rdSrcAdata = global_I256_rddataA;   
-                                14'bxxxxxx1xxxxxxx : rdSrcAdata = private_F128_rddataA;   
+                                14'bxxxxxx1xxxxxxx : rdSrcAdata = private_F128_rddataA;  
                                 
-                               AR3_ADDRS : rdSrcAdata = ((dest_q2 == AR3_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {19'h00000, tr2_AR3};                      
-                               AR2_ADDRS : rdSrcAdata = ((dest_q2 == AR2_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {19'h00000, tr2_AR2};                      
-                               AR1_ADDRS : rdSrcAdata = ((dest_q2 == AR1_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {19'h00000, tr2_AR1};
-                               AR0_ADDRS : rdSrcAdata = ((dest_q2 == AR0_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {19'h00000, tr2_AR0};
-                                PC_ADDRS : rdSrcAdata = ((dest_q2 == PC_ADDRS)  & wrcycl & (thread_q2==2'b10)) ? resultout : {20'h00000, tr2_PC};
-                                 PC_COPY : rdSrcAdata = ((dest_q2 == PC_COPY )  & wrcycl & (thread_q2==2'b10)) ? resultout : {20'h00000, tr2_PC_COPY};
+                               AR3_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : tr2_AR3;                      
+                               AR2_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : tr2_AR2;                      
+                               AR1_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : tr2_AR1;
+                               AR0_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : tr2_AR0;
+                                PC_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : {20'h00000, tr2_PC};
+                                 PC_COPY : rdSrcAdata = (collision_srcA_tr2) ? resultout : {20'h00000, tr2_PC_COPY};
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr2_STATUSq2 : tr2_STATUS;
-                             SCHED_ADDRS : rdSrcAdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcAdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcAdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : tr2_C_reg;                               
-                            LPCNT1_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {16'h0000, tr2_LPCNT1_nz, 3'b000, tr2_LPCNT1};
-                            LPCNT0_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {16'h0000, tr2_LPCNT0_nz, 3'b000, tr2_LPCNT0};
-                             TIMER_ADDRS : rdSrcAdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {12'h000, tr2_timer};                               
-                               QOS_ADDRS : rdSrcAdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};
-                               DOT_ADDRS : rdSrcAdata = private_F128_rddataA;
-
-//                                14'h0064,  //reserved for RPT counter
+                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : sched_cmp;
+                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : tr2_C_reg;                               
+                            LPCNT1_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : {16'h0000, tr2_LPCNT1_nz, 3'b000, tr2_LPCNT1};
+                            LPCNT0_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : {16'h0000, tr2_LPCNT0_nz, 3'b000, tr2_LPCNT0};
+                             TIMER_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : {12'h000, tr2_timer};                               
+                               QOS_ADDRS : rdSrcAdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};                               
+                               
+                                14'h0064,  //reserved for RPT counter
                                 
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcAdata = tr2_capt_dataA;
                                 
-                               14'h005x,
-                               14'h004x : rdSrcAdata = global_32_rddataA;
-                               14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                                                             
-                                default : rdSrcAdata = 32'h0000_0000;  
+                                14'h005x,
+                                14'h004x : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataA;
+                                14'b00000000xxxxxx : rdSrcAdata = (collision_srcA_tr2) ? resultout : prvt_rddataA;                                         
+                                default  : rdSrcAdata = 32'h0000_0000;  
                             endcase
                         end
                         
                 2'b11 : begin
                             casex (srcA_q1)
-                                14'b1xxxxxxxxxxxxx : rdSrcAdata = RAM_4k_IRB_rddataA;    
+                                14'b1xxxxxxxxxxxxx : rdSrcAdata = (collision_srcA_tr3) ? resultout : prvt_2k_rddataA;    
                                 14'bx1xxxxxxxxxxxx : rdSrcAdata = ROM_4k_rddataA;        
-                                14'bxx1xxxxxxxxxxx : rdSrcAdata = prvt_2k_rddataA;       
-                                14'bxxx1xxxxxxxxxx : rdSrcAdata = global_1024_rddataA;   
+                                14'bxx1xxxxxxxxxxx : rdSrcAdata = (collision_srcA_tr3) ? resultout : prvt_2k_rddataA;       
+                                14'bxxx1xxxxxxxxxx : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_1024_rddataA;   
                                 14'bxxxx1xxxxxxxxx : rdSrcAdata = global_F512_rddataA;   
                                 14'bxxxxx1xxxxxxxx : rdSrcAdata = global_I256_rddataA;   
-                                14'bxxxxxx1xxxxxxx : rdSrcAdata = private_F128_rddataA;   
+                                14'bxxxxxx1xxxxxxx : rdSrcAdata = private_F128_rddataA;  
                                 
-                               AR3_ADDRS : rdSrcAdata = ((dest_q2 == AR3_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {19'h00000, tr3_AR3};                      
-                               AR2_ADDRS : rdSrcAdata = ((dest_q2 == AR2_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {19'h00000, tr3_AR2};                      
-                               AR1_ADDRS : rdSrcAdata = ((dest_q2 == AR1_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {19'h00000, tr3_AR1};
-                               AR0_ADDRS : rdSrcAdata = ((dest_q2 == AR0_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {19'h00000, tr3_AR0};
-                                PC_ADDRS : rdSrcAdata = ((dest_q2 == PC_ADDRS)  & wrcycl & (thread_q2==2'b11)) ? resultout : {20'h00000, tr3_PC};
-                                 PC_COPY : rdSrcAdata = ((dest_q2 == PC_COPY )  & wrcycl & (thread_q2==2'b11)) ? resultout : {20'h00000, tr3_PC_COPY};
+                               AR3_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : tr3_AR3;                      
+                               AR2_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : tr3_AR2;                      
+                               AR1_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : tr3_AR1;
+                               AR0_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : tr3_AR0;
+                                PC_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : {20'h00000, tr3_PC};
+                                 PC_COPY : rdSrcAdata = (collision_srcA_tr3) ? resultout : {20'h00000, tr3_PC_COPY};
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr3_STATUSq2 : tr3_STATUS;
-                             SCHED_ADDRS : rdSrcAdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcAdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcAdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : tr3_C_reg;                               
-                            LPCNT1_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {16'h0000, tr3_LPCNT1_nz, 3'b000, tr3_LPCNT1};
-                            LPCNT0_ADDRS : rdSrcAdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {16'h0000, tr3_LPCNT0_nz, 3'b000, tr3_LPCNT0};
-                             TIMER_ADDRS : rdSrcAdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {12'h000, tr3_timer};                               
-                               QOS_ADDRS : rdSrcAdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};
-                               DOT_ADDRS : rdSrcAdata = private_F128_rddataA;
-
-//                                14'h0064,  //reserved for RPT counter
+                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : sched_cmp;
+                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : tr3_C_reg;                               
+                            LPCNT1_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : {16'h0000, tr3_LPCNT1_nz, 3'b000, tr3_LPCNT1};
+                            LPCNT0_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : {16'h0000, tr3_LPCNT0_nz, 3'b000, tr3_LPCNT0};
+                             TIMER_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : {12'h000, tr3_timer};                               
+                               QOS_ADDRS : rdSrcAdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};                               
+                               
+                                14'h0064,  //reserved for RPT counter
                                 
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcAdata = tr3_capt_dataA;
                                 
-                               14'h005x,
-                               14'h004x : rdSrcAdata = global_32_rddataA;
-                               14'b00000000xxxxxx : rdSrcAdata = prvt_rddataA;                                                                                                                              
-                                default : rdSrcAdata = 32'h0000_0000;  
+                                14'h005x,
+                                14'h004x : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataA;
+                                14'b00000000xxxxxx : rdSrcAdata = (collision_srcA_tr3) ? resultout : prvt_rddataA;                                         
+                                default  : rdSrcAdata = 32'h0000_0000;  
                             endcase
                         end
             endcase                 
@@ -1814,68 +1816,66 @@ end
 always @(*) begin        
             case (thread_q1)
                 2'b00 : begin     //thread 0
-                            casex (srcB_q1)                            
-                                14'b1xxxxxxxxxxxxx : rdSrcBdata = RAM_4k_IRB_rddataB;    
-                                14'bxx1xxxxxxxxxxx : rdSrcBdata = prvt_2k_rddataB;       
-                                14'bxxx1xxxxxxxxxx : rdSrcBdata = global_1024_rddataB;   
+                            casex (srcB_q1)                                                            
+                                14'b1xxxxxxxxxxxxx : rdSrcBdata = (collision_srcB_tr0) ? resultout : prvt_2k_rddataB;    
+                                14'bxx1xxxxxxxxxxx : rdSrcBdata = (collision_srcB_tr0) ? resultout : prvt_2k_rddataB;       
+                                14'bxxx1xxxxxxxxxx : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_1024_rddataB;   
                                 14'bxxxx1xxxxxxxxx : rdSrcBdata = global_F512_rddataB;   
                                 14'bxxxxx1xxxxxxxx : rdSrcBdata = global_I256_rddataB;   
                                 14'bxxxxxx1xxxxxxx : rdSrcBdata = private_F128_rddataB;  
                                 
-                               AR3_ADDRS : rdSrcBdata = ((dest_q2 == AR3_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {19'h00000, tr0_AR3};                      
-                               AR2_ADDRS : rdSrcBdata = ((dest_q2 == AR2_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {19'h00000, tr0_AR2};                      
-                               AR1_ADDRS : rdSrcBdata = ((dest_q2 == AR1_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {19'h00000, tr0_AR1};
-                               AR0_ADDRS : rdSrcBdata = ((dest_q2 == AR0_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {19'h00000, tr0_AR0};
-                                PC_ADDRS : rdSrcBdata = ((dest_q2 == PC_ADDRS)  & wrcycl & (thread_q2==2'b00)) ? resultout : {20'h00000, tr0_PC};
-                                 PC_COPY : rdSrcBdata = ((dest_q2 == PC_COPY )  & wrcycl & (thread_q2==2'b00)) ? resultout : {20'h00000, tr0_PC_COPY};
+                               AR3_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : tr0_AR3;                      
+                               AR2_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : tr0_AR2;                      
+                               AR1_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : tr0_AR1;
+                               AR0_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : tr0_AR0;
+                                PC_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : {20'h00000, tr0_PC};
+                                 PC_COPY : rdSrcBdata = (collision_srcB_tr0) ? resultout : {20'h00000, tr0_PC_COPY};
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr0_STATUSq2 : tr0_STATUS;
-                             SCHED_ADDRS : rdSrcBdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : scheduler;
-                          SCHEDCMP_ADDRS : rdSrcBdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcBdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : tr0_C_reg;                               
-                            LPCNT1_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {16'h0000, tr0_LPCNT1_nz, 3'b000, tr0_LPCNT1};
-                            LPCNT0_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {16'h0000, tr0_LPCNT0_nz, 3'b000, tr0_LPCNT0};
-                             TIMER_ADDRS : rdSrcBdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b00)) ? resultout : {12'h000, tr0_timer};                               
-                               QOS_ADDRS : rdSrcBdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};
-                               DOT_ADDRS : rdSrcBdata = private_F128_rddataB;
+                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : sched_cmp;
+                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : tr0_C_reg;                               
+                            LPCNT1_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : {16'h0000, tr0_LPCNT1_nz, 3'b000, tr0_LPCNT1};
+                            LPCNT0_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : {16'h0000, tr0_LPCNT0_nz, 3'b000, tr0_LPCNT0};
+                             TIMER_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : {12'h000, tr0_timer};                               
+                               QOS_ADDRS : rdSrcBdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};                               
                                
-//                                14'h0064,  //reserved for RPT counter
+                                14'h0064,  //reserved for RPT counter
                                 
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcBdata = tr0_capt_dataB;
                                 
-                               14'h005x,
-                               14'h004x : rdSrcBdata = global_32_rddataB;
-                               14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;                                                                                      
-                                default : rdSrcBdata = 32'h0000_0000;  
+                                14'h005x,
+                                14'h004x : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataB;
+                                14'b00000000xxxxxx : rdSrcBdata = (collision_srcB_tr0) ? resultout : prvt_rddataB;                                         
+                                default  : rdSrcBdata = 32'h0000_0000;  
                             endcase
                         end
                         
                 2'b01 : begin           //thread 1
                             casex (srcB_q1)                            
-                                14'b1xxxxxxxxxxxxx : rdSrcBdata = RAM_4k_IRB_rddataB;    
-                                14'bxx1xxxxxxxxxxx : rdSrcBdata = prvt_2k_rddataB;       
-                                14'bxxx1xxxxxxxxxx : rdSrcBdata = global_1024_rddataB;   
+                                14'b1xxxxxxxxxxxxx : rdSrcBdata = (collision_srcB_tr1) ? resultout : prvt_2k_rddataB;    
+                                14'bxx1xxxxxxxxxxx : rdSrcBdata = (collision_srcB_tr1) ? resultout : prvt_2k_rddataB;       
+                                14'bxxx1xxxxxxxxxx : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_1024_rddataB;   
                                 14'bxxxx1xxxxxxxxx : rdSrcBdata = global_F512_rddataB;   
                                 14'bxxxxx1xxxxxxxx : rdSrcBdata = global_I256_rddataB;   
                                 14'bxxxxxx1xxxxxxx : rdSrcBdata = private_F128_rddataB;  
                                 
-                               AR3_ADDRS : rdSrcBdata = ((dest_q2 == AR3_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {19'h00000, tr1_AR3};                      
-                               AR2_ADDRS : rdSrcBdata = ((dest_q2 == AR2_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {19'h00000, tr1_AR2};                      
-                               AR1_ADDRS : rdSrcBdata = ((dest_q2 == AR1_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {19'h00000, tr1_AR1};
-                               AR0_ADDRS : rdSrcBdata = ((dest_q2 == AR0_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {19'h00000, tr1_AR0};
-                                PC_ADDRS : rdSrcBdata = ((dest_q2 == PC_ADDRS)  & wrcycl & (thread_q2==2'b01)) ? resultout : {20'h00000, tr1_PC};
-                                 PC_COPY : rdSrcBdata = ((dest_q2 == PC_COPY )  & wrcycl & (thread_q2==2'b01)) ? resultout : {20'h00000, tr1_PC_COPY};
+                               AR3_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : tr1_AR3;                      
+                               AR2_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : tr1_AR2;                      
+                               AR1_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : tr1_AR1;
+                               AR0_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : tr1_AR0;
+                                PC_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : {20'h00000, tr1_PC};
+                                 PC_COPY : rdSrcBdata = (collision_srcB_tr1) ? resultout : {20'h00000, tr1_PC_COPY};
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr1_STATUSq2 : tr1_STATUS;
-                             SCHED_ADDRS : rdSrcBdata = ((dest_q2 == SCHED_ADDRS) & wrcycl) ? resultout : scheduler;
-                          SCHEDCMP_ADDRS : rdSrcBdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcBdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : tr1_C_reg;                               
-                            LPCNT1_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {16'h0000, tr1_LPCNT1_nz, 3'b000, tr1_LPCNT1};
-                            LPCNT0_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {16'h0000, tr1_LPCNT0_nz, 3'b000, tr1_LPCNT0};
-                             TIMER_ADDRS : rdSrcBdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b01)) ? resultout : {12'h000, tr1_timer};                               
-                               QOS_ADDRS : rdSrcBdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};
-                               DOT_ADDRS : rdSrcBdata = private_F128_rddataB;
+                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : sched_cmp;
+                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : tr1_C_reg;                               
+                            LPCNT1_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : {16'h0000, tr1_LPCNT1_nz, 3'b000, tr1_LPCNT1};
+                            LPCNT0_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : {16'h0000, tr1_LPCNT0_nz, 3'b000, tr1_LPCNT0};
+                             TIMER_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : {12'h000, tr1_timer};                               
+                               QOS_ADDRS : rdSrcBdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};                               
                                
                                 14'h0064,  //reserved for RPT counter
                                 
@@ -1884,37 +1884,36 @@ always @(*) begin
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcBdata = tr1_capt_dataB;
                                 
-                               14'h005x,
-                               14'h004x : rdSrcBdata = global_32_rddataB;
-                               14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
-                                default : rdSrcBdata = 32'h0000_0000;  
+                                14'h005x,
+                                14'h004x : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataB;
+                                14'b00000000xxxxxx : rdSrcBdata = (collision_srcB_tr1) ? resultout : prvt_rddataB;                                         
+                                default  : rdSrcBdata = 32'h0000_0000;  
                             endcase
                         end
                         
                 2'b10 : begin     // thread 2
                             casex (srcB_q1)                            
-                                14'b1xxxxxxxxxxxxx : rdSrcBdata = RAM_4k_IRB_rddataB;    
-                                14'bxx1xxxxxxxxxxx : rdSrcBdata = prvt_2k_rddataB;       
-                                14'bxxx1xxxxxxxxxx : rdSrcBdata = global_1024_rddataB;   
+                                14'b1xxxxxxxxxxxxx : rdSrcBdata = (collision_srcB_tr2) ? resultout : prvt_2k_rddataB;    
+                                14'bxx1xxxxxxxxxxx : rdSrcBdata = (collision_srcB_tr2) ? resultout : prvt_2k_rddataB;       
+                                14'bxxx1xxxxxxxxxx : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_1024_rddataB;   
                                 14'bxxxx1xxxxxxxxx : rdSrcBdata = global_F512_rddataB;   
                                 14'bxxxxx1xxxxxxxx : rdSrcBdata = global_I256_rddataB;   
                                 14'bxxxxxx1xxxxxxx : rdSrcBdata = private_F128_rddataB;  
                                 
-                               AR3_ADDRS : rdSrcBdata = ((dest_q2 == AR3_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {19'h00000, tr2_AR3};                      
-                               AR2_ADDRS : rdSrcBdata = ((dest_q2 == AR2_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {19'h00000, tr2_AR2};                      
-                               AR1_ADDRS : rdSrcBdata = ((dest_q2 == AR1_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {19'h00000, tr2_AR1};
-                               AR0_ADDRS : rdSrcBdata = ((dest_q2 == AR0_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {19'h00000, tr2_AR0};
-                                PC_ADDRS : rdSrcBdata = ((dest_q2 == PC_ADDRS)  & wrcycl & (thread_q2==2'b10)) ? resultout : {20'h00000, tr2_PC};
-                                 PC_COPY : rdSrcBdata = ((dest_q2 == PC_COPY )  & wrcycl & (thread_q2==2'b10)) ? resultout : {20'h00000, tr2_PC_COPY};
+                               AR3_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : tr2_AR3;                      
+                               AR2_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : tr2_AR2;                      
+                               AR1_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : tr2_AR1;
+                               AR0_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : tr2_AR0;
+                                PC_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : {20'h00000, tr2_PC};
+                                 PC_COPY : rdSrcBdata = (collision_srcB_tr2) ? resultout : {20'h00000, tr2_PC_COPY};
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr2_STATUSq2 : tr2_STATUS;
-                             SCHED_ADDRS : rdSrcBdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : scheduler;
-                          SCHEDCMP_ADDRS : rdSrcBdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcBdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : tr2_C_reg;                               
-                            LPCNT1_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {16'h0000, tr2_LPCNT1_nz, 3'b000, tr2_LPCNT1};
-                            LPCNT0_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {16'h0000, tr2_LPCNT0_nz, 3'b000, tr2_LPCNT0};
-                             TIMER_ADDRS : rdSrcBdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b10)) ? resultout : {12'h000, tr2_timer};                               
-                               QOS_ADDRS : rdSrcBdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};
-                               DOT_ADDRS : rdSrcBdata = private_F128_rddataB;
+                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : sched_cmp;
+                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : tr2_C_reg;                               
+                            LPCNT1_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : {16'h0000, tr2_LPCNT1_nz, 3'b000, tr2_LPCNT1};
+                            LPCNT0_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : {16'h0000, tr2_LPCNT0_nz, 3'b000, tr2_LPCNT0};
+                             TIMER_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : {12'h000, tr2_timer};                               
+                               QOS_ADDRS : rdSrcBdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};                               
                                
                                 14'h0064,  //reserved for RPT counter
                                 
@@ -1923,49 +1922,48 @@ always @(*) begin
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcBdata = tr2_capt_dataB;
                                 
-                               14'h005x,
-                               14'h004x : rdSrcBdata = global_32_rddataB;
-                               14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
-                                default : rdSrcBdata = 32'h0000_0000;  
+                                14'h005x,
+                                14'h004x : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataB;
+                                14'b00000000xxxxxx : rdSrcBdata = (collision_srcB_tr2) ? resultout : prvt_rddataB;                                         
+                                default  : rdSrcBdata = 32'h0000_0000;  
                             endcase
                         end
                         
                 2'b11 : begin
                             casex (srcB_q1)
-                                14'b1xxxxxxxxxxxxx : rdSrcBdata = RAM_4k_IRB_rddataB;    
-                                14'bxx1xxxxxxxxxxx : rdSrcBdata = prvt_2k_rddataB;       
-                                14'bxxx1xxxxxxxxxx : rdSrcBdata = global_1024_rddataB;   
+                                14'b1xxxxxxxxxxxxx : rdSrcBdata = (collision_srcB_tr3) ? resultout : prvt_2k_rddataB;    
+                                14'bxx1xxxxxxxxxxx : rdSrcBdata = (collision_srcB_tr3) ? resultout : prvt_2k_rddataB;       
+                                14'bxxx1xxxxxxxxxx : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_1024_rddataB;   
                                 14'bxxxx1xxxxxxxxx : rdSrcBdata = global_F512_rddataB;   
                                 14'bxxxxx1xxxxxxxx : rdSrcBdata = global_I256_rddataB;   
                                 14'bxxxxxx1xxxxxxx : rdSrcBdata = private_F128_rddataB;  
                                 
-                               AR3_ADDRS : rdSrcBdata = ((dest_q2 == AR3_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {19'h00000, tr3_AR3};                      
-                               AR2_ADDRS : rdSrcBdata = ((dest_q2 == AR2_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {19'h00000, tr3_AR2};                      
-                               AR1_ADDRS : rdSrcBdata = ((dest_q2 == AR1_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {19'h00000, tr3_AR1};
-                               AR0_ADDRS : rdSrcBdata = ((dest_q2 == AR0_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {19'h00000, tr3_AR0};
-                                PC_ADDRS : rdSrcBdata = ((dest_q2 == PC_ADDRS)  & wrcycl & (thread_q2==2'b11)) ? resultout : {20'h00000, tr3_PC};
-                                 PC_COPY : rdSrcBdata = ((dest_q2 == PC_COPY )  & wrcycl & (thread_q2==2'b11)) ? resultout : {20'h00000, tr3_PC_COPY};
+                               AR3_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : tr3_AR3;                      
+                               AR2_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : tr3_AR2;                      
+                               AR1_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : tr3_AR1;
+                               AR0_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : tr3_AR0;
+                                PC_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : {20'h00000, tr3_PC};
+                                 PC_COPY : rdSrcBdata = (collision_srcB_tr3) ? resultout : {20'h00000, tr3_PC_COPY};
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr3_STATUSq2 : tr3_STATUS;
-                             SCHED_ADDRS : rdSrcBdata = ((dest_q2 == SCHED_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : scheduler;
-                          SCHEDCMP_ADDRS : rdSrcBdata = ((dest_q2 == SCHEDCMP_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcBdata = ((dest_q2 == CREG_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : tr3_C_reg;                               
-                            LPCNT1_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT1_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {16'h0000, tr3_LPCNT1_nz, 3'b000, tr3_LPCNT1};
-                            LPCNT0_ADDRS : rdSrcBdata = ((dest_q2 == LPCNT0_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {16'h0000, tr3_LPCNT0_nz, 3'b000, tr3_LPCNT0};
-                             TIMER_ADDRS : rdSrcBdata = ((dest_q2 == TIMER_ADDRS) & wrcycl & (thread_q2==2'b11)) ? resultout : {12'h000, tr3_timer};                               
-                               QOS_ADDRS : rdSrcBdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};
-                               DOT_ADDRS : rdSrcBdata = private_F128_rddataB;
+                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : sched_cmp;
+                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : tr3_C_reg;                               
+                            LPCNT1_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : {16'h0000, tr3_LPCNT1_nz, 3'b000, tr3_LPCNT1};
+                            LPCNT0_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : {16'h0000, tr3_LPCNT0_nz, 3'b000, tr3_LPCNT0};
+                             TIMER_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : {12'h000, tr3_timer};                               
+                               QOS_ADDRS : rdSrcBdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};                               
                                
-//                                14'h0064,  //reserved for RPT counter
+                                14'h0064,  //reserved for RPT counter
                                 
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcBdata = tr3_capt_dataB;
                                 
-                               14'h005x,
-                               14'h004x : rdSrcBdata = global_32_rddataB;
-                               14'b00000000xxxxxx : rdSrcBdata = prvt_rddataB;    
-                                default : rdSrcBdata = 32'h0000_0000;  
+                                14'h005x,
+                                14'h004x : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataB;
+                                14'b00000000xxxxxx : rdSrcBdata = (collision_srcB_tr3) ? resultout : prvt_rddataB;                                         
+                                default  : rdSrcBdata = 32'h0000_0000;  
                             endcase
                         end
             endcase
@@ -2613,11 +2611,48 @@ always @(*)  begin
         endcase 
 end 
 
+
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
         REPEAT <= 11'h000;
     end
-    else if (wrcycl && (OPdest == RPT_ADDRS[7:0]) && ~RPT_not_z) REPEAT[10:0] <= P_DATAi[10:0]; 
+    else if (( &constn && (OPdest==RPT_ADDRS[7:0])) && ~RPT_not_z && ~discont) REPEAT[10:0] <= P_DATAi[10:0]; 
+    else if ((~|constn && (OPdest==RPT_ADDRS[7:0])) && ~RPT_not_z && ~discont && &OPsrcA[6:4] && ~OPsrcA[3:2]) begin
+        casex(OPsrcA)
+            8'h74,
+            8'h78,
+            8'h7C : case(newthreadq)
+                        2'b00 : REPEAT[10:0] <= tr0_AR0[10:0];
+                        2'b01 : REPEAT[10:0] <= tr1_AR0[10:0];
+                        2'b10 : REPEAT[10:0] <= tr2_AR0[10:0];
+                        2'b11 : REPEAT[10:0] <= tr3_AR0[10:0];
+                    endcase    
+            8'h75,
+            8'h79,
+            8'h7D : case(newthreadq)
+                        2'b00 : REPEAT[10:0] <= tr0_AR1[10:0];
+                        2'b01 : REPEAT[10:0] <= tr1_AR1[10:0];
+                        2'b10 : REPEAT[10:0] <= tr2_AR1[10:0];
+                        2'b11 : REPEAT[10:0] <= tr3_AR1[10:0];
+                    endcase    
+            8'h76,
+            8'h7A,
+            8'h7E : case(newthreadq)
+                        2'b00 : REPEAT[10:0] <= tr0_AR2[10:0];
+                        2'b01 : REPEAT[10:0] <= tr1_AR2[10:0];
+                        2'b10 : REPEAT[10:0] <= tr2_AR2[10:0];
+                        2'b11 : REPEAT[10:0] <= tr3_AR2[10:0];
+                    endcase    
+            8'h77,
+            8'h7B,
+            8'h7F : case(newthreadq)
+                        2'b00 : REPEAT[10:0] <= tr0_AR3[10:0];
+                        2'b01 : REPEAT[10:0] <= tr1_AR3[10:0];
+                        2'b10 : REPEAT[10:0] <= tr2_AR3[10:0];
+                        2'b11 : REPEAT[10:0] <= tr3_AR3[10:0];
+                    endcase
+        endcase                
+    end 
     else if (|REPEAT[10:0]) REPEAT[10:0] <= REPEAT[10:0] - 1'b1;
 end   
  
@@ -2721,7 +2756,23 @@ always @(posedge CLK or posedge tr0_done) begin
         end
     end
 end    
+
+reg tr3_ld_vector_q1;
+reg tr3_ld_vector_q2;
+reg tr3_ld_vector_q3;
    
+reg tr2_ld_vector_q1;
+reg tr2_ld_vector_q2;
+reg tr2_ld_vector_q3;  
+
+reg tr1_ld_vector_q1;
+reg tr1_ld_vector_q2;
+reg tr1_ld_vector_q3;   
+ 
+reg tr0_ld_vector_q1;
+reg tr0_ld_vector_q2;
+reg tr0_ld_vector_q3;   
+
 always @(posedge CLK or posedge RESET) begin                                                                     
     if (RESET) begin                                                                                             
         PC <= 12'h100;                                                                                                         
@@ -2917,6 +2968,23 @@ always @(posedge CLK or posedge RESET) begin
         pipe_flush_tr1 <= 2'b00;
         pipe_flush_tr2 <= 2'b00;
         pipe_flush_tr3 <= 2'b00;
+        
+        tr3_ld_vector_q1 <= 1'b0;
+        tr3_ld_vector_q2 <= 1'b0;
+        tr3_ld_vector_q3 <= 1'b0;
+        
+        tr2_ld_vector_q1 <= 1'b0;
+        tr2_ld_vector_q2 <= 1'b0;
+        tr2_ld_vector_q3 <= 1'b0;
+        
+        tr1_ld_vector_q1 <= 1'b0;
+        tr1_ld_vector_q2 <= 1'b0;
+        tr1_ld_vector_q3 <= 1'b0;
+        
+        tr0_ld_vector_q1 <= 1'b0;
+        tr0_ld_vector_q2 <= 1'b0;
+        tr0_ld_vector_q3 <= 1'b0;
+                
         fp_ready_q2 <= 1'b0;
         fp_sel_q2 <= 1'b0;
     end    
@@ -2936,13 +3004,31 @@ always @(posedge CLK or posedge RESET) begin
         pipe_flush_tr1[1] <= pipe_flush_tr1[0] & (thread_q2==2'b01);
         pipe_flush_tr2[1] <= pipe_flush_tr2[0] & (thread_q2==2'b10);
         pipe_flush_tr3[1] <= pipe_flush_tr3[0] & (thread_q2==2'b11);
+
+        tr3_ld_vector_q1 <= tr3_ld_vector;
+        tr3_ld_vector_q2 <= tr3_ld_vector_q1;
+        tr3_ld_vector_q3 <= tr3_ld_vector_q2;  
+                         
+        tr2_ld_vector_q1 <= tr2_ld_vector;
+        tr2_ld_vector_q2 <= tr2_ld_vector_q1;
+        tr2_ld_vector_q3 <= tr2_ld_vector_q2;  
+
+        tr1_ld_vector_q1 <= tr1_ld_vector;
+        tr1_ld_vector_q2 <= tr1_ld_vector_q1;
+        tr1_ld_vector_q3 <= tr1_ld_vector_q2;  
  
-       
+        tr0_ld_vector_q1 <= tr0_ld_vector;
+        tr0_ld_vector_q2 <= tr0_ld_vector_q1;
+        tr0_ld_vector_q3 <= tr0_ld_vector_q2;  
+
     ///////////////////// thread 0 PC /////////////////
-        if (tr0_ld_vector && (thread_q2==2'b00)) begin
+        if (tr0_ld_vector) begin
             tr0_PC <= tr0_vector;
-            tr0_PC_COPY <= pc_q2 + 1'b1; 
+            if (((opcode_q2==BTB_) & bitmatch) && (thread_q2==2'b00) && ~|pipe_flush_tr0) tr0_PC_COPY <= pc_q2 + {dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7:0]};
+            else if ((dest_q2 == PC_ADDRS) && wrcycl) tr0_PC_COPY = resultout;
+            else tr0_PC_COPY = pc_q2 + 1'b1; 
         end   
+        else if (tr0_ld_vector_q3) tr0_PC <= resultout;
         else if (tr0_rewind_PC) begin
             tr0_PC <= pc_q2;
             tr0_PC_COPY <= pc_q2 + 1'b1; 
@@ -2958,10 +3044,13 @@ always @(posedge CLK or posedge RESET) begin
         else if ((newthreadq==2'b00)) tr0_PC <= RPT_not_z ? tr0_PC : next_PC;   
 
     ///////////////////// thread 1 PC /////////////////
-        if (tr1_ld_vector && (thread_q2==2'b01)) begin
+        if (tr1_ld_vector) begin
             tr1_PC <= tr1_vector;
-            tr1_PC_COPY <= pc_q2 + 1'b1; 
-        end    
+            if (((opcode_q2==BTB_) & bitmatch) && (thread_q2==2'b01) && ~|pipe_flush_tr1) tr1_PC_COPY <= pc_q2 + {dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7:0]};
+            else if ((dest_q2 == PC_ADDRS) && wrcycl) tr1_PC_COPY = resultout;
+            else tr1_PC_COPY = pc_q2 + 1'b1; 
+        end   
+        else if (tr1_ld_vector_q3) tr1_PC <= resultout;
         else if (tr1_rewind_PC) begin
             tr1_PC <= pc_q2;
             tr1_PC_COPY <= pc_q2 + 1'b1; 
@@ -2972,15 +3061,18 @@ always @(posedge CLK or posedge RESET) begin
         end         
         else if ((dest_q2==PC_ADDRS) && (thread_q2==2'b01) && wrcycl) begin
             tr1_PC <= resultout[11:0];                       
-            if (~((pc_q2[11:2]==10'b0001_0000_00) && (dest_q2==PC_ADDRS))) tr1_PC_COPY <= pc_q2 + 1'b1; 
+            if (~((pc_q2[11:2]==10'b0001_0000_00) && (dest_q2==PC_ADDRS))) tr1_PC_COPY <= pc_q2 + 1'b1;  //don't copy PC if interrupt vector fetch
         end      
         else if ((newthreadq==2'b01)) tr1_PC <= RPT_not_z ? tr1_PC : next_PC;   
 
     ///////////////////// thread 2 PC /////////////////
-        if (tr2_ld_vector && (thread_q2==2'b10)) begin
+        if (tr2_ld_vector) begin
             tr2_PC <= tr2_vector;
-            tr2_PC_COPY <= pc_q2 + 1'b1; 
-        end    
+            if (((opcode_q2==BTB_) & bitmatch) && (thread_q2==2'b10) && ~|pipe_flush_tr2) tr2_PC_COPY <= pc_q2 + {dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7:0]};
+            else if ((dest_q2 == PC_ADDRS) && wrcycl) tr2_PC_COPY = resultout;
+            else tr2_PC_COPY = pc_q2 + 1'b1; 
+        end   
+        else if (tr2_ld_vector_q3) tr2_PC <= resultout;
         else if (tr2_rewind_PC) begin
             tr2_PC <= pc_q2;
             tr2_PC_COPY <= pc_q2 + 1'b1; 
@@ -2991,15 +3083,18 @@ always @(posedge CLK or posedge RESET) begin
         end         
         else if ((dest_q2==PC_ADDRS) && (thread_q2==2'b10) && wrcycl) begin
             tr2_PC <= resultout[11:0];                       
-            if (~((pc_q2[11:2]==10'b0001_0000_00) && (dest_q2==PC_ADDRS))) tr2_PC_COPY <= pc_q2 + 1'b1; 
+            if (~((pc_q2[11:2]==10'b0001_0000_00) && (dest_q2==PC_ADDRS))) tr2_PC_COPY <= pc_q2 + 1'b1;  //don't copy PC if interrupt vector fetch
         end      
         else if ((newthreadq==2'b10)) tr2_PC <= RPT_not_z ? tr2_PC : next_PC;   
       
     ///////////////////// thread 3 PC /////////////////
-        if (tr3_ld_vector && (thread_q2==2'b11)) begin
+        if (tr3_ld_vector) begin
             tr3_PC <= tr3_vector;
-            tr3_PC_COPY <= pc_q2 + 1'b1; 
-        end    
+            if (((opcode_q2==BTB_) & bitmatch) && (thread_q2==2'b11) && ~|pipe_flush_tr3) tr3_PC_COPY <= pc_q2 + {dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7], dest_q2[7:0]};
+            else if ((dest_q2 == PC_ADDRS) && wrcycl) tr3_PC_COPY = resultout;
+            else tr3_PC_COPY = pc_q2 + 1'b1; 
+        end   
+        else if (tr3_ld_vector_q3) tr3_PC <= resultout;
         else if (tr3_rewind_PC) begin
             tr3_PC <= pc_q2;
             tr3_PC_COPY <= pc_q2 + 1'b1; 
@@ -3010,9 +3105,9 @@ always @(posedge CLK or posedge RESET) begin
         end         
         else if ((dest_q2==PC_ADDRS) && (thread_q2==2'b11) && wrcycl) begin
             tr3_PC <= resultout[11:0];                       
-            if (~((pc_q2[11:2]==10'b0001_0000_00) && (dest_q2==PC_ADDRS))) tr3_PC_COPY <= pc_q2 + 1'b1; 
+            if (~((pc_q2[11:2]==10'b0001_0000_00) && (dest_q2==PC_ADDRS))) tr3_PC_COPY <= pc_q2 + 1'b1;  //don't copy PC if interrupt vector fetch
         end      
-        else if ((newthreadq==2'b11)) tr3_PC <= RPT_not_z ? tr3_PC : next_PC;                    
+        else if ((newthreadq==2'b11)) tr3_PC <= RPT_not_z ? tr3_PC : next_PC;   
 
                                            
     ///////////////////// fine-grain scheduler /////////////////               
@@ -3179,8 +3274,7 @@ always @(posedge CLK or posedge RESET) begin
         srcB_q2     <= srcB_q1    ; 
         OPdest_q2   <= OPdest_q1  ;
         OPsrcA_q2   <= OPsrcA_q1  ;
-
-        
+       
         casex (opcode_q1)      //read data stored temporarily in wrsrcAdata and wrsrcBdata
         
            RCP_,
@@ -3228,27 +3322,31 @@ always @(posedge CLK or posedge RESET) begin
                    end          
         endcase
         
-        if (~RPT_not_z && &constn)      //immediate loads of ARn occur during instruction fetch (state0)
+        if (~RPT_not_z && &constn && (OPdest[7:2]==6'b011100))      //immediate loads of ARn occur during instruction fetch (state0)
             casex (newthreadq)
-                2'b00 :casex (OPdest)   //only [12:0] written during immediate write to ARn
+                2'b00 : if (~(discont && (thread_q2==2'b00))) 
+                        casex (OPdest)   //only [12:0] written during immediate write to ARn
                           8'h70 : tr0_AR0[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
                           8'h71 : tr0_AR1[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
                           8'h72 : tr0_AR2[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
                           8'h73 : tr0_AR3[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]};
-                       endcase
-                2'b01 : casex (OPdest)  //only [12:0] written during immediate write to ARn
+                        endcase
+                2'b01 : if (~(discont && (thread_q2==2'b01)))
+                        casex (OPdest)  //only [12:0] written during immediate write to ARn
                            8'h70 : tr1_AR0[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
                            8'h71 : tr1_AR1[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
                            8'h72 : tr1_AR2[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
                            8'h73 : tr1_AR3[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]};
                         endcase
-                2'b10 : casex (OPdest)   //only [12:0] written during immediate write to ARn
+                2'b10 : if (~(discont && (thread_q2==2'b10)))
+                        casex (OPdest)   //only [12:0] written during immediate write to ARn
                            8'h70 : tr2_AR0[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
                            8'h71 : tr2_AR1[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
                            8'h72 : tr2_AR2[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
                            8'h73 : tr2_AR3[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]};
                         endcase
-                2'b11 : casex (OPdest)  //only [12:0] written during immediate write to ARn
+                2'b11 : if (~(discont && (thread_q2==2'b11)))
+                        casex (OPdest)  //only [12:0] written during immediate write to ARn
                            8'h70 : tr3_AR0[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; //direct write to ARn during newthreadq has priority over any update
                            8'h71 : tr3_AR1[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
                            8'h72 : tr3_AR2[13:0] <= {OPsrcA[5:0], OPsrcB[7:0]}; 
@@ -3256,7 +3354,7 @@ always @(posedge CLK or posedge RESET) begin
                         endcase
             endcase
         else if (wrcycl && ~RPT_not_z)
-            casex (thread_q2)  //direct, indirect, or table-read loads of ARn occur during usual write (state2) 
+            casex (thread_q2)  //direct or table-read loads of ARn occur during usual write (state2) 
                 2'b00 : casex (OPdest_q2)
                            8'h70 : tr0_AR0 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR0[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR0[23:16]), 2'b00, resultout[13:0]}; //direct write to ARn during q2 has priority over any update
                            8'h71 : tr0_AR1 <= {(|resultout[31:24] ? resultout[31:24] : tr0_AR1[31:24]), (|resultout[23:16] ? resultout[23:16] : tr0_AR1[23:16]), 2'b00, resultout[13:0]}; 

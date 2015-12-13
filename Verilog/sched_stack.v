@@ -1,26 +1,22 @@
  `timescale 1ns/100ps
 // sched_stack.v
-// Fine-grained scheduler stack for use with SYMPL FP32X-AXI4 RISC core only
+// Fine-grained scheduler stack for use in SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine
 // Author:  Jerry D. Harthcock
-// Version:  1.21  August 27, 2015
+// Version:  1.22    Dec. 12, 2015
 // November 24, 2014
-// Copyright (C) 2014.  All rights reserved without prejudice.
+// Copyright (C) 2014-2015.  All rights reserved without prejudice.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                               //
-//                              SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC                                         //
+//                   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine                           //
 //                              Evaluation and Product Development License                                       //
 //                                                                                                               //
 // Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of this SYMPL FP32X-AXI4 32-Bit Mult-Thread RISC            //
-// Verilog RTL IP core ("this IP"), hereby grants to recipient of this IP ("licensee"), a world-wide, paid-up,   //
-// non-exclusive license to use this IP for the purposes of evaluation, education, and development of end        //
-// products and related development tools only.                                                                  //
-//                                                                                                               //
-// Also subject to the terms and conditions set forth herein, Jerry D. Harthcock, exlusive inventor and owner    //
-// of US Patent No. 7,073,048, entitled "CASCADED MICROCOMPUTER ARRAY AND METHOD", issue date July 4, 2006       //
-// ("the '048 patent"), hereby grants a world-wide, paid-up, non-exclusive license under the '048 patent to use  //
-// this IP for the purposes of evaluation, education, and development of end products and related development    //
-// tools only.                                                                                                   //
+// the original author and exclusive copyright owner of the SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-  //
+// Compute Engine Verilog RTL IP core family and instruction-set architecture ("this IP"), hereby grants to      //
+// recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to use this IP for the        //
+// non-commercial purposes of evaluation, education, and development of end products and related development     //
+// tools only. For a license to use this IP in commercial products intended for sale, license, lease or any      //
+// other form of barter, contact licensor at:  SYMPL.gpu@gmail.com                                               //
 //                                                                                                               //
 // Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
 // and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
@@ -28,9 +24,9 @@
 // netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
 // any copyright notices from any source file covered under this Evaluation and Product Development License.     //
 //                                                                                                               //
-// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR     //
-// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM   //
-// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                //
+// THIS IP IS PROVIDED "AS IS".  LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT        //
+// INFRINGE THE RIGHTS OF OTHERS OR THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE //
+// TO HOLD LICENSOR HARMLESS FROM ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                 //                               
 //                                                                                                               //
 // Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
 // or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
@@ -38,8 +34,7 @@
 // in this Evaluation and Product Development License.                                                           //
 //                                                                                                               //
 // This Evaluation and Product Development License does not include the right to sell products that incorporate  //
-// this IP, any IP derived from this IP, or the '048 patent.  If you would like to obtain such a license, please //
-// contact Licensor.                                                                                             //
+// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor. //                                                                                            //
 //                                                                                                               //
 // Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
 //                                                                                                               //

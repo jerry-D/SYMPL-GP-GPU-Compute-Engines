@@ -5,14 +5,17 @@ With SYMPL GP-GPU-Compute Engines, adding a single, dual or quad-shader GP-GPU-c
 Block diagrams for each can be viewed by clicking on the corresponding thumb image below:
 
 [Single-Shader Version]
+
 (https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU1.jpg)
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU1_thumb.jpg)
 
 [Dual-Shader Version]
+
 (https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU2.jpg)
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU2_thumb.jpg)
 
 [Quad-Shader Version]
+
 (https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU4.jpg)
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU4_thumb.jpg)
 

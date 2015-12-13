@@ -1,15 +1,19 @@
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/web_logo.jpg)
+
 With SYMPL GP-GPU-Compute Engines, adding a single, dual or quad-shader GP-GPU-compute core to your RISC-V is no more difficult than it is to add a 64-k word, block SRAM to your design (see block diagrams below).  With the single-shader version (four interleaving threads), you can boost performance of your application by up to 125 MFLOPs @ 125Mhz.  With the dual-shader version (eight interleaving threads), you get up to 250 MFLOPs @125Mhz.  With the quad-shader (sixteen interleaving threads), you get up to 500 MFLOPs @125 Mhz, when implemented in Kintex 7 (-3 speed-grade) devices.
 
 Block diagrams for each can be viewed by clicking on the corresponding thumb image below:
 
-[Single-Shader Version](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU1.jpg)
+[Single-Shader Version]
+(https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU1.jpg)
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU1_thumb.jpg)
 
-[Dual-Shader Version](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU2.jpg)
+[Dual-Shader Version]
+(https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU2.jpg)
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU2_thumb.jpg)
 
-[Quad-Shader Version](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU4.jpg)
+[Quad-Shader Version]
+(https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU4.jpg)
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU4_thumb.jpg)
 
 SYMPL GP-GPU-Compute engines presently employ FloPoCo-generated, 32-bit, single-precision operators have additional logic to make them IEEE754-2008 compliant.   For example, additional logic was added to implement the default round-to-nearest as well as round to positive infinity, negative infinity and zero.  Both quiet and signaling NaNs are now properly handled.  Subnormals are not flushed to zero, but are allowed to gradually underflow, pursuant to the IEEE754-2008 standard.  Default, alternate immediate and alternate delayed exception handling is also supported.

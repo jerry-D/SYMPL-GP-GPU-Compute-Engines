@@ -43,10 +43,7 @@ https://github.com/ucb-bar/vscale
 
 For the simulation, you need to make sure that the following four files are in the Vivado working directory.  These are the little programs and .stl file that the CGS, shader theads and RISC-V run to carry out their function and can be found in the “ASM” folder:
 
-“CGS_olive_dma.v”   
-“risc_v_test.HEX”
-“Shader_olive.v”
-“olive.stl”
+“CGS_olive_dma.v”, “risc_v_test.HEX”, “Shader_olive.v” and “olive.stl”
 
 “CGS_olive_dma.v” is the coarse-grained scheduler's micro-kernel in Verilog-formatted  ASCII hex that is automatically loaded by the CGS ROM “initial” block at the beginning of the simulation.  Likewise, “Shader_olive.v” is the routine in Verilog-formatted ASCII hex that is automatically loaded by the Shader ROM “initial” block at the start of the simulation.
 The file “risc_v_test.HEX” is a binary image of the program that the RISC-V executes to push the parameters and .stl file data into the data pool for processing by the GP-GPU and then pull results out and store them in its own system memory.  The supplied test bench explicitly performs the loading of both the RISC-V's program and the “olive.stl” file.

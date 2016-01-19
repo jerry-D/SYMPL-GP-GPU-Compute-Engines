@@ -6,6 +6,8 @@ The new test case for the SYMPL version now allows you to choose from one to six
 
 The files can be found in the ASM folder:  "CGS_olive_dma_SIL.v", "MP_RISC_SIL.v" and "Shader_olive_SIL.v".  "olive.stl" also needs to be in the working directory for simulation, as this is the 3D object in .stl file format that gets transformed by the GP-GPU.  Results from the 3D transformation will be written the working directory upon completion of the simulation with the file name, "olive_trans.stl" and can be viewed in 3D using any online .stl file viewer.
 
+For the SYMPL RISC version, the file containing the following instantiation is "SYMPL_CPU.v" and is the top level of the design.
+
 ![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/0cfa6ef1360efe26c08f0c166dc08d52f22c6964/CPU_GP-GPU_inst.png)
 
 With SYMPL GP-GPU-Compute Engines, adding a single, dual or quad-shader GP-GPU-compute core to your SYMPL RISC CPU or RISC-V is no more difficult than it is to add a 64-k word, block SRAM to your design (see block diagrams below).  With the single-shader version (four interleaving threads), you can boost performance of your application by up to 125 MFLOPs @ 125Mhz.  With the dual-shader version (eight interleaving threads), you get up to 250 MFLOPs @125Mhz.  With the quad-shader (sixteen interleaving threads), you get up to 500 MFLOPs @125 Mhz, when implemented in Kintex 7 (-3 speed-grade) devices.  The sixteen-shader version can have results ready for pulling from the data-pool in roughtly 8usec from the time the last triangle is written into the last GP-GPU data-pool by the CPU.

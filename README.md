@@ -4,17 +4,21 @@ With SYMPL GP-GPU-Compute Engines, adding a single, dual or quad-shader GP-GPU-c
 
 Block diagrams in .png format can be downloaded by clicking on the corresponding link below:
 
-[SYMPL RISC CPU with Sixteen-GP-GPU-Compute Engines](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_16_Shader_CPU_GPGPU_COMBO_96.png)
+[SYMPL RISC CPU with Sixteen-GP-GPU-Compute Engine (64 threads)](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_16_Shader_CPU_GPGPU_COMBO_96.png)
 
 ![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_16_Shader_CPU_GPGPU_COMBO_96.png)
 
-[Dual-Shader Version](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU2.jpg)
+[SYMPL RISC CPU with Eight-GP-GPU-Compute Engine (32 threads)](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_8_Shader_CPU_GPGPU_COMBO_pub.pdf)
 
-![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU2_thumb.jpg)
+![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_8_Shader_CPU_GPGPU_COMBO_pub.png)
 
-[Quad-Shader Version](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU4.jpg)
+[SYMPL RISC CPU with Four-GP-GPU-Compute Engine (16 threads)](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_4_Shader_CPU_GPGPU_COMBO_pub.pdf)
 
-![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU4_thumb.jpg)
+![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_4_Shader_CPU_GPGPU_COMBO_pub.png)
+
+[SYMPL RISC CPU with Two-GP-GPU-Compute Engine (8 threads)](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_2_Shader_CPU_GPGPU_COMBO_pub.pdf)
+
+![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_2_Shader_CPU_GPGPU_COMBO_pub.png)
 
 SYMPL GP-GPU-Compute engines presently employ FloPoCo-generated, 32-bit, single-precision operators have additional logic to make them IEEE754-2008 compliant.   For example, additional logic was added to implement the default round-to-nearest as well as round to positive infinity, negative infinity and zero.  Both quiet and signaling NaNs are now properly handled.  Subnormals are not flushed to zero, but are allowed to gradually underflow, pursuant to the IEEE754-2008 standard.  Default, alternate immediate and alternate delayed exception handling is also supported.
 
@@ -61,7 +65,7 @@ It should be noted that all three implementations of the SYMPL GP-GPU run the ex
 
 In this example, the SYMPL GP-GPU-Compute engine is instantiated in the file named, “vscale_dp_hasti_sram.v” and can be found in the “stimulus” folder of this SYMPL GP-GPU distribution package.   The quad-shader version is currently specified in the “vscale_dp_hasti_sram.v” module as the instantiated GP-GPU.  To change the GP-GPU from quad to dual or single shader, simply open said file up and remove the comments in front of the one that you want, shown as follows:
 
-![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/GP-GPU_inst.jpg)
+![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/RISC_V_GP-GPU_inst.png)
 
 Finally, you should be aware that for a single shader GP-GPU, the simulation will require roughly 425 usec to complete and that the test bench does have a "$finish" at the end.  Just before the $finish, the test bench will write the transformed “olive_trans.stl” file to the working directory.  You can view this file using any online .stl file viewer (including the one at GitHub), OpenSCAD, or Blender.  You can view both the "olive.stl" and "olive_trans.stl" file now by simply opening the "olive_stl" folder in this repository and clicking on the image you want to view.  GitHub will then automatically launch its .stl viewer so you can view the selected object from any angle.
 

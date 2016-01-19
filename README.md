@@ -35,7 +35,7 @@ Additionally, each core also includes a software-programmable coarse-grained sch
 Included with this distribution package is an example test case, which can be simulated on Xilinx “free” version of Vivado.  The example test case takes a 3D representation of an olive in binary .stl file format and performs a 3D transformation on all three axis, which includes:  scale(x, y, z), rotate(x, y, x) and translate(x, y, z).   The “olive” was created using the OpenSCAD, free open source 3D modeling environment and was exported in ASCII .stl file format.  To convert to binary, the “olive.stl” file was imported into “Blender”, free open source 3D modeling environment, and immediately exported back to .stl format, which, for Blender, is binary format.  Below is the “before” and “after” 3D rendering of the olive as viewed with OpenSCAD.  Note that the number of faces were kept to a minimum to facilitate faster simulation.
 
 The “Olive” Before and After
-![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute_Engines/olive_trans_both.gif.gif)
+![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/olive_trans_both.gif.gif)
 
 To run this simulation using Vivado, download or clone the SYMPL GP-GPU-Compute engine in this repository.  Next, you will need to click on the VSCALE (RISC-V) repository link below and download or clone those files as well.  Note that to run this simulation, you will not need any of the files in the VSCALE “test” folder--you only need the design files in the VSCALE “verilog” folder.  All the other files you need are in the SYMPL GP-GPU-Compute package.
 

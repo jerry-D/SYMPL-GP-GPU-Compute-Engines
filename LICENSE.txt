@@ -1,4 +1,4 @@
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                //
 //             SYMPL 32-BIT RISC, COARSE-GRAINED SCHEDULER (CGS) and GP-GPU SHADER IP CORES                       //
 //                              Evaluation and Product Development License                                        //
@@ -12,7 +12,7 @@
 // the purposes of prototyping, evaluation, characterization and testing of their implementation in a hard,       //
 // custom or semi-custom ASIC, any university or institution of higher education may have their implementation of //
 // this IP produced for said limited purposes at any foundary of their choosing provided that such prototypes do  //
-// not ever wind up in commercial circulation with such license extending to said foundary and is in connection   //
+// not ever wind up in commercial circulation, with such license extending to said foundary in connection         //
 // with said academic pursuit and under the supervision of said university or institution of higher education.    //
 //                                                                                                                //
 // Any customization, modification, or derivative work of this IP must include an exact copy of this license      //
@@ -31,7 +31,7 @@
 // in this Evaluation and Product Development License.                                                            //
 //                                                                                                                //
 // This Evaluation and Product Development License does not include the right to sell products that incorporate   //
-// this IP, any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor.    //
+// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor.    //
 //                                                                                                                //
 // Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                             //
 //                                                                                                                //

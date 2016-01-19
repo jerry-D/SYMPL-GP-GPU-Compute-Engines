@@ -6,7 +6,7 @@ Block diagrams in .png format can be downloaded by clicking on the corresponding
 
 [SYMPL RISC CPU with Sixteen-GP-GPU-Compute Engines](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_16_Shader_CPU_GPGPU_COMBO_96.png)
 
-![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU1_thumb.jpg)
+![](https://github.com/jerry-D/SYMPL-GP-GPU-Compute-Engines/blob/master/SYMPL_16_Shader_CPU_GPGPU_COMBO_96.png)
 
 [Dual-Shader Version](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/SYMPL_GP_GPU2.jpg)
 

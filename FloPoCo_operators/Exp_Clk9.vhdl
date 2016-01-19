@@ -6,15 +6,15 @@
 -- Final report:
 -- Entity SmallMultTableP3x3r6XuYu
 --    Not pipelined
--- Entity Compressor_6_3
+-- Entity Compressor_6_3_c
 --    Not pipelined
--- Entity Compressor_14_3
+-- Entity Compressor_14_3_d
 --    Not pipelined
--- Entity Compressor_4_3
+-- Entity Compressor_4_3_e
 --    Not pipelined
--- Entity Compressor_23_3
+-- Entity Compressor_23_3_f
 --    Not pipelined
--- Entity Compressor_3_2
+-- Entity Compressor_3_2_a
 --    Not pipelined
 -- |---Entity LeftShifter_24_by_max_34_uid3
 -- |      Not pipelined
@@ -140,7 +140,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                               Compressor_6_3
+--                               Compressor_6_3_c
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Popa, Illyes Kinga, 2012
@@ -155,12 +155,12 @@ library std;
 use std.textio.all;
 library work;
 
-entity Compressor_6_3 is
+entity Compressor_6_3_c is
    port ( X0 : in  std_logic_vector(5 downto 0);
           R : out  std_logic_vector(2 downto 0)   );
 end entity;
 
-architecture arch of Compressor_6_3 is
+architecture arch of Compressor_6_3_c is
 signal X :  std_logic_vector(5 downto 0);
 begin
    X <=X0 ;
@@ -234,7 +234,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                              Compressor_14_3
+--                              Compressor_14_3_d
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Popa, Illyes Kinga, 2012
@@ -249,13 +249,13 @@ library std;
 use std.textio.all;
 library work;
 
-entity Compressor_14_3 is
+entity Compressor_14_3_d is
    port ( X0 : in  std_logic_vector(3 downto 0);
           X1 : in  std_logic_vector(0 downto 0);
           R : out  std_logic_vector(2 downto 0)   );
 end entity;
 
-architecture arch of Compressor_14_3 is
+architecture arch of Compressor_14_3_d is
 signal X :  std_logic_vector(4 downto 0);
 begin
    X <=X1 & X0 ;
@@ -297,7 +297,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                               Compressor_4_3
+--                               Compressor_4_3_e
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Popa, Illyes Kinga, 2012
@@ -312,12 +312,12 @@ library std;
 use std.textio.all;
 library work;
 
-entity Compressor_4_3 is
+entity Compressor_4_3_e is
    port ( X0 : in  std_logic_vector(3 downto 0);
           R : out  std_logic_vector(2 downto 0)   );
 end entity;
 
-architecture arch of Compressor_4_3 is
+architecture arch of Compressor_4_3_e is
 signal X :  std_logic_vector(3 downto 0);
 begin
    X <=X0 ;
@@ -343,7 +343,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                              Compressor_23_3
+--                              Compressor_23_3_f
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Popa, Illyes Kinga, 2012
@@ -358,13 +358,13 @@ library std;
 use std.textio.all;
 library work;
 
-entity Compressor_23_3 is
+entity Compressor_23_3_f is
    port ( X0 : in  std_logic_vector(2 downto 0);
           X1 : in  std_logic_vector(1 downto 0);
           R : out  std_logic_vector(2 downto 0)   );
 end entity;
 
-architecture arch of Compressor_23_3 is
+architecture arch of Compressor_23_3_f is
 signal X :  std_logic_vector(4 downto 0);
 begin
    X <=X1 & X0 ;
@@ -406,7 +406,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                               Compressor_3_2
+--                               Compressor_3_2_a
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Popa, Illyes Kinga, 2012
@@ -421,12 +421,12 @@ library std;
 use std.textio.all;
 library work;
 
-entity Compressor_3_2 is
+entity Compressor_3_2_a is
    port ( X0 : in  std_logic_vector(2 downto 0);
           R : out  std_logic_vector(1 downto 0)   );
 end entity;
 
-architecture arch of Compressor_3_2 is
+architecture arch of Compressor_3_2_a is
 signal X :  std_logic_vector(2 downto 0);
 begin
    X <=X0 ;
@@ -1327,29 +1327,29 @@ entity IntMultiplier_UsingDSP_17_18_19_unsigned_uid55 is
 end entity;
 
 architecture arch of IntMultiplier_UsingDSP_17_18_19_unsigned_uid55 is
-   component Compressor_14_3 is
+   component Compressor_14_3_d is
       port ( X0 : in  std_logic_vector(3 downto 0);
              X1 : in  std_logic_vector(0 downto 0);
              R : out  std_logic_vector(2 downto 0)   );
    end component;
 
-   component Compressor_23_3 is
+   component Compressor_23_3_f is
       port ( X0 : in  std_logic_vector(2 downto 0);
              X1 : in  std_logic_vector(1 downto 0);
              R : out  std_logic_vector(2 downto 0)   );
    end component;
 
-   component Compressor_3_2 is
+   component Compressor_3_2_a is
       port ( X0 : in  std_logic_vector(2 downto 0);
              R : out  std_logic_vector(1 downto 0)   );
    end component;
 
-   component Compressor_4_3 is
+   component Compressor_4_3_e is
       port ( X0 : in  std_logic_vector(3 downto 0);
              R : out  std_logic_vector(2 downto 0)   );
    end component;
 
-   component Compressor_6_3 is
+   component Compressor_6_3_c is
       port ( X0 : in  std_logic_vector(5 downto 0);
              R : out  std_logic_vector(2 downto 0)   );
    end component;
@@ -2420,7 +2420,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_0_0 <= heap_bh57_w0_7 & heap_bh57_w0_6 & heap_bh57_w0_5 & heap_bh57_w0_4 & heap_bh57_w0_3 & heap_bh57_w0_2;
-   Compressor_bh57_0: Compressor_6_3
+   Compressor_bh57_0: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_0_0   ,
                  X0 => CompressorIn_bh57_0_0);
    heap_bh57_w0_8 <= CompressorOut_bh57_0_0(0); -- cycle= 0 cp= 1.10504e-09
@@ -2429,7 +2429,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_1_1 <= heap_bh57_w1_8 & heap_bh57_w1_7 & heap_bh57_w1_6 & heap_bh57_w1_5 & heap_bh57_w1_4 & heap_bh57_w1_3;
-   Compressor_bh57_1: Compressor_6_3
+   Compressor_bh57_1: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_1_1   ,
                  X0 => CompressorIn_bh57_1_1);
    heap_bh57_w1_10 <= CompressorOut_bh57_1_1(0); -- cycle= 0 cp= 1.10504e-09
@@ -2438,7 +2438,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_2_2 <= heap_bh57_w2_8 & heap_bh57_w2_7 & heap_bh57_w2_6 & heap_bh57_w2_5 & heap_bh57_w2_4 & heap_bh57_w2_3;
-   Compressor_bh57_2: Compressor_6_3
+   Compressor_bh57_2: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_2_2   ,
                  X0 => CompressorIn_bh57_2_2);
    heap_bh57_w2_11 <= CompressorOut_bh57_2_2(0); -- cycle= 0 cp= 1.10504e-09
@@ -2447,7 +2447,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_3_3 <= heap_bh57_w3_9 & heap_bh57_w3_8 & heap_bh57_w3_7 & heap_bh57_w3_6 & heap_bh57_w3_5 & heap_bh57_w3_4;
-   Compressor_bh57_3: Compressor_6_3
+   Compressor_bh57_3: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_3_3   ,
                  X0 => CompressorIn_bh57_3_3);
    heap_bh57_w3_12 <= CompressorOut_bh57_3_3(0); -- cycle= 0 cp= 1.10504e-09
@@ -2456,7 +2456,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_4_4 <= heap_bh57_w4_11 & heap_bh57_w4_10 & heap_bh57_w4_9 & heap_bh57_w4_8 & heap_bh57_w4_7 & heap_bh57_w4_6;
-   Compressor_bh57_4: Compressor_6_3
+   Compressor_bh57_4: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_4_4   ,
                  X0 => CompressorIn_bh57_4_4);
    heap_bh57_w4_14 <= CompressorOut_bh57_4_4(0); -- cycle= 0 cp= 1.10504e-09
@@ -2465,7 +2465,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_5_5 <= heap_bh57_w4_5 & heap_bh57_w4_4 & heap_bh57_w4_3 & heap_bh57_w4_2 & heap_bh57_w4_1 & heap_bh57_w4_0;
-   Compressor_bh57_5: Compressor_6_3
+   Compressor_bh57_5: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_5_5   ,
                  X0 => CompressorIn_bh57_5_5);
    heap_bh57_w4_15 <= CompressorOut_bh57_5_5(0); -- cycle= 0 cp= 1.10504e-09
@@ -2474,7 +2474,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_6_6 <= heap_bh57_w5_10 & heap_bh57_w5_9 & heap_bh57_w5_8 & heap_bh57_w5_7 & heap_bh57_w5_6 & heap_bh57_w5_5;
-   Compressor_bh57_6: Compressor_6_3
+   Compressor_bh57_6: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_6_6   ,
                  X0 => CompressorIn_bh57_6_6);
    heap_bh57_w5_14 <= CompressorOut_bh57_6_6(0); -- cycle= 0 cp= 1.10504e-09
@@ -2483,7 +2483,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_7_7 <= heap_bh57_w6_10 & heap_bh57_w6_9 & heap_bh57_w6_8 & heap_bh57_w6_7 & heap_bh57_w6_6 & heap_bh57_w6_5;
-   Compressor_bh57_7: Compressor_6_3
+   Compressor_bh57_7: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_7_7   ,
                  X0 => CompressorIn_bh57_7_7);
    heap_bh57_w6_14 <= CompressorOut_bh57_7_7(0); -- cycle= 0 cp= 1.10504e-09
@@ -2492,7 +2492,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_8_8 <= heap_bh57_w7_10 & heap_bh57_w7_9 & heap_bh57_w7_8 & heap_bh57_w7_7 & heap_bh57_w7_6 & heap_bh57_w7_5;
-   Compressor_bh57_8: Compressor_6_3
+   Compressor_bh57_8: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_8_8   ,
                  X0 => CompressorIn_bh57_8_8);
    heap_bh57_w7_13 <= CompressorOut_bh57_8_8(0); -- cycle= 0 cp= 1.10504e-09
@@ -2501,7 +2501,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_9_9 <= heap_bh57_w8_10 & heap_bh57_w8_9 & heap_bh57_w8_8 & heap_bh57_w8_7 & heap_bh57_w8_6 & heap_bh57_w8_5;
-   Compressor_bh57_9: Compressor_6_3
+   Compressor_bh57_9: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_9_9   ,
                  X0 => CompressorIn_bh57_9_9);
    heap_bh57_w8_13 <= CompressorOut_bh57_9_9(0); -- cycle= 0 cp= 1.10504e-09
@@ -2510,7 +2510,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_10_10 <= heap_bh57_w9_8 & heap_bh57_w9_7 & heap_bh57_w9_6 & heap_bh57_w9_5 & heap_bh57_w9_4 & heap_bh57_w9_3;
-   Compressor_bh57_10: Compressor_6_3
+   Compressor_bh57_10: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_10_10   ,
                  X0 => CompressorIn_bh57_10_10);
    heap_bh57_w9_11 <= CompressorOut_bh57_10_10(0); -- cycle= 0 cp= 1.10504e-09
@@ -2519,7 +2519,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_11_11 <= heap_bh57_w10_8 & heap_bh57_w10_7 & heap_bh57_w10_6 & heap_bh57_w10_5 & heap_bh57_w10_4 & heap_bh57_w10_3;
-   Compressor_bh57_11: Compressor_6_3
+   Compressor_bh57_11: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_11_11   ,
                  X0 => CompressorIn_bh57_11_11);
    heap_bh57_w10_11 <= CompressorOut_bh57_11_11(0); -- cycle= 0 cp= 1.10504e-09
@@ -2528,7 +2528,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_12_12 <= heap_bh57_w11_8 & heap_bh57_w11_7 & heap_bh57_w11_6 & heap_bh57_w11_5 & heap_bh57_w11_4 & heap_bh57_w11_3;
-   Compressor_bh57_12: Compressor_6_3
+   Compressor_bh57_12: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_12_12   ,
                  X0 => CompressorIn_bh57_12_12);
    heap_bh57_w11_11 <= CompressorOut_bh57_12_12(0); -- cycle= 0 cp= 1.10504e-09
@@ -2537,7 +2537,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_13_13 <= heap_bh57_w12_6 & heap_bh57_w12_5 & heap_bh57_w12_4 & heap_bh57_w12_3 & heap_bh57_w12_2 & heap_bh57_w12_1;
-   Compressor_bh57_13: Compressor_6_3
+   Compressor_bh57_13: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_13_13   ,
                  X0 => CompressorIn_bh57_13_13);
    heap_bh57_w12_9 <= CompressorOut_bh57_13_13(0); -- cycle= 0 cp= 1.10504e-09
@@ -2546,7 +2546,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_14_14 <= heap_bh57_w13_6 & heap_bh57_w13_5 & heap_bh57_w13_4 & heap_bh57_w13_3 & heap_bh57_w13_2 & heap_bh57_w13_1;
-   Compressor_bh57_14: Compressor_6_3
+   Compressor_bh57_14: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_14_14   ,
                  X0 => CompressorIn_bh57_14_14);
    heap_bh57_w13_9 <= CompressorOut_bh57_14_14(0); -- cycle= 0 cp= 1.10504e-09
@@ -2555,7 +2555,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_15_15 <= heap_bh57_w14_6 & heap_bh57_w14_5 & heap_bh57_w14_4 & heap_bh57_w14_3 & heap_bh57_w14_2 & heap_bh57_w14_1;
-   Compressor_bh57_15: Compressor_6_3
+   Compressor_bh57_15: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_15_15   ,
                  X0 => CompressorIn_bh57_15_15);
    heap_bh57_w14_9 <= CompressorOut_bh57_15_15(0); -- cycle= 0 cp= 1.10504e-09
@@ -2565,7 +2565,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_16_16 <= heap_bh57_w5_4 & heap_bh57_w5_3 & heap_bh57_w5_2 & heap_bh57_w5_1;
    CompressorIn_bh57_16_17(0) <= heap_bh57_w6_4;
-   Compressor_bh57_16: Compressor_14_3
+   Compressor_bh57_16: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_16_16   ,
                  X0 => CompressorIn_bh57_16_16,
                  X1 => CompressorIn_bh57_16_17);
@@ -2576,7 +2576,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_17_18 <= heap_bh57_w6_3 & heap_bh57_w6_2 & heap_bh57_w6_1 & heap_bh57_w6_0;
    CompressorIn_bh57_17_19(0) <= heap_bh57_w7_4;
-   Compressor_bh57_17: Compressor_14_3
+   Compressor_bh57_17: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_17_17   ,
                  X0 => CompressorIn_bh57_17_18,
                  X1 => CompressorIn_bh57_17_19);
@@ -2587,7 +2587,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_18_20 <= heap_bh57_w7_3 & heap_bh57_w7_2 & heap_bh57_w7_1 & heap_bh57_w7_0;
    CompressorIn_bh57_18_21(0) <= heap_bh57_w8_4;
-   Compressor_bh57_18: Compressor_14_3
+   Compressor_bh57_18: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_18_18   ,
                  X0 => CompressorIn_bh57_18_20,
                  X1 => CompressorIn_bh57_18_21);
@@ -2598,7 +2598,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_19_22 <= heap_bh57_w8_3 & heap_bh57_w8_2 & heap_bh57_w8_1 & heap_bh57_w8_0;
    CompressorIn_bh57_19_23(0) <= heap_bh57_w9_2;
-   Compressor_bh57_19: Compressor_14_3
+   Compressor_bh57_19: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_19_19   ,
                  X0 => CompressorIn_bh57_19_22,
                  X1 => CompressorIn_bh57_19_23);
@@ -2609,7 +2609,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_20_24 <= heap_bh57_w15_4 & heap_bh57_w15_3 & heap_bh57_w15_2 & heap_bh57_w15_1;
    CompressorIn_bh57_20_25(0) <= heap_bh57_w16_4;
-   Compressor_bh57_20: Compressor_14_3
+   Compressor_bh57_20: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_20_20   ,
                  X0 => CompressorIn_bh57_20_24,
                  X1 => CompressorIn_bh57_20_25);
@@ -2620,7 +2620,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_21_26 <= heap_bh57_w16_3 & heap_bh57_w16_2 & heap_bh57_w16_1 & heap_bh57_w16_0;
    CompressorIn_bh57_21_27(0) <= heap_bh57_w17_4;
-   Compressor_bh57_21: Compressor_14_3
+   Compressor_bh57_21: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_21_21   ,
                  X0 => CompressorIn_bh57_21_26,
                  X1 => CompressorIn_bh57_21_27);
@@ -2631,7 +2631,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_22_28 <= heap_bh57_w17_3 & heap_bh57_w17_2 & heap_bh57_w17_1 & heap_bh57_w17_0;
    CompressorIn_bh57_22_29(0) <= heap_bh57_w18_2;
-   Compressor_bh57_22: Compressor_14_3
+   Compressor_bh57_22: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_22_22   ,
                  X0 => CompressorIn_bh57_22_28,
                  X1 => CompressorIn_bh57_22_29);
@@ -2641,7 +2641,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_23_30 <= heap_bh57_w3_3 & heap_bh57_w3_2 & heap_bh57_w3_1 & heap_bh57_w3_0;
-   Compressor_bh57_23: Compressor_4_3
+   Compressor_bh57_23: Compressor_4_3_e
       port map ( R => CompressorOut_bh57_23_23   ,
                  X0 => CompressorIn_bh57_23_30);
    heap_bh57_w3_13 <= CompressorOut_bh57_23_23(0); -- cycle= 0 cp= 1.10504e-09
@@ -2651,7 +2651,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_24_31 <= heap_bh57_w1_2 & heap_bh57_w1_1 & heap_bh57_w1_0;
    CompressorIn_bh57_24_32 <= heap_bh57_w2_2 & heap_bh57_w2_1;
-   Compressor_bh57_24: Compressor_23_3
+   Compressor_bh57_24: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_24_24   ,
                  X0 => CompressorIn_bh57_24_31,
                  X1 => CompressorIn_bh57_24_32);
@@ -2662,7 +2662,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_25_33 <= heap_bh57_w10_2 & heap_bh57_w10_1 & heap_bh57_w10_0;
    CompressorIn_bh57_25_34 <= heap_bh57_w11_2 & heap_bh57_w11_1;
-   Compressor_bh57_25: Compressor_23_3
+   Compressor_bh57_25: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_25_25   ,
                  X0 => CompressorIn_bh57_25_33,
                  X1 => CompressorIn_bh57_25_34);
@@ -2673,7 +2673,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_26_35 <= heap_bh57_w19_2 & heap_bh57_w19_1 & heap_bh57_w19_0;
    CompressorIn_bh57_26_36 <= heap_bh57_w20_2 & heap_bh57_w20_1;
-   Compressor_bh57_26: Compressor_23_3
+   Compressor_bh57_26: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_26_26   ,
                  X0 => CompressorIn_bh57_26_35,
                  X1 => CompressorIn_bh57_26_36);
@@ -2683,7 +2683,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_27_37 <= heap_bh57_w5_0 & heap_bh57_w5_16 & heap_bh57_w5_15 & heap_bh57_w5_14 & heap_bh57_w5_13 & heap_bh57_w5_12;
-   Compressor_bh57_27: Compressor_6_3
+   Compressor_bh57_27: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_27_27   ,
                  X0 => CompressorIn_bh57_27_37);
    heap_bh57_w5_17 <= CompressorOut_bh57_27_27(0); -- cycle= 0 cp= 1.63576e-09
@@ -2692,7 +2692,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_28_38 <= heap_bh57_w6_16 & heap_bh57_w6_15 & heap_bh57_w6_14 & heap_bh57_w6_13 & heap_bh57_w6_12 & heap_bh57_w6_11;
-   Compressor_bh57_28: Compressor_6_3
+   Compressor_bh57_28: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_28_28   ,
                  X0 => CompressorIn_bh57_28_38);
    heap_bh57_w6_18 <= CompressorOut_bh57_28_28(0); -- cycle= 0 cp= 1.63576e-09
@@ -2701,7 +2701,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_29_39 <= heap_bh57_w7_16 & heap_bh57_w7_15 & heap_bh57_w7_14 & heap_bh57_w7_13 & heap_bh57_w7_12 & heap_bh57_w7_11;
-   Compressor_bh57_29: Compressor_6_3
+   Compressor_bh57_29: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_29_29   ,
                  X0 => CompressorIn_bh57_29_39);
    heap_bh57_w7_19 <= CompressorOut_bh57_29_29(0); -- cycle= 0 cp= 1.63576e-09
@@ -2710,7 +2710,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_30_40 <= heap_bh57_w8_16 & heap_bh57_w8_15 & heap_bh57_w8_14 & heap_bh57_w8_13 & heap_bh57_w8_12 & heap_bh57_w8_11;
-   Compressor_bh57_30: Compressor_6_3
+   Compressor_bh57_30: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_30_30   ,
                  X0 => CompressorIn_bh57_30_40);
    heap_bh57_w8_19 <= CompressorOut_bh57_30_30(0); -- cycle= 0 cp= 1.63576e-09
@@ -2719,7 +2719,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_31_41 <= heap_bh57_w9_1 & heap_bh57_w9_0 & heap_bh57_w9_13 & heap_bh57_w9_12 & heap_bh57_w9_11 & heap_bh57_w9_10;
-   Compressor_bh57_31: Compressor_6_3
+   Compressor_bh57_31: Compressor_6_3_c
       port map ( R => CompressorOut_bh57_31_31   ,
                  X0 => CompressorIn_bh57_31_41);
    heap_bh57_w9_16 <= CompressorOut_bh57_31_31(0); -- cycle= 0 cp= 1.63576e-09
@@ -2729,7 +2729,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_32_42 <= heap_bh57_w2_0 & heap_bh57_w2_12 & heap_bh57_w2_11 & heap_bh57_w2_10;
    CompressorIn_bh57_32_43(0) <= heap_bh57_w3_14;
-   Compressor_bh57_32: Compressor_14_3
+   Compressor_bh57_32: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_32_32   ,
                  X0 => CompressorIn_bh57_32_42,
                  X1 => CompressorIn_bh57_32_43);
@@ -2740,7 +2740,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_33_44 <= heap_bh57_w3_13 & heap_bh57_w3_12 & heap_bh57_w3_11 & heap_bh57_w3_10;
    CompressorIn_bh57_33_45(0) <= heap_bh57_w4_16;
-   Compressor_bh57_33: Compressor_14_3
+   Compressor_bh57_33: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_33_33   ,
                  X0 => CompressorIn_bh57_33_44,
                  X1 => CompressorIn_bh57_33_45);
@@ -2751,7 +2751,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_34_46 <= heap_bh57_w4_15 & heap_bh57_w4_14 & heap_bh57_w4_13 & heap_bh57_w4_12;
    CompressorIn_bh57_34_47(0) <= heap_bh57_w5_11;
-   Compressor_bh57_34: Compressor_14_3
+   Compressor_bh57_34: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_34_34   ,
                  X0 => CompressorIn_bh57_34_46,
                  X1 => CompressorIn_bh57_34_47);
@@ -2762,7 +2762,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_35_48 <= heap_bh57_w10_13 & heap_bh57_w10_12 & heap_bh57_w10_11 & heap_bh57_w10_10;
    CompressorIn_bh57_35_49(0) <= heap_bh57_w11_0;
-   Compressor_bh57_35: Compressor_14_3
+   Compressor_bh57_35: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_35_35   ,
                  X0 => CompressorIn_bh57_35_48,
                  X1 => CompressorIn_bh57_35_49);
@@ -2773,7 +2773,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_36_50 <= heap_bh57_w11_12 & heap_bh57_w11_11 & heap_bh57_w11_10 & heap_bh57_w11_9;
    CompressorIn_bh57_36_51(0) <= heap_bh57_w12_0;
-   Compressor_bh57_36: Compressor_14_3
+   Compressor_bh57_36: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_36_36   ,
                  X0 => CompressorIn_bh57_36_50,
                  X1 => CompressorIn_bh57_36_51);
@@ -2784,7 +2784,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_37_52 <= heap_bh57_w12_10 & heap_bh57_w12_9 & heap_bh57_w12_8 & heap_bh57_w12_7;
    CompressorIn_bh57_37_53(0) <= heap_bh57_w13_0;
-   Compressor_bh57_37: Compressor_14_3
+   Compressor_bh57_37: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_37_37   ,
                  X0 => CompressorIn_bh57_37_52,
                  X1 => CompressorIn_bh57_37_53);
@@ -2795,7 +2795,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_38_54 <= heap_bh57_w14_0 & heap_bh57_w14_9 & heap_bh57_w14_8 & heap_bh57_w14_7;
    CompressorIn_bh57_38_55(0) <= heap_bh57_w15_0;
-   Compressor_bh57_38: Compressor_14_3
+   Compressor_bh57_38: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_38_38   ,
                  X0 => CompressorIn_bh57_38_54,
                  X1 => CompressorIn_bh57_38_55);
@@ -2806,7 +2806,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_39_56 <= heap_bh57_w18_1 & heap_bh57_w18_0 & heap_bh57_w18_4 & heap_bh57_w18_3;
    CompressorIn_bh57_39_57(0) <= heap_bh57_w19_4;
-   Compressor_bh57_39: Compressor_14_3
+   Compressor_bh57_39: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_39_39   ,
                  X0 => CompressorIn_bh57_39_56,
                  X1 => CompressorIn_bh57_39_57);
@@ -2817,7 +2817,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_40_58 <= heap_bh57_w0_1 & heap_bh57_w0_0 & heap_bh57_w0_8;
    CompressorIn_bh57_40_59 <= heap_bh57_w1_11 & heap_bh57_w1_10;
-   Compressor_bh57_40: Compressor_23_3
+   Compressor_bh57_40: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_40_40   ,
                  X0 => CompressorIn_bh57_40_58,
                  X1 => CompressorIn_bh57_40_59);
@@ -2828,7 +2828,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_41_60 <= heap_bh57_w15_7 & heap_bh57_w15_6 & heap_bh57_w15_5;
    CompressorIn_bh57_41_61 <= heap_bh57_w16_7 & heap_bh57_w16_6;
-   Compressor_bh57_41: Compressor_23_3
+   Compressor_bh57_41: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_41_41   ,
                  X0 => CompressorIn_bh57_41_60,
                  X1 => CompressorIn_bh57_41_61);
@@ -2838,7 +2838,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_42_62 <= heap_bh57_w13_9 & heap_bh57_w13_8 & heap_bh57_w13_7;
-   Compressor_bh57_42: Compressor_3_2
+   Compressor_bh57_42: Compressor_3_2_a
       port map ( R => CompressorOut_bh57_42_42   ,
                  X0 => CompressorIn_bh57_42_62);
    heap_bh57_w13_12 <= CompressorOut_bh57_42_42(0); -- cycle= 0 cp= 1.63576e-09
@@ -2846,7 +2846,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_43_63 <= heap_bh57_w17_7 & heap_bh57_w17_6 & heap_bh57_w17_5;
-   Compressor_bh57_43: Compressor_3_2
+   Compressor_bh57_43: Compressor_3_2_a
       port map ( R => CompressorOut_bh57_43_43   ,
                  X0 => CompressorIn_bh57_43_63);
    heap_bh57_w17_9 <= CompressorOut_bh57_43_43(0); -- cycle= 0 cp= 1.63576e-09
@@ -2857,7 +2857,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_44_64 <= heap_bh57_w9_9 & heap_bh57_w9_16 & heap_bh57_w9_15 & heap_bh57_w9_14;
    CompressorIn_bh57_44_65(0) <= heap_bh57_w10_9;
-   Compressor_bh57_44: Compressor_14_3
+   Compressor_bh57_44: Compressor_14_3_d
       port map ( R => CompressorOut_bh57_44_44   ,
                  X0 => CompressorIn_bh57_44_64,
                  X1 => CompressorIn_bh57_44_65);
@@ -2868,7 +2868,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_45_66 <= heap_bh57_w2_9 & heap_bh57_w2_14 & heap_bh57_w2_13;
    CompressorIn_bh57_45_67 <= heap_bh57_w3_16 & heap_bh57_w3_15;
-   Compressor_bh57_45: Compressor_23_3
+   Compressor_bh57_45: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_45_45   ,
                  X0 => CompressorIn_bh57_45_66,
                  X1 => CompressorIn_bh57_45_67);
@@ -2879,7 +2879,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_46_68 <= heap_bh57_w4_19 & heap_bh57_w4_18 & heap_bh57_w4_17;
    CompressorIn_bh57_46_69 <= heap_bh57_w5_19 & heap_bh57_w5_18;
-   Compressor_bh57_46: Compressor_23_3
+   Compressor_bh57_46: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_46_46   ,
                  X0 => CompressorIn_bh57_46_68,
                  X1 => CompressorIn_bh57_46_69);
@@ -2890,7 +2890,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_47_70 <= heap_bh57_w6_19 & heap_bh57_w6_18 & heap_bh57_w6_17;
    CompressorIn_bh57_47_71 <= heap_bh57_w7_19 & heap_bh57_w7_18;
-   Compressor_bh57_47: Compressor_23_3
+   Compressor_bh57_47: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_47_47   ,
                  X0 => CompressorIn_bh57_47_70,
                  X1 => CompressorIn_bh57_47_71);
@@ -2901,7 +2901,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_48_72 <= heap_bh57_w10_16 & heap_bh57_w10_15 & heap_bh57_w10_14;
    CompressorIn_bh57_48_73 <= heap_bh57_w11_15 & heap_bh57_w11_14;
-   Compressor_bh57_48: Compressor_23_3
+   Compressor_bh57_48: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_48_48   ,
                  X0 => CompressorIn_bh57_48_72,
                  X1 => CompressorIn_bh57_48_73);
@@ -2912,7 +2912,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_49_74 <= heap_bh57_w12_13 & heap_bh57_w12_12 & heap_bh57_w12_11;
    CompressorIn_bh57_49_75 <= heap_bh57_w13_12 & heap_bh57_w13_11;
-   Compressor_bh57_49: Compressor_23_3
+   Compressor_bh57_49: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_49_49   ,
                  X0 => CompressorIn_bh57_49_74,
                  X1 => CompressorIn_bh57_49_75);
@@ -2923,7 +2923,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_50_76 <= heap_bh57_w14_12 & heap_bh57_w14_11 & heap_bh57_w14_10;
    CompressorIn_bh57_50_77 <= heap_bh57_w15_9 & heap_bh57_w15_8;
-   Compressor_bh57_50: Compressor_23_3
+   Compressor_bh57_50: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_50_50   ,
                  X0 => CompressorIn_bh57_50_76,
                  X1 => CompressorIn_bh57_50_77);
@@ -2934,7 +2934,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_51_78 <= heap_bh57_w16_5 & heap_bh57_w16_9 & heap_bh57_w16_8;
    CompressorIn_bh57_51_79 <= heap_bh57_w17_9 & heap_bh57_w17_8;
-   Compressor_bh57_51: Compressor_23_3
+   Compressor_bh57_51: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_51_51   ,
                  X0 => CompressorIn_bh57_51_78,
                  X1 => CompressorIn_bh57_51_79);
@@ -2945,7 +2945,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_52_80 <= heap_bh57_w20_0 & heap_bh57_w20_3 & heap_bh57_w20_4;
    CompressorIn_bh57_52_81 <= heap_bh57_w21_0 & heap_bh57_w21_1;
-   Compressor_bh57_52: Compressor_23_3
+   Compressor_bh57_52: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_52_52   ,
                  X0 => CompressorIn_bh57_52_80,
                  X1 => CompressorIn_bh57_52_81);
@@ -2955,7 +2955,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_53_82 <= heap_bh57_w8_19 & heap_bh57_w8_18 & heap_bh57_w8_17;
-   Compressor_bh57_53: Compressor_3_2
+   Compressor_bh57_53: Compressor_3_2_a
       port map ( R => CompressorOut_bh57_53_53   ,
                  X0 => CompressorIn_bh57_53_82);
    heap_bh57_w8_21 <= CompressorOut_bh57_53_53(0); -- cycle= 0 cp= 2.16648e-09
@@ -2964,7 +2964,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_54_83 <= heap_bh57_w11_13 & heap_bh57_w11_17 & heap_bh57_w11_16;
    CompressorIn_bh57_54_84 <= heap_bh57_w12_15 & heap_bh57_w12_14;
-   Compressor_bh57_54: Compressor_23_3
+   Compressor_bh57_54: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_54_54   ,
                  X0 => CompressorIn_bh57_54_83,
                  X1 => CompressorIn_bh57_54_84);
@@ -2975,7 +2975,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_55_85 <= heap_bh57_w18_6 & heap_bh57_w18_5 & heap_bh57_w18_7;
    CompressorIn_bh57_55_86 <= heap_bh57_w19_3 & heap_bh57_w19_5;
-   Compressor_bh57_55: Compressor_23_3
+   Compressor_bh57_55: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_55_55   ,
                  X0 => CompressorIn_bh57_55_85,
                  X1 => CompressorIn_bh57_55_86);
@@ -2986,7 +2986,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh57_56_87 <= heap_bh57_w13_10 & heap_bh57_w13_13 & heap_bh57_w13_14;
    CompressorIn_bh57_56_88 <= heap_bh57_w14_14 & heap_bh57_w14_13;
-   Compressor_bh57_56: Compressor_23_3
+   Compressor_bh57_56: Compressor_23_3_f
       port map ( R => CompressorOut_bh57_56_56   ,
                  X0 => CompressorIn_bh57_56_87,
                  X1 => CompressorIn_bh57_56_88);

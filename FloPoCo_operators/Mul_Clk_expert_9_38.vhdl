@@ -1,7 +1,7 @@
 -- vagrant@vagrant-ubuntu-trusty-32:~/flopoco-3.0.beta5$ ./flopoco -frequency=200 FPMultExpert 9 23 23 38 0 0
 -- 
 -- Final report:
--- Entity SmallMultTableP3x3r6XuYu
+-- Entity SmallMultTableP3x3r6XuYu_a
 --    Not pipelined
 -- Entity Compressor_6_3
 --    Not pipelined
@@ -13,7 +13,7 @@
 --    Not pipelined
 -- Entity Compressor_13_3
 --    Not pipelined
--- Entity Compressor_3_2
+-- Entity Compressor_3_2_b
 --    Not pipelined
 -- |   |---Entity IntAdder_44_f200_uid99
 -- |   |      Not pipelined
@@ -25,7 +25,7 @@
 --    Pipeline depth = 1
 -- Output file: flopoco.vhdl
 --------------------------------------------------------------------------------
---                          SmallMultTableP3x3r6XuYu
+--                          SmallMultTableP3x3r6XuYu_a
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Florent de Dinechin (2007-2012)
@@ -34,13 +34,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 library work;
-entity SmallMultTableP3x3r6XuYu is
+entity SmallMultTableP3x3r6XuYu_a is
    port ( clk, rst : in std_logic;
           X : in  std_logic_vector(5 downto 0);
           Y : out  std_logic_vector(5 downto 0)   );
 end entity;
 
-architecture arch of SmallMultTableP3x3r6XuYu is
+architecture arch of SmallMultTableP3x3r6XuYu_a is
 begin
   with X select  Y <=
    "000000" when "000000",
@@ -424,7 +424,7 @@ begin
 end architecture;
 
 --------------------------------------------------------------------------------
---                               Compressor_3_2
+--                               Compressor_3_2_b
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved
 -- Authors: Bogdan Popa, Illyes Kinga, 2012
@@ -439,12 +439,12 @@ library std;
 use std.textio.all;
 library work;
 
-entity Compressor_3_2 is
+entity Compressor_3_2_b is
    port ( X0 : in  std_logic_vector(2 downto 0);
           R : out  std_logic_vector(1 downto 0)   );
 end entity;
 
-architecture arch of Compressor_3_2 is
+architecture arch of Compressor_3_2_b is
 signal X :  std_logic_vector(2 downto 0);
 begin
    X <=X0 ;
@@ -538,7 +538,7 @@ architecture arch of IntMultiplier_UsingDSP_24_24_41_unsigned_uid4 is
              R : out  std_logic_vector(2 downto 0)   );
    end component;
 
-   component Compressor_3_2 is
+   component Compressor_3_2_b is
       port ( X0 : in  std_logic_vector(2 downto 0);
              R : out  std_logic_vector(1 downto 0)   );
    end component;
@@ -561,7 +561,7 @@ architecture arch of IntMultiplier_UsingDSP_24_24_41_unsigned_uid4 is
              R : out  std_logic_vector(43 downto 0)   );
    end component;
 
-   component SmallMultTableP3x3r6XuYu is
+   component SmallMultTableP3x3r6XuYu_a is
       port ( clk, rst : in std_logic;
              X : in  std_logic_vector(5 downto 0);
              Y : out  std_logic_vector(5 downto 0)   );
@@ -1130,8 +1130,8 @@ signal finalAdderOut_bh6 :  std_logic_vector(43 downto 0);
 signal CompressionResult6 :  std_logic_vector(44 downto 0);
 attribute rom_extract: string;
 attribute rom_style: string;
-attribute rom_extract of SmallMultTableP3x3r6XuYu: component is "yes";
-attribute rom_style of SmallMultTableP3x3r6XuYu: component is "distributed";
+attribute rom_extract of SmallMultTableP3x3r6XuYu_a: component is "yes";
+attribute rom_style of SmallMultTableP3x3r6XuYu_a: component is "distributed";
 begin
    process(clk)
       begin
@@ -1215,7 +1215,7 @@ begin
    ----------------Synchro barrier, entering cycle 0----------------
    -- Partial product row number 0
    Y0X1_7_m5 <= y_m5b7_0 & x_m5b7_1;
-   PP_m5_7X1Y0_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X1Y0_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y0X1_7_m5,
@@ -1226,7 +1226,7 @@ begin
    heap_bh6_w2_0 <= PP7X1Y0_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y0X2_7_m5 <= y_m5b7_0 & x_m5b7_2;
-   PP_m5_7X2Y0_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X2Y0_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y0X2_7_m5,
@@ -1238,7 +1238,7 @@ begin
    heap_bh6_w5_0 <= PP7X2Y0_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y0X3_7_m5 <= y_m5b7_0 & x_m5b7_3;
-   PP_m5_7X3Y0_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X3Y0_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y0X3_7_m5,
@@ -1250,7 +1250,7 @@ begin
    heap_bh6_w8_0 <= PP7X3Y0_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y0X4_7_m5 <= y_m5b7_0 & x_m5b7_4;
-   PP_m5_7X4Y0_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X4Y0_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y0X4_7_m5,
@@ -1262,7 +1262,7 @@ begin
    heap_bh6_w11_0 <= PP7X4Y0_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y0X5_7_m5 <= y_m5b7_0 & x_m5b7_5;
-   PP_m5_7X5Y0_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X5Y0_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y0X5_7_m5,
@@ -1274,7 +1274,7 @@ begin
    heap_bh6_w14_0 <= PP7X5Y0_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y0X6_7_m5 <= y_m5b7_0 & x_m5b7_6;
-   PP_m5_7X6Y0_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X6Y0_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y0X6_7_m5,
@@ -1286,7 +1286,7 @@ begin
    heap_bh6_w17_0 <= PP7X6Y0_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y0X7_7_m5 <= y_m5b7_0 & x_m5b7_7;
-   PP_m5_7X7Y0_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X7Y0_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y0X7_7_m5,
@@ -1299,7 +1299,7 @@ begin
 
    -- Partial product row number 1
    Y1X0_7_m5 <= y_m5b7_1 & x_m5b7_0;
-   PP_m5_7X0Y1_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X0Y1_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y1X0_7_m5,
@@ -1310,7 +1310,7 @@ begin
    heap_bh6_w2_2 <= PP7X0Y1_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y1X1_7_m5 <= y_m5b7_1 & x_m5b7_1;
-   PP_m5_7X1Y1_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X1Y1_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y1X1_7_m5,
@@ -1324,7 +1324,7 @@ begin
    heap_bh6_w5_2 <= PP7X1Y1_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y1X2_7_m5 <= y_m5b7_1 & x_m5b7_2;
-   PP_m5_7X2Y1_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X2Y1_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y1X2_7_m5,
@@ -1338,7 +1338,7 @@ begin
    heap_bh6_w8_2 <= PP7X2Y1_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y1X3_7_m5 <= y_m5b7_1 & x_m5b7_3;
-   PP_m5_7X3Y1_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X3Y1_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y1X3_7_m5,
@@ -1352,7 +1352,7 @@ begin
    heap_bh6_w11_2 <= PP7X3Y1_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y1X4_7_m5 <= y_m5b7_1 & x_m5b7_4;
-   PP_m5_7X4Y1_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X4Y1_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y1X4_7_m5,
@@ -1366,7 +1366,7 @@ begin
    heap_bh6_w14_2 <= PP7X4Y1_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y1X5_7_m5 <= y_m5b7_1 & x_m5b7_5;
-   PP_m5_7X5Y1_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X5Y1_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y1X5_7_m5,
@@ -1380,7 +1380,7 @@ begin
    heap_bh6_w17_2 <= PP7X5Y1_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y1X6_7_m5 <= y_m5b7_1 & x_m5b7_6;
-   PP_m5_7X6Y1_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X6Y1_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y1X6_7_m5,
@@ -1394,7 +1394,7 @@ begin
    heap_bh6_w20_1 <= PP7X6Y1_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y1X7_7_m5 <= y_m5b7_1 & x_m5b7_7;
-   PP_m5_7X7Y1_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X7Y1_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y1X7_7_m5,
@@ -1409,7 +1409,7 @@ begin
 
    -- Partial product row number 2
    Y2X0_7_m5 <= y_m5b7_2 & x_m5b7_0;
-   PP_m5_7X0Y2_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X0Y2_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y2X0_7_m5,
@@ -1423,7 +1423,7 @@ begin
    heap_bh6_w5_4 <= PP7X0Y2_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y2X1_7_m5 <= y_m5b7_2 & x_m5b7_1;
-   PP_m5_7X1Y2_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X1Y2_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y2X1_7_m5,
@@ -1437,7 +1437,7 @@ begin
    heap_bh6_w8_4 <= PP7X1Y2_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y2X2_7_m5 <= y_m5b7_2 & x_m5b7_2;
-   PP_m5_7X2Y2_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X2Y2_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y2X2_7_m5,
@@ -1451,7 +1451,7 @@ begin
    heap_bh6_w11_4 <= PP7X2Y2_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y2X3_7_m5 <= y_m5b7_2 & x_m5b7_3;
-   PP_m5_7X3Y2_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X3Y2_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y2X3_7_m5,
@@ -1465,7 +1465,7 @@ begin
    heap_bh6_w14_4 <= PP7X3Y2_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y2X4_7_m5 <= y_m5b7_2 & x_m5b7_4;
-   PP_m5_7X4Y2_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X4Y2_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y2X4_7_m5,
@@ -1479,7 +1479,7 @@ begin
    heap_bh6_w17_4 <= PP7X4Y2_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y2X5_7_m5 <= y_m5b7_2 & x_m5b7_5;
-   PP_m5_7X5Y2_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X5Y2_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y2X5_7_m5,
@@ -1493,7 +1493,7 @@ begin
    heap_bh6_w20_3 <= PP7X5Y2_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y2X6_7_m5 <= y_m5b7_2 & x_m5b7_6;
-   PP_m5_7X6Y2_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X6Y2_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y2X6_7_m5,
@@ -1507,7 +1507,7 @@ begin
    heap_bh6_w23_1 <= PP7X6Y2_m5(5); -- cycle= 0 cp= 5.9176e-10
 
    Y2X7_7_m5 <= y_m5b7_2 & x_m5b7_7;
-   PP_m5_7X7Y2_Tbl: SmallMultTableP3x3r6XuYu  -- pipelineDepth=0 maxInDelay=0
+   PP_m5_7X7Y2_Tbl: SmallMultTableP3x3r6XuYu_a  -- pipelineDepth=0 maxInDelay=0
       port map ( clk  => clk,
                  rst  => rst,
                  X => Y2X7_7_m5,
@@ -1784,7 +1784,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh6_21_31 <= heap_bh6_w1_2 & heap_bh6_w1_1 & heap_bh6_w1_0;
-   Compressor_bh6_21: Compressor_3_2
+   Compressor_bh6_21: Compressor_3_2_b
       port map ( R => CompressorOut_bh6_21_21   ,
                  X0 => CompressorIn_bh6_21_31);
    heap_bh6_w1_5 <= CompressorOut_bh6_21_21(0); -- cycle= 0 cp= 1.12248e-09
@@ -1882,7 +1882,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh6_30_48 <= heap_bh6_w8_9 & heap_bh6_w8_8 & heap_bh6_w8_7;
-   Compressor_bh6_30: Compressor_3_2
+   Compressor_bh6_30: Compressor_3_2_b
       port map ( R => CompressorOut_bh6_30_30   ,
                  X0 => CompressorIn_bh6_30_48);
    heap_bh6_w8_11 <= CompressorOut_bh6_30_30(0); -- cycle= 0 cp= 1.6532e-09
@@ -1890,7 +1890,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh6_31_49 <= heap_bh6_w11_9 & heap_bh6_w11_8 & heap_bh6_w11_7;
-   Compressor_bh6_31: Compressor_3_2
+   Compressor_bh6_31: Compressor_3_2_b
       port map ( R => CompressorOut_bh6_31_31   ,
                  X0 => CompressorIn_bh6_31_49);
    heap_bh6_w11_11 <= CompressorOut_bh6_31_31(0); -- cycle= 0 cp= 1.6532e-09
@@ -1898,7 +1898,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh6_32_50 <= heap_bh6_w14_9 & heap_bh6_w14_8 & heap_bh6_w14_7;
-   Compressor_bh6_32: Compressor_3_2
+   Compressor_bh6_32: Compressor_3_2_b
       port map ( R => CompressorOut_bh6_32_32   ,
                  X0 => CompressorIn_bh6_32_50);
    heap_bh6_w14_11 <= CompressorOut_bh6_32_32(0); -- cycle= 0 cp= 1.6532e-09
@@ -1906,7 +1906,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh6_33_51 <= heap_bh6_w17_9 & heap_bh6_w17_8 & heap_bh6_w17_7;
-   Compressor_bh6_33: Compressor_3_2
+   Compressor_bh6_33: Compressor_3_2_b
       port map ( R => CompressorOut_bh6_33_33   ,
                  X0 => CompressorIn_bh6_33_51);
    heap_bh6_w17_11 <= CompressorOut_bh6_33_33(0); -- cycle= 0 cp= 1.6532e-09
@@ -1914,7 +1914,7 @@ begin
 
    ----------------Synchro barrier, entering cycle 0----------------
    CompressorIn_bh6_34_52 <= heap_bh6_w20_8 & heap_bh6_w20_7 & heap_bh6_w20_6;
-   Compressor_bh6_34: Compressor_3_2
+   Compressor_bh6_34: Compressor_3_2_b
       port map ( R => CompressorOut_bh6_34_34   ,
                  X0 => CompressorIn_bh6_34_52);
    heap_bh6_w20_10 <= CompressorOut_bh6_34_34(0); -- cycle= 0 cp= 1.6532e-09

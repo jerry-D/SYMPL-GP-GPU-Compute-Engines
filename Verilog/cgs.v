@@ -1,44 +1,45 @@
-// cgs.v   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine
 `timescale 1ns/100ps
-// aSYMPL 32-bit GP^2 GPU multi-thread, multi-processing core
 // Author:  Jerry D. Harthcock
- // Version:  2.53  Dec. 12, 2015
- // July 3, 2015
-// Copyright (C) 2014-2015.  All rights reserved without prejudice.
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                               //
-//                   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine                           //
-//                              Evaluation and Product Development License                                       //
-//                                                                                                               //
-// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of the SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-  //
-// Compute Engine Verilog RTL IP core family and instruction-set architecture ("this IP"), hereby grants to      //
-// recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to use this IP for the        //
-// non-commercial purposes of evaluation, education, and development of end products and related development     //
-// tools only. For a license to use this IP in commercial products intended for sale, license, lease or any      //
-// other form of barter, contact licensor at:  SYMPL.gpu@gmail.com                                               //
-//                                                                                                               //
-// Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
-// and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
-// binaries, a printed copy of this license and/or a text format copy in a separate file distributed with said   //
-// netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
-// any copyright notices from any source file covered under this Evaluation and Product Development License.     //
-//                                                                                                               //
-// THIS IP IS PROVIDED "AS IS".  LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT        //
-// INFRINGE THE RIGHTS OF OTHERS OR THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE //
-// TO HOLD LICENSOR HARMLESS FROM ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                 //                               
-//                                                                                                               //
-// Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
-// or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
-// of any kind to anyone. By using this IP for any purpose, you agree to all the terms and conditions set forth  //
-// in this Evaluation and Product Development License.                                                           //
-//                                                                                                               //
-// This Evaluation and Product Development License does not include the right to sell products that incorporate  //
-// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor. //                                                                                            //
-//                                                                                                               //
-// Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
-//                                                                                                               //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Version:  2.53  January, 2016
+// Copyright (C) 2014-2016.  All rights reserved.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                //
+//             SYMPL 32-BIT RISC, COARSE-GRAINED SCHEDULER (CGS) and GP-GPU SHADER IP CORES                       //
+//                              Evaluation and Product Development License                                        //
+//                                                                                                                //
+// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"),  //
+// the original author and exclusive copyright owner of these SYMPL 32-BIT RISC, COARSE-GRAINED SCHEDULER (CGS)   //
+// and GP-GPU SHADER Verilog RTL IP cores and related development software ("this IP")  hereby grants             //
+// to recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to implement this IP in     //
+// Xilinx, Altera, MicroSemi or Lattice Semiconductor brand FPGAs only and used for the purposes of evaluation,   //
+// education, and development of end products and related development tools only.  Furthermore, limited to the    //
+// the purposes of prototyping, evaluation, characterization and testing of their implementation in a hard,       //
+// custom or semi-custom ASIC, any university or institution of higher education may have their implementation of //
+// this IP produced for said limited purposes at any foundary of their choosing provided that such prototypes do  //
+// not ever wind up in commercial circulation with such license extending to said foundary and is in connection   //
+// with said academic pursuit and under the supervision of said university or institution of higher education.    //
+//                                                                                                                //
+// Any customization, modification, or derivative work of this IP must include an exact copy of this license      //
+// and original copyright notice at the very top of each source file and derived netlist, and, in the case of     //
+// binaries, a printed copy of this license and/or a text format copy in a separate file distributed with said    //
+// netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove     //
+// any copyright notices from any source file covered under this Evaluation and Product Development License.      //
+//                                                                                                                //
+// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR      //
+// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM    //
+// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                 //
+//                                                                                                                //
+// Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change   //
+// or modify the terms and conditions of this Evaluation and Product Development License anytime without notice   //
+// of any kind to anyone. By using this IP for any purpose, you agree to all the terms and conditions set forth   //
+// in this Evaluation and Product Development License.                                                            //
+//                                                                                                                //
+// This Evaluation and Product Development License does not include the right to sell products that incorporate   //
+// this IP, any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor.    //
+//                                                                                                                //
+// Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                             //
+//                                                                                                                //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module CGS (
          PC,
@@ -84,7 +85,6 @@ module CGS (
          command,         
          
          SWBRKdet,
-         OUTBOX,
          byte_swap_wr,
          byte_swap_rd
          );
@@ -132,34 +132,34 @@ input   [15:0] swbrkdet_thread;
 input   [31:0] command;
 
 output         SWBRKdet;
-output [31:0]  OUTBOX;
 
 output         byte_swap_wr;
 output         byte_swap_rd;
                                                                                                                                       
-parameter   AR3_ADDRS     = 24'h00073;
-parameter   AR2_ADDRS     = 24'h00072;
-parameter   AR1_ADDRS     = 24'h00071;
-parameter   AR0_ADDRS     = 24'h00070;
-parameter	PC_ADDRS 	  = 24'h0006F;	//address of each PC in private memory
-parameter	PC_COPY 	  = 24'h0006E;	//status register address for each thread
-parameter	ST_ADDRS 	  = 24'h0006D;	//status register address for each thread
-parameter   OUTBOX_ADDRS  = 24'h0006A;    //cas reads are stored here and can be see by sup 
-parameter   LPCNT1_ADDRS  = 24'h00069;    //loop counter 1 address
-parameter   LPCNT0_ADDRS  = 24'h00068;    //loop counter 0 address
-parameter   TIMER_ADDRS   = 24'h00067;
-parameter   RPT_ADDRS     = 24'h00064;
-
-parameter   DMA1_CSR      = 24'h00062;
-parameter   DMA1_RDADDRS  = 24'h00061;
-parameter   DMA1_WRADDRS  = 24'h00060;
-parameter   FRC_IRQ_ADDRS = 24'h0005F;   //force thread interrupt--can be used for forcing a breakpoint on a thread   
-parameter   DMA0_CSR      = 24'h0005E;
-parameter   DMA0_RDADDRS  = 24'h0005D;
-parameter   DMA0_WRADDRS  = 24'h0005C;
-parameter   DONE_IE_ADDRS = 24'h0005B;   //interrupt enables for thread DONE and their status inputs
-parameter   COMMAND_ADDRS = 24'h0005A;   // command/semiphore address
-
+parameter   AR3_ADDRS     = 24'h000073;
+parameter   AR2_ADDRS     = 24'h000072;
+parameter   AR1_ADDRS     = 24'h000071;
+parameter   AR0_ADDRS     = 24'h000070;
+parameter	PC_ADDRS 	  = 24'h00006F;	//address of each PC in private memory
+parameter	PC_COPY 	  = 24'h00006E;	//status register address for each thread
+parameter	ST_ADDRS 	  = 24'h00006D;	//status register address for each thread
+parameter   RPT_ADDRS     = 24'h00006C;
+parameter   SPSH_ADDRS    = 24'h00006B;         
+parameter   SPOP_ADDRS    = 24'h00006A;         
+parameter   SNOP_ADDRS    = 24'h000069;         
+parameter   SP_ADDRS      = 24'h000068;
+parameter   LPCNT1_ADDRS  = 24'h000067;    //loop counter 1 address
+parameter   LPCNT0_ADDRS  = 24'h000066;    //loop counter 0 address
+parameter   TIMER_ADDRS   = 24'h000065;
+parameter   COMMAND_ADDRS = 24'h000064;   // command/semiphore address
+parameter   FRC_IRQ_ADDRS = 24'h000063;   //force thread interrupt--can be used for forcing a breakpoint on a thread   
+parameter   DMA1_CSR      = 24'h000062;
+parameter   DMA1_RDADDRS  = 24'h000061;
+parameter   DMA1_WRADDRS  = 24'h000060;
+parameter   DONE_IE_ADDRS = 24'h00005F;   //interrupt enables for thread DONE and their status inputs
+parameter   DMA0_CSR      = 24'h00005E;
+parameter   DMA0_RDADDRS  = 24'h00005D;
+parameter   DMA0_WRADDRS  = 24'h00005C;
 
 parameter	MOV_	= 4'b0000;		
 parameter	AND_	= 4'b0001;
@@ -174,7 +174,6 @@ parameter	ADDC_	= 4'b0111;
 parameter   SUB_    = 4'b1000;
 parameter   SUBB_   = 4'b1001;
 parameter   MUL_    = 4'b1010;
-
 
 parameter   LEFT_  = 3'b000;
 parameter   LSL_   = 3'b001;
@@ -210,10 +209,13 @@ reg [31:0] CGS_AR2;
 reg [31:0] CGS_AR1;
 reg [31:0] CGS_AR0;
 
+reg [23:0] CGS_SP;
+reg [23:0] CGS_SP_read;
+
 reg [11:0] CGS_PC;
 reg [11:0] CGS_PC_COPY;
-reg [19:0] CGS_timer;
-reg [19:0] CGS_timercmpr;
+reg [31:0] CGS_timer;
+reg [31:0] CGS_timercmpr;
 
 reg  CGS_IRQ_IE;
 reg  CGS_EXC_IE;
@@ -225,8 +227,6 @@ reg CGS_N;
 reg CGS_V;
 reg CGS_done;   
     
-reg [31:0] OUTBOX;
-
 reg [2:0] STATE;
 reg [1:0] CGS_pipe_flush;
 
@@ -252,15 +252,15 @@ reg        CGS_ld_vector_q2;
 reg        CGS_ld_vector_q3;
 
 //loop counter for DBNZ
-reg [11:0] CGS_LPCNT0;
-reg [11:0] CGS_LPCNT1;
+reg [14:0] CGS_LPCNT0;
+reg [14:0] CGS_LPCNT1;
 
 reg [15:0] shiftbucket;
 reg [31:0] rdSrcAdata;
 reg [31:0] rdSrcBdata; 
 reg [11:0] pre_PC;
 
-reg [10:0] REPEAT;
+reg [23:0] REPEAT;
 
 reg wrdisable;
 
@@ -326,8 +326,8 @@ wire [31:0] CGS_STATUSq2;
 
 wire pipe_flush;
 
-wire [11:0] CGS_LPCNT1_dec;
-wire [11:0] CGS_LPCNT0_dec;
+wire [14:0] CGS_LPCNT1_dec;
+wire [14:0] CGS_LPCNT0_dec;
 
 wire CGS_LPCNT1_nz;
 wire CGS_LPCNT0_nz;
@@ -443,8 +443,9 @@ assign CGS_NMI = ~CGS_done & (CGS_timer==CGS_timercmpr);
 assign CGS_IRQ = 1'b0;
 
 assign  CGS_STATUSq2 =  {2'b10,
-                         Z_q2 | N_q2,
-                         13'b0_0000_0000_0000,
+                         Z_q2 | V_q2,                // LTE (less than or equal)
+                        ~Z_q2 & V_q2,                // LT  (less than)
+                         12'b0000_0000_0000,
                          ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[12] : shdr3_RESET,
                          ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[11] : shdr2_RESET,
                          ((dest_q2 == ST_ADDRS) & wrcycl) ? resultout[10] : shdr1_RESET,
@@ -461,11 +462,14 @@ assign  CGS_STATUSq2 =  {2'b10,
                          C_q2,     
                          Z_q2};
                          
-DATA_ADDRS_mod_CGS data_addrs_mod(							
-    .tr0_AR3       (CGS_AR3   ),
-    .tr0_AR2       (CGS_AR2   ),
-    .tr0_AR1       (CGS_AR1   ),
-    .tr0_AR0       (CGS_AR0   ),
+DATA_ADDRS_mod_CGS data_addrs_mod(
+    .MOV_q0        (opcode==MOV_),  //for 16-bit table-read from program memory using "@"
+    .CGS_SP        (CGS_SP    ),
+    .CGS_SP_read   (CGS_SP_read),
+    .CGS_AR3       (CGS_AR3   ),
+    .CGS_AR2       (CGS_AR2   ),
+    .CGS_AR1       (CGS_AR1   ),
+    .CGS_AR0       (CGS_AR0   ),
     .constn        (constn    ),
     .OPdest_q2     (OPdest_q2 ),
     .OPsrcA        (OPsrcA    ),
@@ -687,17 +691,18 @@ always @(*) begin
              24'b0000000000000001xxxxxxxx : rdSrcAdata = srcAcollide ? resultout : CGS_RAM_rddataA;  
              24'b00000000000000001xxxxxxx : rdSrcAdata = srcAcollide ? resultout : CGS_RAM_rddataA;   
              
-                      AR3_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {19'h00000, CGS_AR3};                      
-                      AR2_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {19'h00000, CGS_AR2};                      
-                      AR1_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {19'h00000, CGS_AR1};
-                      AR0_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {19'h00000, CGS_AR0};
+                      AR3_ADDRS : rdSrcAdata = srcAcollide  ? resultout : CGS_AR3;                      
+                      AR2_ADDRS : rdSrcAdata = srcAcollide  ? resultout : CGS_AR2;                      
+                      AR1_ADDRS : rdSrcAdata = srcAcollide  ? resultout : CGS_AR1;
+                      AR0_ADDRS : rdSrcAdata = srcAcollide  ? resultout : CGS_AR0;
                        PC_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {20'h00000, CGS_PC};
                         PC_COPY : rdSrcAdata = srcAcollide  ? resultout : {20'h00000, CGS_PC_COPY};
                        ST_ADDRS : rdSrcAdata = srcAcollide  ? resultout : CGS_STATUSq2;
-                   OUTBOX_ADDRS : rdSrcAdata = srcAcollide  ? resultout : OUTBOX;
-                   LPCNT1_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {16'h0000, CGS_LPCNT1_nz, 3'b000, CGS_LPCNT1};
-                   LPCNT0_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {16'h0000, CGS_LPCNT0_nz, 3'b000, CGS_LPCNT0};
-                    TIMER_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {12'h000, CGS_timer}; 
+                       SP_ADDRS : rdSrcAdata = srcAcollide  ? resultout : CGS_SP;
+                   LPCNT1_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {16'h0000, CGS_LPCNT1_nz, CGS_LPCNT1};
+                   LPCNT0_ADDRS : rdSrcAdata = srcAcollide  ? resultout : {16'h0000, CGS_LPCNT0_nz, CGS_LPCNT0};
+                    TIMER_ADDRS : rdSrcAdata = srcAcollide  ? resultout : CGS_timer; 
+                  COMMAND_ADDRS : rdSrcAdata = srcAcollide  ? resultout : command; 
                     
                        DMA1_CSR : rdSrcAdata = srcAcollide ? resultout : CGS_DMA1_rddataA;  
                    DMA1_RDADDRS : rdSrcAdata = srcAcollide ? resultout : CGS_DMA1_rddataA;
@@ -711,8 +716,6 @@ always @(*) begin
                    
                   DONE_IE_ADDRS : rdSrcAdata = srcAcollide  ? {done_thread[15:0], resultout[15:0]} : {done_thread[15:0], DONE_IE[15:0]};
                   
-                  COMMAND_ADDRS : rdSrcAdata = srcAcollide  ? resultout : command; 
-                                                                                        
              24'b0000000000000000010xxxxx : rdSrcAdata = srcAcollide  ? resultout : CGS_RAM_rddataA; 
              24'b000000000000000000xxxxxx : rdSrcAdata = srcAcollide  ? resultout : CGS_RAM_rddataA; 
                                                  
@@ -728,17 +731,18 @@ always @(*) begin
              24'b0000000000000001xxxxxxxx : rdSrcBdata = srcBcollide ? resultout : CGS_RAM_rddataB;  
              24'b00000000000000001xxxxxxx : rdSrcBdata = srcBcollide ? resultout : CGS_RAM_rddataB;   
              
-                      AR3_ADDRS : rdSrcBdata = srcBcollide ? resultout : {19'h00000, CGS_AR3};                      
-                      AR2_ADDRS : rdSrcBdata = srcBcollide ? resultout : {19'h00000, CGS_AR2};                      
-                      AR1_ADDRS : rdSrcBdata = srcBcollide ? resultout : {19'h00000, CGS_AR1};
-                      AR0_ADDRS : rdSrcBdata = srcBcollide ? resultout : {19'h00000, CGS_AR0};
+                      AR3_ADDRS : rdSrcBdata = srcBcollide ? resultout : CGS_AR3;                      
+                      AR2_ADDRS : rdSrcBdata = srcBcollide ? resultout : CGS_AR2;                      
+                      AR1_ADDRS : rdSrcBdata = srcBcollide ? resultout : CGS_AR1;
+                      AR0_ADDRS : rdSrcBdata = srcBcollide ? resultout : CGS_AR0;
                        PC_ADDRS : rdSrcBdata = srcBcollide ? resultout : {20'h00000, CGS_PC};
                         PC_COPY : rdSrcBdata = srcBcollide ? resultout : {20'h00000, CGS_PC_COPY};
                        ST_ADDRS : rdSrcBdata = srcBcollide ? resultout : CGS_STATUSq2;
-                   OUTBOX_ADDRS : rdSrcBdata = srcBcollide ? resultout : OUTBOX;
-                   LPCNT1_ADDRS : rdSrcBdata = srcBcollide ? resultout : {16'h0000, CGS_LPCNT1_nz, 3'b000, CGS_LPCNT1};
-                   LPCNT0_ADDRS : rdSrcBdata = srcBcollide ? resultout : {16'h0000, CGS_LPCNT0_nz, 3'b000, CGS_LPCNT0};
-                    TIMER_ADDRS : rdSrcBdata = srcBcollide ? resultout : {12'h000, CGS_timer};                               
+                       SP_ADDRS : rdSrcBdata = srcBcollide  ? resultout: CGS_SP;
+                   LPCNT1_ADDRS : rdSrcBdata = srcBcollide ? resultout : {16'h0000, CGS_LPCNT1_nz, CGS_LPCNT1};
+                   LPCNT0_ADDRS : rdSrcBdata = srcBcollide ? resultout : {16'h0000, CGS_LPCNT0_nz, CGS_LPCNT0};
+                    TIMER_ADDRS : rdSrcBdata = srcBcollide ? resultout : CGS_timer;                               
+                  COMMAND_ADDRS : rdSrcBdata = srcBcollide ? resultout : command; 
                    
                        DMA1_CSR : rdSrcBdata = srcBcollide ? resultout : CGS_DMA1_rddataB;  
                    DMA1_RDADDRS : rdSrcBdata = srcBcollide ? resultout : CGS_DMA1_rddataB;
@@ -751,15 +755,16 @@ always @(*) begin
                    DMA0_WRADDRS : rdSrcBdata = srcBcollide ? resultout : CGS_DMA0_rddataB;
                    
                   DONE_IE_ADDRS : rdSrcBdata = srcBcollide ? {done_thread[15:0], resultout[15:0]} : {done_thread[15:0], DONE_IE[15:0]}; 
-                  COMMAND_ADDRS : rdSrcBdata = srcBcollide ? resultout : command; 
-                   
 
-             14'b0000000000000000010xxxxx : rdSrcBdata = srcBcollide ? resultout : CGS_RAM_rddataB; 
-             14'b000000000000000000xxxxxx : rdSrcBdata = srcBcollide ? resultout : CGS_RAM_rddataB; 
+             24'b0000000000000000010xxxxx : rdSrcBdata = srcBcollide ? resultout : CGS_RAM_rddataB; 
+             24'b000000000000000000xxxxxx : rdSrcBdata = srcBcollide ? resultout : CGS_RAM_rddataB; 
                                                  
              default : rdSrcBdata = 32'h0000_0000;  
          endcase                      
 end    
+
+wire PC_stack_op;
+assign PC_stack_op = ((opcode_q2==MOV_) & ((OPdest_q2==PC_ADDRS) & (OPsrcA_q2==(SP_ADDRS+1))) | ((OPdest_q2==(SP_ADDRS+2)) & (OPsrcA_q2==PC_ADDRS)));    //pop or push PC
   
 always @(*)  begin     
     if (~|STATE[1:0]) begin 
@@ -770,8 +775,8 @@ always @(*)  begin
         casex (opcode_q2)
             MOV_  : begin
                        resultout = wrsrcAdata;
-                       Z_q2 = ~|wrsrcAdata;
-                       N_q2 = wrsrcAdata[31];
+                       Z_q2 = PC_stack_op ? CGS_Z : ~|wrsrcAdata;
+                       N_q2 = PC_stack_op ? CGS_N :  wrsrcAdata[31];
                        C_q2 = CGS_C;
                        V_q2 = CGS_V;
                     end    
@@ -888,47 +893,49 @@ end
 
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
-        REPEAT <= 11'h000;
+        REPEAT <= 24'h00_0000;
     end
-    else if (( &constn && (OPdest==RPT_ADDRS[7:0])) && ~RPT_not_z && ~discont) REPEAT[10:0] <= P_DATAi[10:0]; 
+    else if (( &constn && (OPdest==RPT_ADDRS[7:0])) && ~RPT_not_z && ~discont) REPEAT[23:0] <= {8'h00, P_DATAi[15:0]}; 
     else if ((~|constn && (OPdest==RPT_ADDRS[7:0])) && ~RPT_not_z && ~discont && &OPsrcA[6:4] && ~OPsrcA[3:2]) begin
         casex(OPsrcA)
             8'h74,
             8'h78,
-            8'h7C : REPEAT[10:0] <= CGS_AR0[10:0];
+            8'h7C : REPEAT[23:0] <= (wrcycl && (dest_q2==AR0_ADDRS)) ? resultout[23:0] : CGS_AR0[23:0];
  
             8'h75,
             8'h79,
-            8'h7D : REPEAT[10:0] <= CGS_AR1[10:0];
+            8'h7D : REPEAT[23:0] <= (wrcycl && (dest_q2==AR1_ADDRS)) ? resultout[23:0] : CGS_AR1[23:0];
                         
             8'h76,
             8'h7A,
-            8'h7E : REPEAT[10:0] <= CGS_AR2[10:0];
+            8'h7E : REPEAT[23:0] <= (wrcycl && (dest_q2==AR2_ADDRS)) ? resultout[23:0] : CGS_AR2[23:0];
                         
             8'h77,
             8'h7B,
-            8'h7F : REPEAT[10:0] <= CGS_AR3[10:0];
+            8'h7F : REPEAT[23:0] <= (wrcycl && (dest_q2==AR3_ADDRS)) ? resultout[23:0] : CGS_AR3[23:0];
         endcase                
     end 
-    else if (|REPEAT[10:0]) REPEAT[10:0] <= REPEAT[10:0] - 1'b1;
+    else if (|REPEAT[23:0]) REPEAT[23:0] <= REPEAT[23:0] - 1'b1;
 end   
 
 always @(posedge CLK or posedge RESET) begin
     if (RESET) begin
-        CGS_LPCNT1 <= 12'h000;
-        CGS_LPCNT0 <= 12'h000;
+        CGS_LPCNT1 <= 15'h0000;
+        CGS_LPCNT0 <= 15'h0000;
     end 
     else begin
-        if ((dest_q2==LPCNT0_ADDRS) && wrcycl) CGS_LPCNT0 <= resultout[11:0];
+        if ((dest_q2==LPCNT0_ADDRS) && wrcycl) CGS_LPCNT0 <= resultout[14:0];
         else if ((opcode_q2==BTB_) && (srcB_q2==LPCNT0_ADDRS) && |CGS_LPCNT0 && ~pipe_flush) CGS_LPCNT0 <= CGS_LPCNT0_dec;
         
-        if ((dest_q2==LPCNT1_ADDRS) && wrcycl) CGS_LPCNT1 <= resultout[11:0];
+        if ((dest_q2==LPCNT1_ADDRS) && wrcycl) CGS_LPCNT1 <= resultout[14:0];
         else if ((opcode_q2==BTB_) && (srcB_q2==LPCNT1_ADDRS) && |CGS_LPCNT1 && ~pipe_flush) CGS_LPCNT1 <= CGS_LPCNT1_dec;
     end    
 end
 
+reg [1:0] OPmode_q1;
 wire branch;
 wire jump;
+
 assign branch = (opcode_q2 == BTB_) & ((|(bitsel & wrsrcBdata)) ^ OPsrcA_q2[6]) & ~pipe_flush;
 assign jump = (dest_q2 == PC_ADDRS) & wrcycl;
 always @(posedge CLK or posedge RESET) begin  
@@ -943,6 +950,7 @@ always @(posedge CLK or posedge RESET) begin
         OPdest_q1 <= 8'h00;
         OPsrcA_q1 <= 8'h00;
         OPsrcB_q1 <= 8'h00;
+        OPmode_q1 <= 2'b00;
 
         // state2 read
         pc_q2     <= 12'h100;
@@ -956,13 +964,16 @@ always @(posedge CLK or posedge RESET) begin
         CGS_PC <= 12'h100;
         CGS_PC_COPY <= 12'h100;
         
-        CGS_timer <= 20'h00000; 
-        CGS_timercmpr <= 20'h00000;         
+        CGS_timer <= 32'h0000_0000; 
+        CGS_timercmpr <= 32'h0000_0000;         
 
         CGS_AR3 <= 32'h01000000;
         CGS_AR2 <= 32'h01000000;
         CGS_AR1 <= 32'h01000000;
         CGS_AR0 <= 32'h01000000;
+        
+        CGS_SP  <= 32'h007FFFFF;
+        CGS_SP_read <= 32'h007FFFFF;        
         
         shdr3_RESET <= 1'b1;
         shdr2_RESET <= 1'b1;
@@ -989,7 +1000,6 @@ always @(posedge CLK or posedge RESET) begin
         
         STATE <= 3'b100;
         
-        OUTBOX <= 32'h00000000;
         CGS_pipe_flush <= 2'b00;
     end    
     else begin
@@ -1021,17 +1031,14 @@ always @(posedge CLK or posedge RESET) begin
         
         if ((dest_q2==ST_ADDRS) && wrcycl) {shdr3_RESET, shdr2_RESET, shdr1_RESET, shdr0_RESET, CGS_IRQ_IE, CGS_EXC_IE, CGS_done, CGS_V, CGS_N, CGS_C, CGS_Z} <= {resultout[15:12], resultout[9], resultout[8], resultout[5], resultout[3:0]}; 
         else if (wrcycl) {CGS_V, CGS_N, CGS_C, CGS_Z} <= {V_q2, N_q2, C_q2, Z_q2};
-        
-        if ((dest_q2==OUTBOX_ADDRS) && wrcycl) OUTBOX <= resultout;
-        
+                
         if ((dest_q2== FRC_IRQ_ADDRS) && wrcycl) frc_IRQ_thread <= resultout[15:0];
         
         if ((dest_q2== DONE_IE_ADDRS) && wrcycl) DONE_IE <= resultout[15:0];
         
-
         if ((dest_q2==TIMER_ADDRS) && wrcycl) begin 
-            CGS_timer <= 20'h00000;
-            CGS_timercmpr <= resultout[19:0];
+            CGS_timer <= 32'h0000_0000;
+            CGS_timercmpr <= resultout;
         end                   
         else if (~CGS_done && ~(CGS_timer==CGS_timercmpr)) CGS_timer <= CGS_timer + 1'b1;                   
                 
@@ -1045,6 +1052,7 @@ always @(posedge CLK or posedge RESET) begin
         OPdest_q1 <= OPdest   ;
         OPsrcA_q1 <= OPsrcA   ;
         OPsrcB_q1 <= OPsrcB   ;
+        OPmode_q1 <= P_DATAi[31:30];
 
         opcode_q2 <= opcode_q1;        
         pc_q2     <= pc_q1    ;               
@@ -1068,8 +1076,8 @@ always @(posedge CLK or posedge RESET) begin
                                 wrsrcAdata <= rdSrcAdata;             
                                 wrsrcBdata <= rdSrcBdata; 
                              end
-                     2'b11 : begin //16-bit immediate       
-                                wrsrcAdata <= {16'h0000, OPsrcA_q1, OPsrcB_q1};
+                     2'b11 : begin //16-bit immediate with sign-extend only available for 16-bit immediate      
+                                wrsrcAdata <= &OPmode_q1 ? {{16{OPsrcA_q1[7]}}, {OPsrcA_q1, OPsrcB_q1}} : {16'h0000, OPsrcA_q1, OPsrcB_q1};
                                 wrsrcBdata <= rdSrcBdata; 
                              end
                    endcase           
@@ -1091,6 +1099,35 @@ always @(posedge CLK or posedge RESET) begin
                         wrsrcAdata <= rdSrcAdata;
                     end
         endcase
+
+//SPSH_ADDRS    = 24'h00006B        
+//SPOP_ADDRS    = 24'h00006A
+//SNOP_ADDRS    = 24'h000069
+
+        if (~discont && &constn && (OPdest==8'h68)) begin
+            CGS_SP[23:0] <= {(&OPmode_q1 ? {1'b0, {7{OPsrcA[7]}}} : 8'h00), OPsrcA[7:0], OPsrcB[7:0]};  //immediate write to SP during newthreadq has priority over any update         
+            CGS_SP_read  <= {(&OPmode_q1 ? {1'b0, {7{OPsrcA[7]}}} : 8'h00), OPsrcA[7:0], OPsrcB[7:0]};
+        end    
+        else if (wrcycl && (OPdest_q2==8'h6A)) begin
+            CGS_SP <= {1'b0, resultout[22:0]}; //direct write to SP during q2 has priority over any update 
+            CGS_SP_read  <= {(&OPmode_q1 ? {8{OPsrcA[7]}} : 8'h00), OPsrcA[7:0], OPsrcB[7:0]};
+        end            
+        if (~constn[1] && ~discont && (OPsrcA==8'h6A) && ~(CGS_SP[23:0]==24'h7FFFFF))  begin   //SP auto-post-increment of indirect srcA address SPOP occurs during instruction fetch (state0)
+//SP POP      
+              CGS_SP_read <= CGS_SP_read + 1'b1;  
+              CGS_SP[23:0] <= CGS_SP[23:0] + 1'b1;
+        end
+              
+        if (~constn[0] && ~discont && (OPsrcB==8'h6A) && ~(CGS_SP[23:0]==24'h7FFFFF))  begin   //SP auto-post-increment of indirect srcB address SPOP occurs during instruction fetch (state0)
+              CGS_SP_read <= CGS_SP_read + 1'b1;  
+              CGS_SP[23:0] <= CGS_SP[23:0] + 1'b1;
+        end       
+//SP PUSH               
+        if (wrcycl && (OPdest_q2==8'h6B)) begin      
+            CGS_SP_read[23:0] <= CGS_SP[23:0];       //used for SP POP
+            CGS_SP[23:0] <= CGS_SP[23:0] - 1'b1;
+        end
+
 
         if (~discont && &constn && (OPdest==8'h70)) CGS_AR0[23:0] <= {8'h00, OPsrcA[7:0], OPsrcB[7:0]};  //immediate write to ARn during newthreadq has priority over any update         
         else if (wrcycl && (OPdest_q2==8'h70)) CGS_AR0 <= |resultout[31:24] ? resultout : {CGS_AR0[31:24], resultout[23:0]}; //direct write to ARn during q2 has priority over any update         

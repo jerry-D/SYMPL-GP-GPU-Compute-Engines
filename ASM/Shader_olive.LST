@@ -1,4 +1,4 @@
- 00000000                                  CPU  "aSYMPL32.TBL"
+ 00000000                                  CPU  "SYMPL_IL.TBL"
  00000000                                  HOF  "MOT32"
  00000000                                  WDLN 4
                                 ; FP324 test1
@@ -16,19 +16,18 @@
  0000006F         =             PC:         EQU     0x6F                    ;Program Counter
  0000006E         =             PC_COPY:    EQU     0x6E
  0000006D         =             STATUS:     EQU     0x6D                    ;Statis Register
- 0000006C         =             SCHED:      EQU     0x6C                    ;scheduler
- 0000006B         =             SCHEDCMP:   EQU     0x6B                    ;scheduler max count values
- 0000006A         =             C_reg:      EQU     0x6A                    ;FMA C register
- 00000069         =             LPCNT1:     EQU	    0x69		   	        ;dedicated loop counter 1 
- 00000068         =             LPCNT0:	    EQU	    0x68 			        ;dedicated loop counter 0
- 00000067         =             TIMER:      EQU     0x67                    ;timer
- 00000066         =             QOS:        EQU     0x66                    ;quality of service exception counters
- 00000065         =             DOT:        EQU     0x65                    ;DOT operator
- 00000064         =             RPT:        EQU     0x64                    ;repeat counter location
+ 0000006C         =             RPT:        EQU     0x6C                    ;repeat counter location
+ 00000067         =             LPCNT1:     EQU	    0x67		   	        ;dedicated loop counter 1 
+ 00000066         =             LPCNT0:	    EQU	    0x66 			        ;dedicated loop counter 0
+ 00000065         =             TIMER:      EQU     0x65                    ;timer
+ 00000064         =             C_reg:      EQU     0x64                    ;FMA C register
  00000063         =             CAPTURE3:   EQU     0x63                    ;alternate delayed exception capture register 3
  00000062         =             CAPTURE2:   EQU     0x62                    ;alternate delayed exception capture register 2
  00000061         =             CAPTURE1:   EQU     0x61                    ;alternate delayed exception capture register 1
  00000060         =             CAPTURE0:   EQU     0x60                    ;alternate delayed exception capture register 0
+ 0000005F         =             SCHED:      EQU     0x5F                    ;scheduler
+ 0000005E         =             SCHEDCMP:   EQU     0x5E                    ;scheduler max count values
+ 0000005D         =             QOS:        EQU     0x5D                    ;quality of service exception counters
                                 
                                 ;zero-page storage
  00000001         =             NMI_save    EQU     0x01                    ;save PC_COPY here immediately upon entry to NMI service routine
@@ -101,7 +100,7 @@
  0000010D 006F1400                          mov     PC, work_1              ;else perform the specified thread pointed to by contents of work_1, in this case, "start"
                                         
  0000010E                       start:  
- 0000010E 30672710                          mov     TIMER, #10000           ;load time-out timer with sufficient time to process before timeout
+ 0000010E 30652710                          mov     TIMER, #10000           ;load time-out timer with sufficient time to process before timeout
  0000010F 30730801                          mov     AR3, #packet + 1        ;load AR3 with pointer to list length in parameter/data packet just received--AR3 is read pointer                   
  00000110 116D6DDF                          and     STATUS, STATUS, #0xDF   ;clear the DONE bit to signal we are now busy
                                             
@@ -121,7 +120,7 @@
                                             ; AR3 is now pointing to first X of first triangle
  0000011E 00727300                          mov     AR2, AR3                ;copy AR3 contents to AR2 so AR2 can be used as write pointer back to PDB for saving results
                                             
- 0000011F 00682000                          mov     LPCNT0, triangles       ;load loop counter 0 with number of triangles 
+ 0000011F 00662000                          mov     LPCNT0, triangles       ;load loop counter 0 with number of triangles 
                                             
                                             ;the following routine performs scaling on all three axis first, 
                                             ;rotate on all three axis second, then translate on all three axis last 
@@ -307,17 +306,17 @@
  0000016F 007A8D00                          mov     *AR2++, FADD_D          ;copy translated Y3 to PDB
  00000170 007A8E00                          mov     *AR2++, FADD_E          ;copy translated Z3 to PDB
                                             
- 00000171 04AF0F68                          dbnz    loop, LPCNT0            ;continue until done
+ 00000171 04AF0F66                          dbnz    loop, LPCNT0            ;continue until done
                                 
  00000172 306F0108                          mov     PC, #done               ;jump to done, semphr test and spin for next packet
                                             
                                 ; interrupt service routines        
  00000173 00016E00              NMI_:       mov     NMI_save, PC_COPY       ;save return address from non-maskable interrupt (time-out timer in this instance)
- 00000174 30672710                          mov     TIMER, #10000           ;put a new value in the timer
+ 00000174 30652710                          mov     TIMER, #10000           ;put a new value in the timer
  00000175 006F0100                          mov     PC, NMI_save            ;return from interrupt
                                         
  00000176 00026E00              INV_:       mov     INV_save, PC_COPY       ;save return address from floating-point invalid operation exception, which is maskable
- 00000177 30672710                          mov     TIMER, #10000           ;put a new value in the timer
+ 00000177 30652710                          mov     TIMER, #10000           ;put a new value in the timer
  00000178 0019D100                          mov     work_6, SQRT_1          ;retrieve the NaN with payload (this quiet NaN replaced the signaling NaN that caused the INV exc)
  00000179 006F0200                          mov     PC, INV_save            ;return from interrupt
                                             
@@ -326,23 +325,23 @@
  0000017C 001B6100                          mov     capt1_save, CAPTURE1    ;read out CAPTURE1 register and save it
  0000017D 001C6200                          mov     capt2_save, CAPTURE2    ;read out CAPTURE2 register and save it
  0000017E 001D6300                          mov     capt3_save, CAPTURE3    ;read out CAPTURE3 register and save it
- 0000017F 30672710                          mov     TIMER, #10000           ;put a new value in the timer
+ 0000017F 30652710                          mov     TIMER, #10000           ;put a new value in the timer
  00000180 006F0300                          mov     PC, DIVx0_save          ;return from interrupt
                                 
  00000181 00046E00              OVFL_:      mov     OVFL_save, PC_COPY      ;save return address from floating-point overflow exception, which is maskable
- 00000182 30672710                          mov     TIMER, #10000           ;put a new value in the timer
+ 00000182 30652710                          mov     TIMER, #10000           ;put a new value in the timer
  00000183 006F0400                          mov     PC, OVFL_save           ;return from interrupt
                                 
  00000184 00056E00              UNFL_:      mov     UNFL_save, PC_COPY      ;save return address from floating-point underflow exception, which is maskable
- 00000185 30672710                          mov     TIMER, #10000           ;put a new value in the timer
+ 00000185 30652710                          mov     TIMER, #10000           ;put a new value in the timer
  00000186 006F0500                          mov     PC, UNFL_save           ;return from interrupt
                                 
  00000187 00066E00              INEXT_:     mov     INEX_save, PC_COPY      ;save return address from floating-point inexact exception, which is maskable
- 00000188 30672710                          mov     TIMER, #10000           ;put a new value in the timer
+ 00000188 30652710                          mov     TIMER, #10000           ;put a new value in the timer
  00000189 006F0600                          mov     PC, INEX_save           ;return from interrupt
                                 
  0000018A 00076E00              IRQ_:       mov     IRQ_PC_save, PC_COPY    ;save return address (general-purpose, maskable interrupt)
- 0000018B 30672710                          mov     TIMER, #10000           ;put a new value in the timer
+ 0000018B 30652710                          mov     TIMER, #10000           ;put a new value in the timer
  0000018C 006F0700                          mov     PC, IRQ_PC_save         ;return from interrupt            
  0000018D                       progend:        
  00000000                                   end
@@ -351,68 +350,68 @@
 0000001C  CAPT2_SAVE         0000001D  CAPT3_SAVE         00000060  CAPTURE0           
 00000061  CAPTURE1           00000062  CAPTURE2           00000063  CAPTURE3           
 000000FE  CONSTANTS          00000022  COS_THETAX         00000024  COS_THETAY         
-00000026  COS_THETAZ         0000006A  C_REG              0000017A  DIVX0_             
+00000026  COS_THETAZ         00000064  C_REG              0000017A  DIVX0_             
 00000003  DIVX0_SAVE         00000103  DIVX0_VECT         00000108  DONE               
-00000020  DONE_BIT           00000065  DOT                000000F8  EXP_0              
-000000F9  EXP_1              000000FA  EXP_2              000000FB  EXP_3              
-000000FC  EXP_4              000000FD  EXP_5              000000FE  EXP_6              
-000000FF  EXP_7              00000080  FADD_0             00000081  FADD_1             
-00000082  FADD_2             00000083  FADD_3             00000084  FADD_4             
-00000085  FADD_5             00000086  FADD_6             00000087  FADD_7             
-00000088  FADD_8             00000089  FADD_9             0000008A  FADD_A             
-0000008B  FADD_B             0000008C  FADD_C             0000008D  FADD_D             
-0000008E  FADD_E             0000008F  FADD_F             000000C0  FDIV_0             
-000000C1  FDIV_1             000000C2  FDIV_2             000000C3  FDIV_3             
-000000C4  FDIV_4             000000C5  FDIV_5             000000C6  FDIV_6             
-000000C7  FDIV_7             000000C8  FDIV_8             000000C9  FDIV_9             
-000000CA  FDIV_A             000000CB  FDIV_B             000000CC  FDIV_C             
-000000CD  FDIV_D             000000CE  FDIV_E             000000CF  FDIV_F             
-00000008  FGS_SAVE           000000E0  FMA_0              000000E1  FMA_1              
-000000E2  FMA_2              000000E3  FMA_3              000000E4  FMA_4              
-000000E5  FMA_5              000000E6  FMA_6              000000E7  FMA_7              
-000000E8  FMA_8              000000E9  FMA_9              000000EA  FMA_A              
-000000EB  FMA_B              000000EC  FMA_C              000000ED  FMA_D              
-000000EE  FMA_E              000000EF  FMA_F              000000A0  FMUL_0             
-000000A1  FMUL_1             000000A2  FMUL_2             000000A3  FMUL_3             
-000000A4  FMUL_4             000000A5  FMUL_5             000000A6  FMUL_6             
-000000A7  FMUL_7             000000A8  FMUL_8             000000A9  FMUL_9             
-000000AA  FMUL_A             000000AB  FMUL_B             000000AC  FMUL_C             
-000000AD  FMUL_D             000000AE  FMUL_E             000000AF  FMUL_F             
-00000090  FSUB_0             00000091  FSUB_1             00000092  FSUB_2             
-00000093  FSUB_3             00000094  FSUB_4             00000095  FSUB_5             
-00000096  FSUB_6             00000097  FSUB_7             00000098  FSUB_8             
-00000099  FSUB_9             0000009A  FSUB_A             0000009B  FSUB_B             
-0000009C  FSUB_C             0000009D  FSUB_D             0000009E  FSUB_E             
-0000009F  FSUB_F             000000B8  FTOI_0             000000B9  FTOI_1             
-000000BA  FTOI_2             000000BB  FTOI_3             000000BC  FTOI_4             
-000000BD  FTOI_5             000000BE  FTOI_6             000000BF  FTOI_7             
-00000187  INEXT_             00000106  INEXT_VECT         00000006  INEX_SAVE          
-00000176  INV_               00000002  INV_SAVE           00000102  INV_VECT           
-0000018A  IRQ_               00000007  IRQ_PC_SAVE        00000107  IRQ_VECT           
-000000B0  ITOF_0             000000B1  ITOF_1             000000B2  ITOF_2             
-000000B3  ITOF_3             000000B4  ITOF_4             000000B5  ITOF_5             
-000000B6  ITOF_6             000000B7  ITOF_7             000000F0  LOG_0              
-000000F1  LOG_1              000000F2  LOG_2              000000F3  LOG_3              
-000000F4  LOG_4              000000F5  LOG_5              000000F6  LOG_6              
-000000F7  LOG_7              00000120  LOOP               00000068  LPCNT0             
-00000069  LPCNT1             00000173  NMI_               00000001  NMI_SAVE           
-00000101  NMI_VECT           00000181  OVFL_              00000004  OVFL_SAVE          
-00000104  OVFL_VECT          00000800  PACKET             0000006F  PC                 
-0000006E  PC_COPY            0000018D  PROGEND            000000FF  PROG_LEN           
-00000066  QOS                00000064  RPT                00000100  RST_VECT           
-00000027  SCALEX             00000028  SCALEY             00000029  SCALEZ             
-0000006C  SCHED              0000006B  SCHEDCMP           00000109  SEMPHR             
-0000001E  SIGN_MASK          00000021  SIN_THETAX         00000023  SIN_THETAY         
-00000025  SIN_THETAZ         0000010A  SPIN               000000D0  SQRT_0             
-000000D1  SQRT_1             000000D2  SQRT_2             000000D3  SQRT_3             
-000000D4  SQRT_4             000000D5  SQRT_5             000000D6  SQRT_6             
-000000D7  SQRT_7             000000D8  SQRT_8             000000D9  SQRT_9             
-000000DA  SQRT_A             000000DB  SQRT_B             000000DC  SQRT_C             
-000000DD  SQRT_D             000000DE  SQRT_E             000000DF  SQRT_F             
-0000010E  START              0000006D  STATUS             00000067  TIMER              
-0000002A  TRANSX             0000002B  TRANSY             0000002C  TRANSZ             
-00000020  TRIANGLES          00000184  UNFL_              00000005  UNFL_SAVE          
-00000105  UNFL_VECT          00000014  WORK_1             00000015  WORK_2             
-00000016  WORK_3             00000017  WORK_4             00000018  WORK_5             
-00000019  WORK_6             
+00000020  DONE_BIT           000000F8  EXP_0              000000F9  EXP_1              
+000000FA  EXP_2              000000FB  EXP_3              000000FC  EXP_4              
+000000FD  EXP_5              000000FE  EXP_6              000000FF  EXP_7              
+00000080  FADD_0             00000081  FADD_1             00000082  FADD_2             
+00000083  FADD_3             00000084  FADD_4             00000085  FADD_5             
+00000086  FADD_6             00000087  FADD_7             00000088  FADD_8             
+00000089  FADD_9             0000008A  FADD_A             0000008B  FADD_B             
+0000008C  FADD_C             0000008D  FADD_D             0000008E  FADD_E             
+0000008F  FADD_F             000000C0  FDIV_0             000000C1  FDIV_1             
+000000C2  FDIV_2             000000C3  FDIV_3             000000C4  FDIV_4             
+000000C5  FDIV_5             000000C6  FDIV_6             000000C7  FDIV_7             
+000000C8  FDIV_8             000000C9  FDIV_9             000000CA  FDIV_A             
+000000CB  FDIV_B             000000CC  FDIV_C             000000CD  FDIV_D             
+000000CE  FDIV_E             000000CF  FDIV_F             00000008  FGS_SAVE           
+000000E0  FMA_0              000000E1  FMA_1              000000E2  FMA_2              
+000000E3  FMA_3              000000E4  FMA_4              000000E5  FMA_5              
+000000E6  FMA_6              000000E7  FMA_7              000000E8  FMA_8              
+000000E9  FMA_9              000000EA  FMA_A              000000EB  FMA_B              
+000000EC  FMA_C              000000ED  FMA_D              000000EE  FMA_E              
+000000EF  FMA_F              000000A0  FMUL_0             000000A1  FMUL_1             
+000000A2  FMUL_2             000000A3  FMUL_3             000000A4  FMUL_4             
+000000A5  FMUL_5             000000A6  FMUL_6             000000A7  FMUL_7             
+000000A8  FMUL_8             000000A9  FMUL_9             000000AA  FMUL_A             
+000000AB  FMUL_B             000000AC  FMUL_C             000000AD  FMUL_D             
+000000AE  FMUL_E             000000AF  FMUL_F             00000090  FSUB_0             
+00000091  FSUB_1             00000092  FSUB_2             00000093  FSUB_3             
+00000094  FSUB_4             00000095  FSUB_5             00000096  FSUB_6             
+00000097  FSUB_7             00000098  FSUB_8             00000099  FSUB_9             
+0000009A  FSUB_A             0000009B  FSUB_B             0000009C  FSUB_C             
+0000009D  FSUB_D             0000009E  FSUB_E             0000009F  FSUB_F             
+000000B8  FTOI_0             000000B9  FTOI_1             000000BA  FTOI_2             
+000000BB  FTOI_3             000000BC  FTOI_4             000000BD  FTOI_5             
+000000BE  FTOI_6             000000BF  FTOI_7             00000187  INEXT_             
+00000106  INEXT_VECT         00000006  INEX_SAVE          00000176  INV_               
+00000002  INV_SAVE           00000102  INV_VECT           0000018A  IRQ_               
+00000007  IRQ_PC_SAVE        00000107  IRQ_VECT           000000B0  ITOF_0             
+000000B1  ITOF_1             000000B2  ITOF_2             000000B3  ITOF_3             
+000000B4  ITOF_4             000000B5  ITOF_5             000000B6  ITOF_6             
+000000B7  ITOF_7             000000F0  LOG_0              000000F1  LOG_1              
+000000F2  LOG_2              000000F3  LOG_3              000000F4  LOG_4              
+000000F5  LOG_5              000000F6  LOG_6              000000F7  LOG_7              
+00000120  LOOP               00000066  LPCNT0             00000067  LPCNT1             
+00000173  NMI_               00000001  NMI_SAVE           00000101  NMI_VECT           
+00000181  OVFL_              00000004  OVFL_SAVE          00000104  OVFL_VECT          
+00000800  PACKET             0000006F  PC                 0000006E  PC_COPY            
+0000018D  PROGEND            000000FF  PROG_LEN           0000005D  QOS                
+0000006C  RPT                00000100  RST_VECT           00000027  SCALEX             
+00000028  SCALEY             00000029  SCALEZ             0000005F  SCHED              
+0000005E  SCHEDCMP           00000109  SEMPHR             0000001E  SIGN_MASK          
+00000021  SIN_THETAX         00000023  SIN_THETAY         00000025  SIN_THETAZ         
+0000010A  SPIN               000000D0  SQRT_0             000000D1  SQRT_1             
+000000D2  SQRT_2             000000D3  SQRT_3             000000D4  SQRT_4             
+000000D5  SQRT_5             000000D6  SQRT_6             000000D7  SQRT_7             
+000000D8  SQRT_8             000000D9  SQRT_9             000000DA  SQRT_A             
+000000DB  SQRT_B             000000DC  SQRT_C             000000DD  SQRT_D             
+000000DE  SQRT_E             000000DF  SQRT_F             0000010E  START              
+0000006D  STATUS             00000065  TIMER              0000002A  TRANSX             
+0000002B  TRANSY             0000002C  TRANSZ             00000020  TRIANGLES          
+00000184  UNFL_              00000005  UNFL_SAVE          00000105  UNFL_VECT          
+00000014  WORK_1             00000015  WORK_2             00000016  WORK_3             
+00000017  WORK_4             00000018  WORK_5             00000019  WORK_6             
+
 

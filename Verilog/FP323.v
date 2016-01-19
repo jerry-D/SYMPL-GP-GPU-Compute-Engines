@@ -1,44 +1,45 @@
-//FP323.v memory-mapped quad-shader implementation with coarse-grained scheduler (CGS)
 `timescale 1ns/100ps
-// SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine (dual-shader)
 // Author:  Jerry D. Harthcock
-// Version:  1.02  Dec. 12, 2015
-// October 30, 2015
-// Copyright (C) 2015.  All rights reserved without prejudice.
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                               //
-//                   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine                           //
-//                              Evaluation and Product Development License                                       //
-//                                                                                                               //
-// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of the SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-  //
-// Compute Engine Verilog RTL IP core family and instruction-set architecture ("this IP"), hereby grants to      //
-// recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to use this IP for the        //
-// non-commercial purposes of evaluation, education, and development of end products and related development     //
-// tools only. For a license to use this IP in commercial products intended for sale, license, lease or any      //
-// other form of barter, contact licensor at:  SYMPL.gpu@gmail.com                                               //
-//                                                                                                               //
-// Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
-// and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
-// binaries, a printed copy of this license and/or a text format copy in a separate file distributed with said   //
-// netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
-// any copyright notices from any source file covered under this Evaluation and Product Development License.     //
-//                                                                                                               //
-// THIS IP IS PROVIDED "AS IS".  LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT        //
-// INFRINGE THE RIGHTS OF OTHERS OR THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE //
-// TO HOLD LICENSOR HARMLESS FROM ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                 //                               
-//                                                                                                               //
-// Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
-// or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
-// of any kind to anyone. By using this IP for any purpose, you agree to all the terms and conditions set forth  //
-// in this Evaluation and Product Development License.                                                           //
-//                                                                                                               //
-// This Evaluation and Product Development License does not include the right to sell products that incorporate  //
-// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor. //                                                                                            //
-//                                                                                                               //
-// Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
-//                                                                                                               //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Version:  1.02  January 18, 2016
+// Copyright (C) 2016.  All rights reserved.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                //
+//             SYMPL 32-BIT RISC, COARSE-GRAINED SCHEDULER (CGS) and GP-GPU SHADER IP CORES                       //
+//                              Evaluation and Product Development License                                        //
+//                                                                                                                //
+// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"),  //
+// the original author and exclusive copyright owner of these SYMPL 32-BIT RISC, COARSE-GRAINED SCHEDULER (CGS)   //
+// and GP-GPU SHADER Verilog RTL IP cores and related development software ("this IP")  hereby grants             //
+// to recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to implement this IP in     //
+// Xilinx, Altera, MicroSemi or Lattice Semiconductor brand FPGAs only and used for the purposes of evaluation,   //
+// education, and development of end products and related development tools only.  Furthermore, limited to the    //
+// the purposes of prototyping, evaluation, characterization and testing of their implementation in a hard,       //
+// custom or semi-custom ASIC, any university or institution of higher education may have their implementation of //
+// this IP produced for said limited purposes at any foundary of their choosing provided that such prototypes do  //
+// not ever wind up in commercial circulation with such license extending to said foundary and is in connection   //
+// with said academic pursuit and under the supervision of said university or institution of higher education.    //
+//                                                                                                                //
+// Any customization, modification, or derivative work of this IP must include an exact copy of this license      //
+// and original copyright notice at the very top of each source file and derived netlist, and, in the case of     //
+// binaries, a printed copy of this license and/or a text format copy in a separate file distributed with said    //
+// netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove     //
+// any copyright notices from any source file covered under this Evaluation and Product Development License.      //
+//                                                                                                                //
+// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR      //
+// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM    //
+// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                 //
+//                                                                                                                //
+// Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change   //
+// or modify the terms and conditions of this Evaluation and Product Development License anytime without notice   //
+// of any kind to anyone. By using this IP for any purpose, you agree to all the terms and conditions set forth   //
+// in this Evaluation and Product Development License.                                                            //
+//                                                                                                                //
+// This Evaluation and Product Development License does not include the right to sell products that incorporate   //
+// this IP, any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor.    //
+//                                                                                                                //
+// Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                             //
+//                                                                                                                //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module FP323 (
     CLKA,
@@ -68,10 +69,11 @@ reg [31:0] cgs_rddataA;
 reg [31:0] DMA1wrdata;
 reg [31:0] command;  //command/semaphore
 reg cgs_command_ack;
-reg clr_command;
     
-reg command_rdA_q1;
-reg command_rdB_q1;
+reg command_ready;
+reg [31:0] command_q;
+reg [1:0] command_stateA;
+reg [1:0] command_stateB;
 
 reg [2:0] cgs_sel_q1;
 reg [1:0] DMA1_sel_q1;
@@ -265,12 +267,11 @@ CGS cgs(
      .frc_IRQ_thread (frc_IRQ_thread ),
      .done_thread    (done_thread[15:0]),
      .swbrkdet_thread(16'h0000       ),
-     .command        (command        ),
-     .SWBRKdet       (               ),
-     .OUTBOX         (               )
+     .command        (command_q      ),
+     .SWBRKdet       (               )
      );
 
-core core1(
+gpu gpu1(
      .PC                 (shdr1_PC                ),
      .P_DATAi            (shdr1_instr             ),
      .ROM_4k_rddataA     (shdr1_tabl_data         ),     
@@ -301,7 +302,7 @@ core core1(
      .tr0_IRQ            (frc_IRQ_thread[4]       )
       );
 
-core core0(
+gpu gpu0(
      .PC                 (shdr0_PC                ),
      .P_DATAi            (shdr0_instr             ),
      .ROM_4k_rddataA     (shdr0_tabl_data         ),     
@@ -465,30 +466,55 @@ shdrROM #(.ADDRS_WIDTH(12), .DATA_WIDTH(32))
 
 always @(posedge CLKA or posedge RESET) begin                                     
     if (RESET) begin
+        command_stateA <= 2'b00;
+        command_ready <= 1'b0;
         command <= 32'h0000_0000;
-        clr_command <= 1'b0;
-    end                                             
-    else if (WREN && (WRADDRS==15'h0000) && ~|command) command <= WRDATA;
-    else if ( cgs_command_ack && ~clr_command) begin
-        clr_command <= 1'b1;
-        command <= 32'h0000_0000;       
-    end    
-    else if (~cgs_command_ack && clr_command) clr_command <= 1'b0;
-end  
+    end 
+    else begin
+        case(command_stateA)
+            2'b00 : if (WREN && (WRADDRS==15'h0000) && ~|command) begin
+                        command <= WRDATA;
+                        command_stateA <= 2'b01;
+                    end
+            2'b01 : begin 
+                        command_ready <= 1'b1;
+                        command_stateA <= 2'b10;                        
+                    end
+            2'b10 : if (cgs_command_ack) command_stateA <= 2'b11;
+            2'b11 : begin
+                        command <= 32'h0000_0000;
+                        command_ready <= 1'b0;
+                        command_stateA <= 2'b00; 
+                    end
+        endcase
+    end
+end                                           
 
 always @(posedge CLKB or posedge RESET) begin
     if (RESET) begin
         cgs_command_ack <= 1'b0;
-        command_rdA_q1 <= 1'b0;
-        command_rdB_q1 <= 1'b0;
+        command_q <= 32'h0000_0000;
+        command_stateB <= 2'b00;
     end    
     else begin
-        command_rdA_q1 <= (cgs_rdsrcA & (cgs_srcA[23:0]==23'h00_005A));
-        command_rdB_q1 <= (cgs_rdsrcB & (cgs_srcB[23:0]==23'h00_005A));
-        if (command_rdA_q1 || command_rdB_q1) cgs_command_ack <= 1'b1; 
-        else if (clr_command) cgs_command_ack <= 1'b0;
-    end    
-end      
+        case (command_stateB)
+            2'b00 : if (command_ready && ((cgs_rdsrcA && (cgs_srcA[23:0]==23'h00_0064)) || (cgs_rdsrcB && (cgs_srcB[23:0]==23'h00_0064)))) begin
+                        command_q <= command;
+                        command_stateB <= 2'b01;
+                    end
+            2'b01 :  begin
+                        cgs_command_ack <= 1'b1;
+                        command_stateB <= 2'b10;
+                    end
+            2'b10,
+            2'b11 : if (~command_ready) begin
+                        command_q <= 32'h0000_0000;
+                        cgs_command_ack <= 1'b0;
+                        command_stateB <= 2'b00;
+                    end
+        endcase                            
+    end
+end                            
              
 always @(posedge CLKB or posedge RESET) begin
     if (RESET) cgs_sel_q1[2:0] <= 3'b000;

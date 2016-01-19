@@ -1,46 +1,48 @@
-// core.v
+// GPU.v
 `timescale 1ns/100ps
-// Shader core SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine
 // Author:  Jerry D. Harthcock
-// Version:  3.06  Dec. 12, 2015
-// July 11, 2015
-// Copyright (C) 2014-2015.  All rights reserved without prejudice.
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                               //
-//                   SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-Compute Engine                           //
-//                              Evaluation and Product Development License                                       //
-//                                                                                                               //
-// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"), //
-// the original author and exclusive copyright owner of the SYMPL 32-Bit Multi-Thread, Multi-Processing GP-GPU-  //
-// Compute Engine Verilog RTL IP core family and instruction-set architecture ("this IP"), hereby grants to      //
-// recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to use this IP for the        //
-// non-commercial purposes of evaluation, education, and development of end products and related development     //
-// tools only. For a license to use this IP in commercial products intended for sale, license, lease or any      //
-// other form of barter, contact licensor at:  SYMPL.gpu@gmail.com                                               //
-//                                                                                                               //
-// Any customization, modification, or derivative work of this IP must include an exact copy of this license     //
-// and original copyright notice at the very top of each source file and derived netlist, and, in the case of    //
-// binaries, a printed copy of this license and/or a text format copy in a separate file distributed with said   //
-// netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove    //
-// any copyright notices from any source file covered under this Evaluation and Product Development License.     //
-//                                                                                                               //
-// THIS IP IS PROVIDED "AS IS".  LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT        //
-// INFRINGE THE RIGHTS OF OTHERS OR THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE //
-// TO HOLD LICENSOR HARMLESS FROM ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                 //                               
-//                                                                                                               //
-// Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change  //
-// or modify the terms and conditions of this Evaluation and Product Development License anytime without notice  //
-// of any kind to anyone. By using this IP for any purpose, you agree to all the terms and conditions set forth  //
-// in this Evaluation and Product Development License.                                                           //
-//                                                                                                               //
-// This Evaluation and Product Development License does not include the right to sell products that incorporate  //
-// this IP or any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor. //                                                                                            //
-//                                                                                                               //
-// Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                            //
-//                                                                                                               //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Version:  3.06  January 18, 2016
+// Copyright (C) 2014-2016.  All rights reserved.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                //
+//             SYMPL 32-BIT RISC, COARSE-GRAINED SCHEDULER (CGS) and GP-GPU SHADER IP CORES                       //
+//                              Evaluation and Product Development License                                        //
+//                                                                                                                //
+// Provided that you comply with all the terms and conditions set forth herein, Jerry D. Harthcock ("licensor"),  //
+// the original author and exclusive copyright owner of these SYMPL 32-BIT RISC, COARSE-GRAINED SCHEDULER (CGS)   //
+// and GP-GPU SHADER Verilog RTL IP cores and related development software ("this IP")  hereby grants             //
+// to recipient of this IP ("licensee"), a world-wide, paid-up, non-exclusive license to implement this IP in     //
+// Xilinx, Altera, MicroSemi or Lattice Semiconductor brand FPGAs only and used for the purposes of evaluation,   //
+// education, and development of end products and related development tools only.  Furthermore, limited to the    //
+// the purposes of prototyping, evaluation, characterization and testing of their implementation in a hard,       //
+// custom or semi-custom ASIC, any university or institution of higher education may have their implementation of //
+// this IP produced for said limited purposes at any foundary of their choosing provided that such prototypes do  //
+// not ever wind up in commercial circulation with such license extending to said foundary and is in connection   //
+// with said academic pursuit and under the supervision of said university or institution of higher education.    //
+//                                                                                                                //
+// Any customization, modification, or derivative work of this IP must include an exact copy of this license      //
+// and original copyright notice at the very top of each source file and derived netlist, and, in the case of     //
+// binaries, a printed copy of this license and/or a text format copy in a separate file distributed with said    //
+// netlists or binary files having the file name, "LICENSE.txt".  You, the licensee, also agree not to remove     //
+// any copyright notices from any source file covered under this Evaluation and Product Development License.      //
+//                                                                                                                //
+// LICENSOR DOES NOT WARRANT OR GUARANTEE THAT YOUR USE OF THIS IP WILL NOT INFRINGE THE RIGHTS OF OTHERS OR      //
+// THAT IT IS SUITABLE OR FIT FOR ANY PURPOSE AND THAT YOU, THE LICENSEE, AGREE TO HOLD LICENSOR HARMLESS FROM    //
+// ANY CLAIM BROUGHT BY YOU OR ANY THIRD PARTY FOR YOUR SUCH USE.                                                 //
+//                                                                                                                //
+// Licensor reserves all his rights without prejudice, including, but in no way limited to, the right to change   //
+// or modify the terms and conditions of this Evaluation and Product Development License anytime without notice   //
+// of any kind to anyone. By using this IP for any purpose, you agree to all the terms and conditions set forth   //
+// in this Evaluation and Product Development License.                                                            //
+//                                                                                                                //
+// This Evaluation and Product Development License does not include the right to sell products that incorporate   //
+// this IP, any IP derived from this IP.  If you would like to obtain such a license, please contact Licensor.    //
+//                                                                                                                //
+// Licensor can be contacted at:  SYMPL.gpu@gmail.com                                                             //
+//                                                                                                                //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-module core (
+module gpu (
          PC,
          P_DATAi,
          ROM_4k_rddataA,     
@@ -111,25 +113,29 @@ parameter THREAD2      =  2'b10;  //P_ADDRS[31:30] indicate active thread
 parameter THREAD1      =  2'b01;  //P_ADDRS[31:30] indicate active thread
 parameter THREAD0      =  2'b00;  //P_ADDRS[31:30] indicate active thread
 
-parameter AR3_ADDRS    = 14'h0073;
-parameter AR2_ADDRS    = 14'h0072;
-parameter AR1_ADDRS    = 14'h0071;
-parameter AR0_ADDRS    = 14'h0070;
-parameter PC_ADDRS     = 14'h006F;    //address of each PC in private memory
-parameter PC_COPY      = 14'h006E;    //status register address for each thread
-parameter ST_ADDRS     = 14'h006D;    //status register address for each thread
-parameter SCHED_ADDRS  = 14'h006C;
-parameter SCHEDCMP_ADDRS  = 14'h006B; //scheduler reload address
-parameter CREG_ADDRS =   14'h006A;    // "C" register for FMA operator
-parameter LPCNT1_ADDRS = 14'h0069;    //loop counter 1 address
-parameter LPCNT0_ADDRS = 14'h0068;    //loop counter 0 address
-parameter TIMER_ADDRS  = 14'h0067;
-parameter QOS_ADDRS    = 14'h0066;    // FP quality of service address
-parameter RPT_ADDRS    = 14'h0064;
-parameter CAPT3_ADDRS  = 14'h0063;    //delayed alternate exception handling captured rounding mode, thread and PC
-parameter CAPT2_ADDRS  = 14'h0062;    //delayed alternate exception handling captured srcB, srcA and corresponding FP exception code
-parameter CAPT1_ADDRS  = 14'h0061;    //delayed alternate exception handling captured resultB
-parameter CAPT0_ADDRS  = 14'h0060;    //delayed alternate exception handling captured resultA
+parameter AR3_ADDRS      = 14'h0073;
+parameter AR2_ADDRS      = 14'h0072;
+parameter AR1_ADDRS      = 14'h0071;
+parameter AR0_ADDRS      = 14'h0070;
+parameter PC_ADDRS       = 14'h006F;
+parameter PC_COPY        = 14'h006E;
+parameter ST_ADDRS       = 14'h006D;
+parameter RPT_ADDRS      = 14'h006C;
+parameter SPSH_ADDRS     = 14'h006B;
+parameter SPOP_ADDRS     = 14'h006A;
+parameter SNOP_ADDRS     = 14'h0069;
+parameter SP_ADDRS       = 14'h0068;
+parameter LPCNT1_ADDRS   = 14'h0067;
+parameter LPCNT0_ADDRS   = 14'h0066;
+parameter TIMER_ADDRS    = 14'h0065;
+parameter CREG_ADDRS     = 14'h0064;
+parameter CAPT3_ADDRS    = 14'h0063;
+parameter CAPT2_ADDRS    = 14'h0062;
+parameter CAPT1_ADDRS    = 14'h0061;
+parameter CAPT0_ADDRS    = 14'h0060;
+parameter SCHED_ADDRS    = 14'h005F;
+parameter SCHEDCMP_ADDRS = 14'h005E;
+parameter QOS_ADDRS      = 14'h005D;
 
 parameter MOV_    = 4'b0000;      
 parameter AND_    = 4'b0001;
@@ -826,8 +832,9 @@ assign tr2_NMI = ~tr2_done & (tr2_timer==tr2_timercmpr);
 assign tr3_NMI = ~tr3_done & (tr3_timer==tr3_timercmpr);
 
 assign  tr0_STATUS = {  2'b10,
-                         tr0_Z | tr0_N,
-                        6'b000000,
+                         tr0_Z | tr0_V,             // LTE (less than or equal)
+                        ~tr0_Z & tr0_V,             // LT  (less than)
+                        5'b00000,
                          tr0_IRQ,                   // tr0 general-purpose interrupt request
                          tr0_IRQ_IE,                // tr0 general-purpose interrupt request interrupt enable
                          tr0_alt_del_nxact,         // 1 = alternate delayed handler, 0 = immediate
@@ -854,8 +861,9 @@ assign  tr0_STATUS = {  2'b10,
                          };            
 
 assign  tr1_STATUS = {  2'b10,
-                         tr1_Z | tr1_N,
-                        6'b000000,
+                         tr1_Z | tr1_V,             // LTE (less than or equal)
+                        ~tr1_Z & tr1_V,             // LT  (less than)
+                        5'b00000,
                          tr1_IRQ,                   // tr1 general-purpose interrupt request
                          tr1_IRQ_IE,                // tr1 general-purpose interrupt request interrupt enable
                          tr1_alt_del_nxact,         // 1 = alternate delayed handler, 0 = immediate
@@ -882,8 +890,9 @@ assign  tr1_STATUS = {  2'b10,
                          };            
                          
 assign  tr2_STATUS = {  2'b10,
-                         tr2_Z | tr2_N,
-                         6'b000000,
+                         tr2_Z | tr2_V,             // LTE (less than or equal)
+                        ~tr2_Z & tr2_V,             // LT  (less than)
+                        5'b00000,
                          tr2_IRQ,                   // tr2 general-purpose interrupt request
                          tr2_IRQ_IE,                // tr2 general-purpose interrupt request interrupt enable
                          tr2_alt_del_nxact,         // 1 = alternate delayed handler, 0 = immediate
@@ -910,8 +919,9 @@ assign  tr2_STATUS = {  2'b10,
                          };            
 
 assign  tr3_STATUS = {  2'b10,
-                         tr3_Z | tr3_N,
-                        6'b000000,
+                         tr3_Z | tr3_V,             // LTE (less than or equal)
+                        ~tr3_Z & tr3_V,             // LT  (less than)
+                        5'b00000,
                          tr3_IRQ,                   // tr3 general-purpose interrupt request
                          tr3_IRQ_IE,                // tr3 general-purpose interrupt request interrupt enable
                          tr3_alt_del_nxact,         // 1 = alternate delayed handler, 0 = immediate
@@ -938,8 +948,9 @@ assign  tr3_STATUS = {  2'b10,
                          };            
                          
 assign  tr0_STATUSq2 = {2'b10,
-                         Z_q2 | N_q2,
-                         6'b000000,
+                         Z_q2 | V_q2,                // LTE (less than or equal)
+                        ~Z_q2 & V_q2,                // LT  (less than)
+                         5'b00000,
                          tr0_IRQ,                    // tr0 general-purpose interrupt request
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[21] : tr0_IRQ_IE,
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[20] : tr0_alt_del_nxact,                         
@@ -966,8 +977,9 @@ assign  tr0_STATUSq2 = {2'b10,
                          };
                          
 assign  tr1_STATUSq2 = {2'b10,
-                         Z_q2 | N_q2,
-                        6'b000000,
+                         Z_q2 | V_q2,                // LTE (less than or equal)
+                        ~Z_q2 & V_q2,                // LT  (less than)
+                         5'b00000,
                          tr1_IRQ,                    // tr1 general-purpose interrupt request
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[21] : tr1_IRQ_IE,
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[20] : tr1_alt_del_nxact,                         
@@ -994,8 +1006,9 @@ assign  tr1_STATUSq2 = {2'b10,
                          };
                                                   
 assign  tr2_STATUSq2 = {2'b10,
-                         Z_q2 | N_q2,
-                        6'b000000,
+                         Z_q2 | V_q2,                // LTE (less than or equal)
+                        ~Z_q2 & V_q2,                // LT  (less than)
+                         5'b00000,
                          tr2_IRQ,                    // tr2 general-purpose interrupt request
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[21] : tr2_IRQ_IE,
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[20] : tr2_alt_del_nxact,                         
@@ -1004,7 +1017,7 @@ assign  tr2_STATUSq2 = {2'b10,
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[17] : tr2_alt_del_div0,                         
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[16] : tr2_alt_del_inv,                         
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[15] : tr2_alt_nxact_handl,
-                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[14] : tr2_alt_unfl_handl,
+                         ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[14] : tr2_alt_unfl_handl,                                                        
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[13] : tr2_alt_ovfl_handl,
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[12] : tr2_alt_div0_handl,
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[11] : tr2_alt_inv_handl,
@@ -1022,8 +1035,9 @@ assign  tr2_STATUSq2 = {2'b10,
                          };
                          
 assign  tr3_STATUSq2 = {2'b10,
-                         Z_q2 | N_q2,
-                        6'b000000,
+                         Z_q2 | V_q2,                // LTE (less than or equal)
+                        ~Z_q2 & V_q2,                // LT  (less than)
+                         5'b00000,
                          tr3_IRQ,                    // tr3 general-purpose interrupt request
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[21] : tr3_IRQ_IE,
                          ((dest_q2==ST_ADDRS) & wrcycl) ? resultout[20] : tr3_alt_del_nxact,                         
@@ -1672,20 +1686,19 @@ always @(*) begin
                                 PC_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : {20'h00000, tr0_PC};
                                  PC_COPY : rdSrcAdata = (collision_srcA_tr0) ? resultout : {20'h00000, tr0_PC_COPY};
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr0_STATUSq2 : tr0_STATUS;
-                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : tr0_C_reg;                               
                             LPCNT1_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : {16'h0000, tr0_LPCNT1_nz, 3'b000, tr0_LPCNT1};
                             LPCNT0_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : {16'h0000, tr0_LPCNT0_nz, 3'b000, tr0_LPCNT0};
                              TIMER_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : {12'h000, tr0_timer};                               
-                               QOS_ADDRS : rdSrcAdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};                               
-                               
-                                14'h0064,  //reserved for RPT counter
-                                
+                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : tr0_C_reg;                               
+                                                               
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcAdata = tr0_capt_dataA;
+                             
+                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr0) ? resultout : sched_cmp;
+                               QOS_ADDRS : rdSrcAdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};                               
                                 
                                 14'h005x,
                                 14'h004x : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataA;
@@ -1711,20 +1724,19 @@ always @(*) begin
                                 PC_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : {20'h00000, tr1_PC};
                                  PC_COPY : rdSrcAdata = (collision_srcA_tr1) ? resultout : {20'h00000, tr1_PC_COPY};
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr1_STATUSq2 : tr1_STATUS;
-                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : tr1_C_reg;                               
                             LPCNT1_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : {16'h0000, tr1_LPCNT1_nz, 3'b000, tr1_LPCNT1};
                             LPCNT0_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : {16'h0000, tr1_LPCNT0_nz, 3'b000, tr1_LPCNT0};
                              TIMER_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : {12'h000, tr1_timer};                               
-                               QOS_ADDRS : rdSrcAdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};                               
-                               
-                                14'h0064,  //reserved for RPT counter
-                                
+                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : tr1_C_reg;                               
+                                                               
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcAdata = tr1_capt_dataA;
+                             
+                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr1) ? resultout : sched_cmp;
+                               QOS_ADDRS : rdSrcAdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};                               
                                 
                                 14'h005x,
                                 14'h004x : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataA;
@@ -1750,20 +1762,19 @@ always @(*) begin
                                 PC_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : {20'h00000, tr2_PC};
                                  PC_COPY : rdSrcAdata = (collision_srcA_tr2) ? resultout : {20'h00000, tr2_PC_COPY};
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr2_STATUSq2 : tr2_STATUS;
-                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : tr2_C_reg;                               
                             LPCNT1_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : {16'h0000, tr2_LPCNT1_nz, 3'b000, tr2_LPCNT1};
                             LPCNT0_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : {16'h0000, tr2_LPCNT0_nz, 3'b000, tr2_LPCNT0};
                              TIMER_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : {12'h000, tr2_timer};                               
-                               QOS_ADDRS : rdSrcAdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};                               
-                               
-                                14'h0064,  //reserved for RPT counter
-                                
+                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : tr2_C_reg;                               
+                                                               
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcAdata = tr2_capt_dataA;
+                             
+                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr2) ? resultout : sched_cmp;
+                               QOS_ADDRS : rdSrcAdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};                               
                                 
                                 14'h005x,
                                 14'h004x : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataA;
@@ -1789,20 +1800,19 @@ always @(*) begin
                                 PC_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : {20'h00000, tr3_PC};
                                  PC_COPY : rdSrcAdata = (collision_srcA_tr3) ? resultout : {20'h00000, tr3_PC_COPY};
                                 ST_ADDRS : rdSrcAdata = (thread_q1==thread_q2) ? tr3_STATUSq2 : tr3_STATUS;
-                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : tr3_C_reg;                               
                             LPCNT1_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : {16'h0000, tr3_LPCNT1_nz, 3'b000, tr3_LPCNT1};
                             LPCNT0_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : {16'h0000, tr3_LPCNT0_nz, 3'b000, tr3_LPCNT0};
                              TIMER_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : {12'h000, tr3_timer};                               
-                               QOS_ADDRS : rdSrcAdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};                               
-                               
-                                14'h0064,  //reserved for RPT counter
-                                
+                              CREG_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : tr3_C_reg;                               
+                                                               
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcAdata = tr3_capt_dataA;
+                             
+                             SCHED_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcAdata = (collision_srcA_tr3) ? resultout : sched_cmp;
+                               QOS_ADDRS : rdSrcAdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};                               
                                 
                                 14'h005x,
                                 14'h004x : rdSrcAdata = ((srcA_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataA;
@@ -1831,20 +1841,19 @@ always @(*) begin
                                 PC_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : {20'h00000, tr0_PC};
                                  PC_COPY : rdSrcBdata = (collision_srcB_tr0) ? resultout : {20'h00000, tr0_PC_COPY};
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr0_STATUSq2 : tr0_STATUS;
-                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : tr0_C_reg;                               
                             LPCNT1_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : {16'h0000, tr0_LPCNT1_nz, 3'b000, tr0_LPCNT1};
                             LPCNT0_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : {16'h0000, tr0_LPCNT0_nz, 3'b000, tr0_LPCNT0};
                              TIMER_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : {12'h000, tr0_timer};                               
-                               QOS_ADDRS : rdSrcBdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};                               
-                               
-                                14'h0064,  //reserved for RPT counter
-                                
+                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : tr0_C_reg;                               
+                                                               
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcBdata = tr0_capt_dataB;
+                             
+                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr0) ? resultout : sched_cmp;
+                               QOS_ADDRS : rdSrcBdata = {tr0_underflow_QOS, tr0_overflow_QOS, tr0_divby0_QOS, tr0_invalid_QOS};                               
                                 
                                 14'h005x,
                                 14'h004x : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataB;
@@ -1869,20 +1878,19 @@ always @(*) begin
                                 PC_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : {20'h00000, tr1_PC};
                                  PC_COPY : rdSrcBdata = (collision_srcB_tr1) ? resultout : {20'h00000, tr1_PC_COPY};
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr1_STATUSq2 : tr1_STATUS;
-                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : tr1_C_reg;                               
                             LPCNT1_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : {16'h0000, tr1_LPCNT1_nz, 3'b000, tr1_LPCNT1};
                             LPCNT0_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : {16'h0000, tr1_LPCNT0_nz, 3'b000, tr1_LPCNT0};
                              TIMER_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : {12'h000, tr1_timer};                               
-                               QOS_ADDRS : rdSrcBdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};                               
-                               
-                                14'h0064,  //reserved for RPT counter
-                                
+                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : tr1_C_reg;                               
+                                                               
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcBdata = tr1_capt_dataB;
+                             
+                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr1) ? resultout : sched_cmp;
+                               QOS_ADDRS : rdSrcBdata = {tr1_underflow_QOS, tr1_overflow_QOS, tr1_divby0_QOS, tr1_invalid_QOS};                               
                                 
                                 14'h005x,
                                 14'h004x : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataB;
@@ -1907,20 +1915,19 @@ always @(*) begin
                                 PC_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : {20'h00000, tr2_PC};
                                  PC_COPY : rdSrcBdata = (collision_srcB_tr2) ? resultout : {20'h00000, tr2_PC_COPY};
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr2_STATUSq2 : tr2_STATUS;
-                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : tr2_C_reg;                               
                             LPCNT1_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : {16'h0000, tr2_LPCNT1_nz, 3'b000, tr2_LPCNT1};
                             LPCNT0_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : {16'h0000, tr2_LPCNT0_nz, 3'b000, tr2_LPCNT0};
                              TIMER_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : {12'h000, tr2_timer};                               
-                               QOS_ADDRS : rdSrcBdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};                               
-                               
-                                14'h0064,  //reserved for RPT counter
-                                
+                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : tr2_C_reg;                               
+                                                               
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcBdata = tr2_capt_dataB;
+                             
+                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr2) ? resultout : sched_cmp;
+                               QOS_ADDRS : rdSrcBdata = {tr2_underflow_QOS, tr2_overflow_QOS, tr2_divby0_QOS, tr2_invalid_QOS};                               
                                 
                                 14'h005x,
                                 14'h004x : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataB;
@@ -1945,20 +1952,19 @@ always @(*) begin
                                 PC_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : {20'h00000, tr3_PC};
                                  PC_COPY : rdSrcBdata = (collision_srcB_tr3) ? resultout : {20'h00000, tr3_PC_COPY};
                                 ST_ADDRS : rdSrcBdata = (thread_q1==thread_q2) ? tr3_STATUSq2 : tr3_STATUS;
-                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : scheduler;      //global
-                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : sched_cmp;
-                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : tr3_C_reg;                               
                             LPCNT1_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : {16'h0000, tr3_LPCNT1_nz, 3'b000, tr3_LPCNT1};
                             LPCNT0_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : {16'h0000, tr3_LPCNT0_nz, 3'b000, tr3_LPCNT0};
                              TIMER_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : {12'h000, tr3_timer};                               
-                               QOS_ADDRS : rdSrcBdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};                               
-                               
-                                14'h0064,  //reserved for RPT counter
-                                
+                              CREG_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : tr3_C_reg;                               
+                                                               
                              CAPT3_ADDRS,
                              CAPT2_ADDRS,
                              CAPT1_ADDRS,
                              CAPT0_ADDRS : rdSrcBdata = tr3_capt_dataB;
+                             
+                             SCHED_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : scheduler;      //global
+                          SCHEDCMP_ADDRS : rdSrcBdata = (collision_srcB_tr3) ? resultout : sched_cmp;
+                               QOS_ADDRS : rdSrcBdata = {tr3_underflow_QOS, tr3_overflow_QOS, tr3_divby0_QOS, tr3_invalid_QOS};                               
                                 
                                 14'h005x,
                                 14'h004x : rdSrcBdata = ((srcB_q1==dest_q2) & wrcycl) ? resultout : global_32_rddataB;

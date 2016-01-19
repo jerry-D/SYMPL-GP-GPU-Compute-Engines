@@ -1,4 +1,4 @@
-           CPU  "aSYMPL32.TBL"
+           CPU  "SYMPL_IL.TBL"
            HOF  "MOT32"
            WDLN 4
 ; FP324 test1
@@ -16,19 +16,18 @@ AR0:        EQU     0x70                    ;Auxiliary Reg 0
 PC:         EQU     0x6F                    ;Program Counter
 PC_COPY:    EQU     0x6E
 STATUS:     EQU     0x6D                    ;Statis Register
-SCHED:      EQU     0x6C                    ;scheduler
-SCHEDCMP:   EQU     0x6B                    ;scheduler max count values
-C_reg:      EQU     0x6A                    ;FMA C register
-LPCNT1:     EQU	    0x69		   	        ;dedicated loop counter 1 
-LPCNT0:	    EQU	    0x68 			        ;dedicated loop counter 0
-TIMER:      EQU     0x67                    ;timer
-QOS:        EQU     0x66                    ;quality of service exception counters
-DOT:        EQU     0x65                    ;DOT operator
-RPT:        EQU     0x64                    ;repeat counter location
+RPT:        EQU     0x6C                    ;repeat counter location
+LPCNT1:     EQU	    0x67		   	        ;dedicated loop counter 1 
+LPCNT0:	    EQU	    0x66 			        ;dedicated loop counter 0
+TIMER:      EQU     0x65                    ;timer
+C_reg:      EQU     0x64                    ;FMA C register
 CAPTURE3:   EQU     0x63                    ;alternate delayed exception capture register 3
 CAPTURE2:   EQU     0x62                    ;alternate delayed exception capture register 2
 CAPTURE1:   EQU     0x61                    ;alternate delayed exception capture register 1
 CAPTURE0:   EQU     0x60                    ;alternate delayed exception capture register 0
+SCHED:      EQU     0x5F                    ;scheduler
+SCHEDCMP:   EQU     0x5E                    ;scheduler max count values
+QOS:        EQU     0x5D                    ;quality of service exception counters
 
 ;zero-page storage
 NMI_save    EQU     0x01                    ;save PC_COPY here immediately upon entry to NMI service routine

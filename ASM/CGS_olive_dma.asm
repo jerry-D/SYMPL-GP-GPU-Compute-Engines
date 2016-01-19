@@ -1,4 +1,4 @@
-           CPU  "aSYMPL32.TBL"
+           CPU  "SYMPL_IL.TBL"
            HOF  "MOT32"
            WDLN 4
 ; CGS FP3211 test1
@@ -16,19 +16,23 @@ AR0:            EQU     0x70                    ;Auxiliary Reg 0
 PC:             EQU     0x6F                    ;Program Counter
 PC_COPY:        EQU     0x6E
 STATUS:         EQU     0x6D                    ;Statis Register
-LPCNT1:         EQU     0x69                    ;H/W loop counter 1
-LPCNT0:         EQU     0x68                    ;H/W loop counter 0
-TIMER:          EQU     0x67                    ;timer
-RPT:            EQU     0x64                    ;repeat counter location
+RPT:            EQU     0x6C                    ;repeat counter location
+SPSH:           EQU     0x6B                    ;stack push
+SPOP:           EQU     0x6A                    ;stack pop
+SNOP:           EQU     0x69                    ;stack read or write without SP modification
+SP:             EQU     0x68
+LPCNT1:         EQU     0x67                    ;H/W loop counter 1
+LPCNT0:         EQU     0x66                    ;H/W loop counter 0
+TIMER:          EQU     0x65                    ;timer
+COMMAND:        EQU     0x64                    ;command register
+FRC_IRQ:        EQU     0x63
 DMA1_CSR:       EQU     0x62                    ;DMA_Done is DMAn_CSR[21], interrupt enable is DMAn_CSR[20], 20-bit count value {DMAn_CSR[19:0]} 
 DMA1_RDADDRS:   EQU     0x61                    ;DMA1 reads from GPU
 DMA1_WRADDRS:   EQU     0x60                    ;DMA1 writes to DataPool
-FRC_IRQ:        EQU     0x5F
+DONE_IE:        EQU     0x5F                    ;thread[15:0] Done & interrupt enable register
 DMA0_CSR:       EQU     0x5E                    ;DMA_Done is DMAn_CSR[21], interrupt enable is DMAn_CSR[20], 20-bit count value {DMAn_CSR[19:0]}
 DMA0_RDADDRS:   EQU     0x5D                    ;DMA0 reads from DataPool
 DMA0_WRADDRS:   EQU     0x5C                    ;DMA0 writes to GPU
-DONE_IE:        EQU     0x5B                    ;thread[15:0] Done & interrupt enable register
-COMMAND:        EQU     0x5A                    ;command register
 
 
 ;zero-page storage
@@ -233,17 +237,17 @@ wait2:      btbc    wait2, 31, DMA1_CSR         ;wait for transfer to complete
             mov     PC, #done                   ;jump to done, semphr test and spin for next packet
             
 ; interrupt service routines        
-NMI_:       mov     NMI_save, PC_COPY           ;save return address from non-maskable interrupt (time-out timer in this instance)
-            mov     TIMER, #10000               ;put a new value in the timer
-            mov     PC, NMI_save                ;return from interrupt
+NMI_:       mov     *SP--, PC_COPY    ;save return address (general-purpose, maskable interrupt)
+            mov     TIMER, #10000           ;put a new value in the timer
+            mov     PC, *SP++         ;return from interrupt
         
-EXC_:       mov     EXC_save, PC_COPY           ;save return address
-            mov     TIMER, #10000               ;put a new value in the timer
-            mov     PC, EXC_save                ;return from interrupt
+EXC_:       mov     *SP--, PC_COPY    ;save return address (general-purpose, maskable interrupt)
+            mov     TIMER, #10000           ;put a new value in the timer
+            mov     PC, *SP++         ;return from interrupt
 
-IRQ_:       mov     IRQ_PC_save, PC_COPY        ;save return address (general-purpose, maskable interrupt)
-            mov     TIMER, #10000               ;put a new value in the timer
-            mov     PC, IRQ_PC_save             ;return from interrupt            
+IRQ_:       mov     *SP--, PC_COPY    ;save return address (general-purpose, maskable interrupt)
+            mov     TIMER, #10000           ;put a new value in the timer
+            mov     PC, *SP++         ;return from interrupt
 progend:        
             end
           

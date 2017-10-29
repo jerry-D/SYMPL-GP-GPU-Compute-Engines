@@ -1,6 +1,6 @@
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/web_logo.jpg)
 
-(Update:  May 2, 2016)  The SYMPL64 floating-point RISC is now in development.  You can read a short description here:  https://github.com/jerry-D/SYMPL64_FloatingPoint_RISC-
+(Update:  October 28, 2017)  Sorry it took so long, folks, but here it is.  The SYMPLYON-64.  Read the readme file.  It's 64 bits and single-clock "MOVE" of dual operands, which can be any size.  I think you will like it:  https://github.com/jerry-D/SYMPL64_FloatingPoint_RISC-  When I get around to it, I'll publish a double-precision version and maybe write a more detailed manual.
 
 (Update:  January 18, 2016)  The SYMPL GP-GPU-Compute Engine repository now includes the SYMPL 32-bit RISC CPU, which is also IEEE745-2008 compliant.  It executes the same instruction set as the GP-GPU and Coarse-Grained Scheduler (CGS).  Also included with this update is a new instruction table that allows you to write your programs and threads in the new SYMPL Intermediate Language (SYMPL IL) and/or assembly.  SYMPL IL is similar to a primative form of the BASIC programming language.  In the "ASM" folder, you will find the example thread source files and object listing files used for the simulation described below, one verision is in SYMPL assembly language and the other is written in SYMPL IL.  The object code produced by the assembler is identical.
 

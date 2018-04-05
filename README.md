@@ -1,6 +1,6 @@
 ![](https://github.com/jerry-D/SYMPL-FP324-AXI4-GP-GPU/blob/master/web_logo.jpg)
 
-(Update:  April 5, 2018)  After further study and input from various users, it has been brought to my attention that this design's hardware is not fully IEEE 754-2008 compliant.  Accordingly, all references to such have been deleted with apologies for any inconvence this may have caused you.  
+(Update:  April 5, 2018)  After further study and input from various users, it has been brought to my attention that this design's hardware is not fully IEEE 754-2008 compliant.  Accordingly, all references to such have been deleted with apologies for any inconvence this may have caused you.  If you'd like to try a another GP-GPU Compute Unit that I believe "is" IEEE 754-2008 compliant, check out this one:  https://github.com/jerry-D/IEEE-754-2008-Emulator
 
 (Update:  January 18, 2016)  The SYMPL GP-GPU-Compute Engine repository now includes the SYMPL 32-bit RISC CPU.  It executes the same instruction set as the GP-GPU and Coarse-Grained Scheduler (CGS).  Also included with this update is a new instruction table that allows you to write your programs and threads in the new SYMPL Intermediate Language (SYMPL IL) and/or assembly.  SYMPL IL is similar to a primative form of the BASIC programming language.  In the "ASM" folder, you will find the example thread source files and object listing files used for the simulation described below, one verision is in SYMPL assembly language and the other is written in SYMPL IL.  The object code produced by the assembler is identical.
 
